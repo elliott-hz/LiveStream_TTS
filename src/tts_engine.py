@@ -11,7 +11,7 @@ from typing import Callable, Optional
 from .linguistic_engine import LinguisticFeatures
 from .emotion_engine import EmotionTag
 
-logger = logging.getLogger("M7.TTSEngine")
+logger = logging.getLogger(__name__)
 
 
 CHUNK_DURATION_SEC = 0.02   # 20ms per chunk

@@ -8,7 +8,7 @@ import logging
 import time
 from typing import Optional
 
-logger = logging.getLogger("M9.Cache")
+logger = logging.getLogger(__name__)
 
 
 class AudioCache:

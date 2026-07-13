@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass, asdict
 from typing import Optional
 
-logger = logging.getLogger("M5.Emotion")
+logger = logging.getLogger(__name__)
 
 
 @dataclass

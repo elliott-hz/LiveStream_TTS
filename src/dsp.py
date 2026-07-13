@@ -8,7 +8,7 @@ import math
 import struct
 from typing import AsyncGenerator
 
-logger = logging.getLogger("M8.DSP")
+logger = logging.getLogger(__name__)
 
 
 SAMPLE_RATE = 16000

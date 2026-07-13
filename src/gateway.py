@@ -15,7 +15,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 
 from . import tts_pb2, tts_pb2_grpc
 
-logger = logging.getLogger("gateway")
+logger = logging.getLogger(__name__)
 
 
 class TTSGateway:

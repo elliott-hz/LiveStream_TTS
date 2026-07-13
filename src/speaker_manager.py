@@ -9,7 +9,7 @@ import os
 from dataclasses import dataclass, asdict, field
 from typing import Optional
 
-logger = logging.getLogger("M6.Speaker")
+logger = logging.getLogger(__name__)
 
 
 @dataclass

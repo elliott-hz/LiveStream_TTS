@@ -9,7 +9,7 @@ from typing import Optional
 
 from pypinyin import pinyin, Style
 
-logger = logging.getLogger("M4.Linguistic")
+logger = logging.getLogger(__name__)
 
 
 @dataclass

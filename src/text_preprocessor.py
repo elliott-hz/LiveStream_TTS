@@ -7,7 +7,7 @@ import logging
 import re
 from typing import Optional
 
-logger = logging.getLogger("M3.TN")
+logger = logging.getLogger(__name__)
 
 
 class TextPreprocessor:
