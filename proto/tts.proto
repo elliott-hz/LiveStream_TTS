@@ -1,0 +1,77 @@
+syntax = "proto3";
+package tts.v1;
+
+option go_package = "github.com/elliott-hz/livestream-tts/proto/tts/v1";
+
+// ============================================================
+// TTS Service
+// ============================================================
+service TTS {
+  // 双向流：客户端发送文本，服务端返回音频 chunks
+  rpc BidirectionalSynthesize(stream ClientMessage) returns (stream ServerMessage);
+  // 健康检查
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+// ============================================================
+// 消息定义
+// ============================================================
+
+message SynthesizeRequest {
+  string text         = 1;  // 合成文本，单句 ≤ 2000 字符
+  string voice_id     = 2;  // 音色 ID，默认 "default"
+  string emotion      = 3;  // 情感标签，默认 "neutral"
+  float  speed        = 4;  // 语速倍率 [0.5, 2.0]，默认 1.0
+  string request_id   = 5;  // 请求跟踪 ID（可选）
+}
+
+message CancelRequest {
+  string request_id = 1;
+}
+
+message Ping {}
+message Pong {}
+
+message ClientMessage {
+  oneof payload {
+    SynthesizeRequest synthesis_request = 1;
+    CancelRequest     cancel            = 2;
+    Ping              ping              = 3;
+  }
+}
+
+message AudioChunk {
+  string request_id   = 1;
+  int32  sequence     = 2;
+  bytes  pcm_data     = 3;  // PCM chunk（20ms, 无 WAV Header）
+  int32  sample_rate  = 4;
+}
+
+message SynthesisComplete {
+  string request_id   = 1;
+  int32  total_chunks = 2;
+  int32  duration_ms  = 3;
+}
+
+message ErrorMessage {
+  string request_id  = 1;
+  int32  error_code  = 2;
+  string message     = 3;
+}
+
+message ServerMessage {
+  oneof payload {
+    AudioChunk        audio_chunk        = 1;
+    SynthesisComplete synthesis_complete = 2;
+    ErrorMessage      error              = 3;
+    Pong              pong               = 4;
+  }
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string version = 2;
+  int32  uptime_seconds = 3;
+}
