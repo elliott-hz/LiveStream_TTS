@@ -30,7 +30,7 @@ from pathlib import Path
 import grpc
 import uvicorn
 from fastapi import FastAPI, WebSocket
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 
 from .audio_cache import AudioCache
 from .dsp import DSP
@@ -268,6 +268,10 @@ def create_app() -> FastAPI:
         if filepath.exists():
             return HTMLResponse(filepath.read_text(encoding="utf-8"))
         return HTMLResponse("", status_code=404)
+
+    @app.get("/favicon.ico")
+    async def favicon():
+        return Response(status_code=204)
 
     return app
 

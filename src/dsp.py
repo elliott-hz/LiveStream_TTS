@@ -60,25 +60,31 @@ class DSP:
 
         samples = self._pcm_bytes_to_samples(pcm_bytes)
         rms_before = self._rms(samples)
+        is_silence = rms_before < SILENCE_THRESHOLD
 
         # Silence Trim（裁剪首部静音）
         if not self._first_non_silence:
-            if rms_before < SILENCE_THRESHOLD:
+            if is_silence:
                 self._pre_silence_chunks.append(len(samples))
                 logger.info(f"  [DSP] Trimmed silence chunk #{len(self._pre_silence_chunks)} (RMS={rms_before:.4f})")
                 return b""
             self._first_non_silence = True
             trimmed_count = len(self._pre_silence_chunks)
             if trimmed_count > 0:
-                logger.info(f"  [DSP] Trimmed {trimmed_count} leading silence chunks")
+                logger.info(f"  [DSP] Trimmed {trimmed_count} leading silence chunks ({trimmed_count * 20}ms)")
             self._pre_silence_chunks = []
 
-        # Normalize
+        # 静音 chunk → 保持静音（不归一化）
+        if is_silence:
+            return pcm_bytes
+
+        # Normalize（仅非静音 chunk）
         samples = self._normalize_chunk(samples)
         rms_after = self._rms(samples)
-
         result = self._samples_to_pcm_bytes(samples)
-        logger.info(f"  [DSP] Chunk: {len(pcm_bytes)}B → {len(result)}B, RMS {rms_before:.4f} → {rms_after:.4f}")
+
+        # 仅首尾和 RMS 变化 > 50% 时打日志
+        logger.info(f"  [DSP] Chunk: RMS {rms_before:.3f} → {rms_after:.3f}")
         return result
 
     def reset(self):
