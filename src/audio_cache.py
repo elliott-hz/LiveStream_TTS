@@ -4,8 +4,11 @@ POC: 内存 dict 缓存。生产环境换 Redis。
 """
 
 import hashlib
+import logging
 import time
 from typing import Optional
+
+logger = logging.getLogger("M9.Cache")
 
 
 class AudioCache:
@@ -28,11 +31,14 @@ class AudioCache:
         """查缓存。命中返回 PCM bytes，未命中返回 None。"""
         entry = self._store.get(key)
         if entry is None:
+            logger.info(f"MISS: {key[:40]}... ({self.size} entries in cache)")
             return None
         pcm_data, expire_at = entry
         if expire_at > 0 and time.time() > expire_at:
             del self._store[key]
+            logger.info(f"EXPIRED: {key[:40]}... (TTL expired)")
             return None
+        logger.info(f"HIT:  {key[:40]}... ({len(pcm_data)} bytes, {self.size} entries)")
         return pcm_data
 
     def set(self, key: str, pcm_data: bytes, ttl_seconds: Optional[int] = None) -> None:
@@ -40,6 +46,7 @@ class AudioCache:
         ttl = ttl_seconds if ttl_seconds is not None else self.default_ttl
         expire_at = time.time() + ttl if ttl > 0 else 0
         self._store[key] = (pcm_data, expire_at)
+        logger.info(f"WRITE: {key[:40]}... ({len(pcm_data)} bytes, TTL={ttl}s, cache now {self.size} entries)")
 
     def exists(self, key: str) -> bool:
         return self.get(key) is not None

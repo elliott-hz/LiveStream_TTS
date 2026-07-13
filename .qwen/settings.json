@@ -7,7 +7,11 @@
       "Bash(git rm *)",
       "Bash(mkdir *)",
       "Bash(python3 *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(chmod *)",
+      "Bash(lsof *)",
+      "Bash(xargs *)",
+      "Bash(sleep *)"
     ]
   },
   "$version": 4

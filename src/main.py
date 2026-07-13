@@ -25,10 +25,12 @@ import os
 import threading
 import time
 import uuid
+from pathlib import Path
 
 import grpc
 import uvicorn
 from fastapi import FastAPI, WebSocket
+from fastapi.responses import HTMLResponse
 
 from .audio_cache import AudioCache
 from .dsp import DSP
@@ -63,59 +65,66 @@ def build_pipeline_runner(
     m8: DSP,
     m9: AudioCache,
 ):
-    """
-    构建全管线异步生成器。
-    返回 async generator，产出 {'type': ..., ...} 帧 dict。
-    """
+    """构建全管线异步生成器。"""
 
     async def run(request_id: str, text: str, voice_id: str,
                   emotion: str, speed: float):
         """执行完整合成管线，逐 chunk 产出帧。"""
         m8.reset()
+        t_start = time.time()
+
+        logger.info(f"[{request_id}] ╔═══ PIPELINE START ════════════════════════════")
+        logger.info(f"[{request_id}] ║ INPUT: text=\"{text[:40]}...\", voice={voice_id}, emotion={emotion}, speed={speed}")
 
         # ── 1. M3: Text Normalization ──
+        t0 = time.time()
         try:
             normalized = m3.process(text)
         except Exception as e:
-            yield {"type": "error", "request_id": request_id,
-                   "error_code": 2001, "message": f"TN failed: {e}"}
+            yield {"type": "error", "request_id": request_id, "error_code": 2001, "message": f"TN failed: {e}"}
             return
-        logger.info(f"[{request_id}] M3 TN: '{text[:40]}...' → '{normalized[:40]}...'")
+        t_m3 = time.time() - t0
+        logger.info(f"[{request_id}] ║ M3 TN: {t_m3*1000:.1f}ms | \"{text[:40]}...\" → \"{normalized[:40]}...\"")
 
         if not normalized:
-            yield {"type": "error", "request_id": request_id,
-                   "error_code": 2002, "message": "text is empty after normalization"}
+            yield {"type": "error", "request_id": request_id, "error_code": 2002, "message": "text is empty after normalization"}
             return
 
         # ── 2. M5: Emotion Classification ──
+        t0 = time.time()
         emotion_tag = m5.classify(normalized, explicit_emotion=emotion)
-        logger.info(f"[{request_id}] M5 Emotion: {emotion_tag.emotion}")
+        t_m5 = time.time() - t0
+        logger.info(f"[{request_id}] ║ M5 Emotion: {t_m5*1000:.1f}ms | {emotion_tag.emotion}")
 
         # ── 3. M4: Linguistic Processing ──
+        t0 = time.time()
         try:
             features = m4.process(normalized, emotion=emotion_tag.emotion, speed=speed)
         except Exception as e:
-            yield {"type": "error", "request_id": request_id,
-                   "error_code": 4002, "message": f"Linguistic failed: {e}"}
+            yield {"type": "error", "request_id": request_id, "error_code": 4002, "message": f"Linguistic failed: {e}"}
             return
-        logger.info(f"[{request_id}] M4 Linguistic: {len(features.phonemes)} phonemes, "
-                     f"{len(features.pause_positions)} pauses")
+        t_m4 = time.time() - t0
+        logger.info(f"[{request_id}] ║ M4 Linguistic: {t_m4*1000:.1f}ms | {len(features.phonemes)} phonemes, {len(features.pause_positions)} pauses")
 
-        # ── 4. M6: Speaker Embedding 加载 ──
+        # ── 4. M6: Speaker Embedding ──
+        t0 = time.time()
         voice = m6.get_voice(voice_id)
         if not voice:
-            yield {"type": "error", "request_id": request_id,
-                   "error_code": 3001, "message": f"voice_id '{voice_id}' not found"}
+            yield {"type": "error", "request_id": request_id, "error_code": 3001, "message": f"voice_id '{voice_id}' not found"}
             return
         embedding = m6.load_embedding(voice_id)
-        logger.info(f"[{request_id}] M6 Speaker: {voice.name}")
+        t_m6 = time.time() - t0
+        logger.info(f"[{request_id}] ║ M6 Speaker: {t_m6*1000:.1f}ms | {voice.name}")
 
-        # ── 5. M9: 缓存查询 ──
+        # ── 5. M9: Cache Query ──
         cache_key = AudioCache.build_key(normalized, voice_id, emotion_tag.emotion)
+        t0 = time.time()
         cached_pcm = m9.get(cache_key)
+        t_m9q = time.time() - t0
+
         if cached_pcm:
-            logger.info(f"[{request_id}] M9 Cache HIT → bypass inference")
-            chunk_bytes = TTS_CHUNK_SAMPLES * 2  # 320 samples × 2 bytes = 640
+            logger.info(f"[{request_id}] ║ M9 Cache: {t_m9q*1000:.1f}ms | HIT → bypass inference")
+            chunk_bytes = TTS_CHUNK_SAMPLES * 2
             total_chunks = len(cached_pcm) // chunk_bytes
             for seq in range(total_chunks):
                 chunk = cached_pcm[seq * chunk_bytes:(seq + 1) * chunk_bytes]
@@ -126,7 +135,10 @@ def build_pipeline_runner(
                     "data": base64.b64encode(chunk).decode(),
                     "sample_rate": SAMPLE_RATE,
                 }
-                await asyncio.sleep(0)  # yield control
+                await asyncio.sleep(0)
+            t_total = time.time() - t_start
+            logger.info(f"[{request_id}] ║ DONE (CACHED): {total_chunks} chunks, {t_total*1000:.0f}ms total")
+            logger.info(f"[{request_id}] ╚═══ PIPELINE END (CACHED) ════════════════════")
             yield {
                 "type": "synthesis_complete",
                 "request_id": request_id,
@@ -135,9 +147,9 @@ def build_pipeline_runner(
             }
             return
 
-        logger.info(f"[{request_id}] M9 Cache MISS → start inference")
+        logger.info(f"[{request_id}] ║ M9 Cache: {t_m9q*1000:.1f}ms | MISS")
 
-        # ── 6-7. M7 TTS Engine (推理) + M8 DSP (后处理) ──
+        # ── 6-7. M7 Inference + M8 DSP ──
         full_pcm = bytearray()
         total_chunks = 0
         complete_event = asyncio.Event()
@@ -145,7 +157,6 @@ def build_pipeline_runner(
 
         def on_chunk(req_id: str, seq: int, pcm: bytes):
             nonlocal total_chunks, full_pcm
-            # M8 DSP 处理
             processed = m8.process_chunk(pcm)
             if processed:
                 full_pcm.extend(processed)
@@ -158,7 +169,7 @@ def build_pipeline_runner(
             error_result[0] = (code, msg)
             complete_event.set()
 
-        # M7 推理（同步，但在 run_in_executor 中执行以避免阻塞事件循环）
+        t0 = time.time()
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(
             None,
@@ -167,8 +178,11 @@ def build_pipeline_runner(
                 on_chunk, on_complete, on_error,
             )
         )
+        t_m7 = time.time() - t0
+        logger.info(f"[{request_id}] ║ M7+M8: {t_m7*1000:.1f}ms | inference+DSP")
 
         if error_result[0]:
+            logger.error(f"[{request_id}] ║ ERROR: code={error_result[0][0]}, msg={error_result[0][1]}")
             yield {
                 "type": "error", "request_id": request_id,
                 "error_code": error_result[0][0],
@@ -176,14 +190,16 @@ def build_pipeline_runner(
             }
             return
 
-        # ── 8. M9: 缓存写入 ──
+        # ── 8. M9: Cache Write ──
+        t0 = time.time()
         if full_pcm:
             m9.set(cache_key, bytes(full_pcm))
-            logger.info(f"[{request_id}] M9 Cache WRITE: {len(full_pcm)} bytes")
+        t_m9w = time.time() - t0
+        logger.info(f"[{request_id}] ║ M9 Cache WRITE: {t_m9w*1000:.1f}ms | {len(full_pcm)} bytes")
 
-        # ── 流式输出 ──
+        # ── Stream Output ──
         if full_pcm:
-            chunk_bytes = TTS_CHUNK_SAMPLES * 2  # 320 samples × 2 bytes = 640
+            chunk_bytes = TTS_CHUNK_SAMPLES * 2
             for seq in range(0, len(full_pcm), chunk_bytes):
                 chunk = full_pcm[seq:seq + chunk_bytes]
                 yield {
@@ -195,13 +211,16 @@ def build_pipeline_runner(
                 }
                 await asyncio.sleep(0)
 
+        t_total = time.time() - t_start
+        logger.info(f"[{request_id}] ║ TIMING: M3={t_m3*1000:.0f}ms M5={t_m5*1000:.0f}ms M4={t_m4*1000:.0f}ms M6={t_m6*1000:.0f}ms M7+M8={t_m7*1000:.0f}ms M9W={t_m9w*1000:.0f}ms TOTAL={t_total*1000:.0f}ms")
+        logger.info(f"[{request_id}] ║ RESULT: {total_chunks} chunks, {len(full_pcm)} bytes PCM")
+        logger.info(f"[{request_id}] ╚═══ PIPELINE END ═══════════════════════════════════")
         yield {
             "type": "synthesis_complete",
             "request_id": request_id,
             "total_chunks": total_chunks,
             "duration_ms": int(total_chunks * 20),
         }
-        logger.info(f"[{request_id}] Synthesis complete: {total_chunks} chunks")
 
     return run
 
@@ -232,6 +251,23 @@ def create_app() -> FastAPI:
     @app.websocket("/ws/v1/tts")
     async def tts_ws(ws: WebSocket):
         await gateway.handle_websocket(ws)
+
+    # ── 静态页面 ──
+    static_dir = Path(__file__).parent.parent / "static"
+    index_html = static_dir / "index.html"
+
+    @app.get("/")
+    async def index():
+        if index_html.exists():
+            return HTMLResponse(index_html.read_text(encoding="utf-8"))
+        return HTMLResponse("<h1>TTS Platform POC</h1><p>index.html not found</p>")
+
+    @app.get("/static/{filename}")
+    async def static_file(filename: str):
+        filepath = static_dir / filename
+        if filepath.exists():
+            return HTMLResponse(filepath.read_text(encoding="utf-8"))
+        return HTMLResponse("", status_code=404)
 
     return app
 

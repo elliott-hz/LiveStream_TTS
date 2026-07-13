@@ -4,9 +4,12 @@ POC: JSON 文件存储。预置 default 音色。
 """
 
 import json
+import logging
 import os
 from dataclasses import dataclass, asdict, field
 from typing import Optional
+
+logger = logging.getLogger("M6.Speaker")
 
 
 @dataclass
@@ -61,24 +64,34 @@ class SpeakerManager:
     # --- 对内接口 (供 M7 调用) ---
 
     def get_voice(self, voice_id: str) -> Optional[VoiceProfile]:
-        return self._voices.get(voice_id)
+        voice = self._voices.get(voice_id)
+        if voice:
+            logger.info("╔═══════════════════════════════════════════")
+            logger.info(f"║ VOICE ID: {voice_id}")
+            logger.info(f"║ NAME: {voice.name}")
+            logger.info(f"║ GENDER: {voice.gender}, LANG: {voice.language}")
+            logger.info(f"║ STATUS: {voice.status}")
+            logger.info(f"║ EMBEDDING: {voice.embedding_path or '(none, POC default)'}")
+            logger.info(f"╚═══════════════════════════════════════════")
+        else:
+            logger.warning(f"Voice '{voice_id}' not found")
+        return voice
 
     def load_embedding(self, voice_id: str) -> list:
         """
         加载音色 Embedding 向量。
-        POC: 返回空列表（占位符）。接入真实 TTS 模型后改为加载 .npy 文件。
+        POC: 返回空列表（占位符）。
         """
         voice = self.get_voice(voice_id)
         if voice and voice.embedding_path:
-            # TODO: 真实场景用 numpy.load(embedding_path)
-            pass
+            logger.info(f"Loading embedding from {voice.embedding_path}")
+            # TODO: numpy.load(embedding_path)
+        else:
+            logger.info(f"No embedding file for '{voice_id}', using default")
         return []
 
     def load_prompt_audio(self, voice_id: str) -> bytes:
-        """
-        加载 Prompt 音频。
-        POC: 返回空 bytes。
-        """
+        logger.info(f"Prompt audio load requested for '{voice_id}' — POC: returning empty")
         return b""
 
     # --- 对外接口 REST (供 M1 管理用) ---

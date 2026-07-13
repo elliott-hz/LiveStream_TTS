@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTS Platform — 流式合成测试</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, system-ui, sans-serif; background: #f5f5f5; padding: 24px; color: #333; }
+  .container { max-width: 720px; margin: 0 auto; }
+
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 13px; margin-bottom: 20px; }
+
+  .card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 16px; }
+
+  label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; color: #555; }
+  textarea { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 15px; resize: vertical; min-height: 80px; outline: none; }
+  textarea:focus { border-color: #4f8ef7; }
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .field { flex: 1; min-width: 120px; }
+  select, input { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px; font-size: 14px; background: #fff; outline: none; }
+  select:focus, input:focus { border-color: #4f8ef7; }
+
+  .actions { display: flex; gap: 10px; margin-top: 16px; }
+  .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: .15s; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: #4f8ef7; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #3a7ae0; }
+  .btn-danger { background: #e74c3c; color: #fff; }
+  .btn-danger:hover:not(:disabled) { background: #c0392b; }
+  .btn-secondary { background: #eee; color: #555; }
+  .btn-secondary:hover:not(:disabled) { background: #ddd; }
+
+  .status-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f8f9fa; border-radius: 8px; font-size: 13px; min-height: 42px; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot-connected { background: #2ecc71; }
+  .dot-disconnected { background: #aaa; }
+  .dot-speaking { background: #e67e22; animation: pulse 1s infinite; }
+  .dot-error { background: #e74c3c; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .log { background: #1e1e1e; color: #d4d4d4; border-radius: 8px; padding: 14px; font-family: 'SF Mono', Consolas, monospace; font-size: 12px; line-height: 1.6; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+  .log .info { color: #6a9955; }
+  .log .warn { color: #e6db74; }
+  .log .err { color: #f44747; }
+
+  .samples { margin-top: 12px; }
+  .sample-tag { display: inline-block; background: #eef2ff; color: #4f8ef7; border-radius: 4px; padding: 4px 10px; font-size: 12px; cursor: pointer; margin: 3px 4px 3px 0; }
+  .sample-tag:hover { background: #dde4ff; }
+
+  audio { width: 100%; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔊 TTS 流式合成测试</h1>
+  <p class="subtitle">输入文本 → WebSocket 流式合成 → 实时播放</p>
+
+  <div class="card">
+    <div class="status-bar" id="statusBar">
+      <span class="status-dot dot-disconnected" id="statusDot"></span>
+      <span id="statusText">未连接</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <label for="textInput">合成文本</label>
+    <textarea id="textInput" placeholder="输入要合成的文本，如：欢迎来到直播间，今天给大家带来一款超值产品。">欢迎来到直播间，今天给大家带来一款超值产品。</textarea>
+
+    <div class="row" style="margin-top:12px">
+      <div class="field">
+        <label for="voiceSelect">音色</label>
+        <select id="voiceSelect"></select>
+      </div>
+      <div class="field">
+        <label for="emotionSelect">情感</label>
+        <select id="emotionSelect">
+          <option value="neutral">neutral（中性）</option>
+          <option value="happy">happy（高兴）</option>
+          <option value="excited" selected>excited（兴奋）</option>
+          <option value="sad">sad（悲伤）</option>
+          <option value="calm">calm（平静）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="speedInput">语速</label>
+        <input type="number" id="speedInput" value="1.0" min="0.5" max="2.0" step="0.1">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btnSpeak" onclick="speak()">🔊 朗读</button>
+      <button class="btn btn-danger" id="btnStop" onclick="stop()" disabled>⏹ 停止</button>
+      <button class="btn btn-secondary" onclick="clearLog()">清除日志</button>
+    </div>
+
+    <div class="samples" id="sampleList"></div>
+  </div>
+
+  <div class="card">
+    <label>管线日志</label>
+    <div class="log" id="log">连接服务中...</div>
+  </div>
+</div>
+
+<script>
+// ── 配置 ──
+const WS_URL = `ws://${location.host}/ws/v1/tts`;
+const SAMPLE_RATE = 16000;
+
+// ── 状态 ──
+let ws = null;
+let audioCtx = null;
+let isSpeaking = false;
+let pcmBuffer = [];
+
+// ── DOM ──
+const $ = id => document.getElementById(id);
+const textInput = $('textInput');
+const voiceSelect = $('voiceSelect');
+const emotionSelect = $('emotionSelect');
+const speedInput = $('speedInput');
+const btnSpeak = $('btnSpeak');
+const btnStop = $('btnStop');
+const logEl = $('log');
+const statusText = $('statusText');
+const statusDot = $('statusDot');
+
+// ── 日志 ──
+function log(msg, cls='info') {
+  const line = document.createElement('div');
+  line.className = cls;
+  const t = new Date().toLocaleTimeString();
+  line.textContent = `[${t}] ${msg}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function clearLog() {
+  logEl.innerHTML = '';
+  log('日志已清除');
+}
+
+// ── 连接状态 ──
+function setStatus(text, cls) {
+  statusText.textContent = text;
+  statusDot.className = 'status-dot ' + cls;
+}
+setStatus('连接中...', 'dot-disconnected');
+log('正在连接 WebSocket: ' + WS_URL);
+
+// ── 加载音色列表 ──
+fetch('/api/v1/voices')
+  .then(r => r.json())
+  .then(data => {
+    voiceSelect.innerHTML = data.voices.map(v =>
+      `<option value="${v.voice_id}">${v.name} (${v.gender})</option>`
+    ).join('');
+    log(`已加载 ${data.total} 个音色`);
+  })
+  .catch(() => log('加载音色列表失败', 'err'));
+
+// ── 预设样本 ──
+const SAMPLES = [
+  '欢迎来到直播间，今天给大家带来一款超值产品。',
+  '今天是2026年7月13日，😊 天气不错，适合出门走走。',
+  '人工智能正在改变我们生活的方方面面。',
+  '你好，请问有什么可以帮你的吗？',
+  '注意了！限时抢购活动马上就要开始了。',
+  '《静夜思》床前明月光，疑是地上霜。举头望明月，低头思故乡。',
+];
+const sampleList = $('sampleList');
+const tag = document.createElement('span');
+tag.textContent = '📝 快速填入:';
+tag.style.cssText = 'font-size:12px;color:#888;margin-right:6px;';
+sampleList.appendChild(tag);
+SAMPLES.forEach(s => {
+  const el = document.createElement('span');
+  el.className = 'sample-tag';
+  el.textContent = s.slice(0, 16) + (s.length > 16 ? '...' : '');
+  el.title = s;
+  el.onclick = () => { textInput.value = s; };
+  sampleList.appendChild(el);
+});
+
+// ── WebSocket ──
+function connect() {
+  if (ws && ws.readyState === WebSocket.OPEN) return;
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    setStatus('已连接，可以朗读', 'dot-connected');
+    log('WebSocket 已连接 ✅');
+    btnSpeak.disabled = false;
+  };
+
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    const t = msg.type;
+
+    if (t === 'audio_chunk') {
+      // 累积 PCM（Base64 → ArrayBuffer）
+      const binary = atob(msg.data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      pcmBuffer.push(bytes);
+    }
+
+    else if (t === 'synthesis_complete') {
+      log(`合成完成: ${msg.total_chunks} chunks, ${msg.duration_ms}ms`, 'info');
+      setStatus('合成完成，播放中...', 'dot-speaking');
+      playPcm(pcmBuffer);
+      pcmBuffer = [];
+    }
+
+    else if (t === 'error') {
+      log(`错误 [${msg.error_code}]: ${msg.message}`, 'err');
+      setStatus('错误: ' + msg.message, 'dot-error');
+      btnSpeak.disabled = false;
+      btnStop.disabled = true;
+      isSpeaking = false;
+      pcmBuffer = [];
+    }
+
+    else if (t === 'pong') {
+      // ignore
+    }
+  };
+
+  ws.onclose = () => {
+    setStatus('连接断开', 'dot-disconnected');
+    log('WebSocket 断开', 'warn');
+    btnSpeak.disabled = true;
+    btnStop.disabled = true;
+    isSpeaking = false;
+    // 自动重连
+    setTimeout(connect, 3000);
+  };
+
+  ws.onerror = () => {
+    log('WebSocket 错误', 'err');
+  };
+}
+
+// ── 播放 PCM（Web Audio API） ──
+function playPcm(chunks) {
+  // 合并所有 chunk
+  const totalBytes = chunks.reduce((s, c) => s + c.length, 0);
+  const totalSamples = totalBytes / 2; // 16-bit
+  const buffer = new ArrayBuffer(totalBytes);
+  const view = new Uint8Array(buffer);
+  let offset = 0;
+  for (const chunk of chunks) {
+    view.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  // 转为 Float32 (int16 → float32)
+  const int16 = new Int16Array(buffer);
+  const float32 = new Float32Array(totalSamples);
+  for (let i = 0; i < totalSamples; i++) {
+    float32[i] = int16[i] / 32768.0;
+  }
+
+  // 创建 AudioContext（第一次交互时创建）
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  // 创建 AudioBuffer
+  const audioBuffer = audioCtx.createBuffer(1, totalSamples, SAMPLE_RATE);
+  audioBuffer.getChannelData(0).set(float32);
+
+  // 播放
+  const source = audioCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(audioCtx.destination);
+  source.onended = () => {
+    setStatus('播放完成', 'dot-connected');
+    btnSpeak.disabled = false;
+    btnStop.disabled = true;
+    isSpeaking = false;
+  };
+  source.start();
+
+  // 更新状态
+  isSpeaking = true;
+  btnSpeak.disabled = true;
+  btnStop.disabled = false;
+  const durationSec = (totalSamples / SAMPLE_RATE).toFixed(1);
+  setStatus(`▶ 播放中 (${durationSec}s)`, 'dot-speaking');
+  log(`播放音频: ${totalSamples} samples, ~${durationSec}s`);
+}
+
+// ── 朗读 ──
+function speak() {
+  const text = textInput.value.trim();
+  if (!text) { log('请输入文本', 'warn'); return; }
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    log('WebSocket 未连接，请等待...', 'warn');
+    return;
+  }
+
+  pcmBuffer = [];
+  setStatus('合成中...', 'dot-speaking');
+  log('--- 开始合成 ---');
+  log(`文本: "${text.slice(0, 50)}${text.length > 50 ? '...' : ''}"`);
+  log(`音色: ${voiceSelect.value}, 情感: ${emotionSelect.value}, 语速: ${speedInput.value}`);
+
+  ws.send(JSON.stringify({
+    type: 'synthesis_request',
+    request_id: 'web-' + Date.now().toString(36),
+    text: text,
+    voice_id: voiceSelect.value,
+    emotion: emotionSelect.value,
+    speed: parseFloat(speedInput.value) || 1.0,
+  }));
+}
+
+// ── 停止 ──
+function stop() {
+  // 断开音频
+  if (audioCtx && audioCtx.state !== 'closed') {
+    audioCtx.close().then(() => { audioCtx = null; });
+  }
+  // 发送取消
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'cancel', request_id: 'cancel-' + Date.now() }));
+  }
+  pcmBuffer = [];
+  isSpeaking = false;
+  btnSpeak.disabled = false;
+  btnStop.disabled = true;
+  setStatus('已停止', 'dot-disconnected');
+  log('用户停止播放', 'warn');
+}
+
+// ── 连接 ──
+connect();
+</script>
+</body>
+</html>

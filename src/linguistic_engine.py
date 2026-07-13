@@ -3,10 +3,13 @@ M4 — Linguistic Processing Engine
 POC: 简化实现。用 pypinyin 做 G2P + 固定 Prosody 规则。
 """
 
+import logging
 from dataclasses import dataclass, asdict, field
 from typing import Optional
 
 from pypinyin import pinyin, Style
+
+logger = logging.getLogger("M4.Linguistic")
 
 
 @dataclass
@@ -73,13 +76,11 @@ class LinguisticEngine:
                 speed: float = 1.0) -> LinguisticFeatures:
         """
         执行语言学处理。
-        Args:
-            normalized_text: M3 输出的规范化文本
-            emotion: 情感标签
-            speed: 语速倍率
-        Returns:
-            LinguisticFeatures
         """
+        logger.info("╔═══════════════════════════════════════════")
+        logger.info(f"║ INPUT:  \"{normalized_text[:60]}{'...' if len(normalized_text)>60 else ''}\"")
+        logger.info(f"║ EMOTION: {emotion}, SPEED: {speed}")
+
         features = LinguisticFeatures()
 
         emotion_profile = EMOTION_PROFILE.get(emotion, EMOTION_PROFILE["neutral"])
@@ -87,49 +88,51 @@ class LinguisticEngine:
         pitch_base = emotion_profile["pitch_baseline"]
         energy = emotion_profile["energy"]
 
+        logger.info(f"║ PROFILE: speed_factor={speed_factor:.2f}, pitch_base={pitch_base}Hz, energy={energy}")
+
         sentences = self._split_sentences(normalized_text)
-        phoneme_offset = 0
+        logger.info(f"║ SENTENCES: {len(sentences)} detected")
+        for i, (sent, pause) in enumerate(sentences):
+            logger.info(f"║   [{i}] \"{sent[:30]}\" → pause {pause}ms")
 
         for sentence, pause_ms in sentences:
             if not sentence.strip():
                 continue
 
             # G2P: 汉字 → 拼音（声母+韵母作为音素单元）
-            # 用 pypinyin 的 BOPOMOFO 风格拆成更细的音素
             raw = pinyin(sentence, style=Style.BOPOMOFO_FIRST, errors="ignore")
             for syllable_list in raw:
                 for syllable in syllable_list:
                     features.phonemes.append(syllable)
 
-            # 音素时长（基础 80ms/音素，受语速影响）
-            base_duration = int(80 / speed_factor)
-            for _ in syllable_list if raw else []:
-                for _ in range(len(raw[-1]) if raw else 1):
-                    features.durations_ms.append(base_duration)
-
-            # 修正: 为每个音素设置时长
+            # 音素时长
             features.durations_ms = [
                 int(80 / speed_factor) for _ in features.phonemes
             ]
 
-            # F0 Contour — 模拟正弦变化
-            num_phonemes = len(features.phonemes) - (phoneme_offset if phoneme_offset else 0)
+            # F0 Contour
+            num_phonemes = len(features.phonemes) - (phoneme_offset if 'phoneme_offset' in dir() else 0)
             for i in range(num_phonemes if num_phonemes > 0 else 0):
                 t = i / max(num_phonemes, 1)
-                # 句尾略降，句首略升
                 pitch = pitch_base + 30 * (1 - t) - 20 * t
                 features.f0_contour.append(pitch)
 
-            # Energy Contour — 按情感设定
             features.energy_contour.extend([energy] * max(num_phonemes, 1))
 
-            # 停顿位置
             if pause_ms > 0:
                 features.pause_positions.append({
                     "after_phoneme_index": len(features.phonemes) - 1,
                     "duration_ms": pause_ms,
                 })
 
-            phoneme_offset = len(features.phonemes)
+        # 输出摘要
+        logger.info(f"║ PHONEMES: {len(features.phonemes)} total")
+        if features.phonemes:
+            logger.info(f"║   first 10: {features.phonemes[:10]}")
+        logger.info(f"║ PAUSES: {len(features.pause_positions)}")
+        for p in features.pause_positions:
+            logger.info(f"║   after phoneme #{p['after_phoneme_index']}: {p['duration_ms']}ms")
+        logger.info(f"║ F0: {len(features.f0_contour)} points, range {min(features.f0_contour):.0f}-{max(features.f0_contour):.0f}Hz" if features.f0_contour else "║ F0: none")
+        logger.info(f"╚═══════════════════════════════════════════")
 
         return features

@@ -3,9 +3,12 @@ M8 — Audio Post Processing (DSP)
 POC: 简化实现 — Normalize（响度归一化）+ Silence Trim（静音裁剪）。
 """
 
+import logging
 import math
 import struct
 from typing import AsyncGenerator
+
+logger = logging.getLogger("M8.DSP")
 
 
 SAMPLE_RATE = 16000
@@ -51,29 +54,32 @@ class DSP:
     def process_chunk(self, pcm_bytes: bytes) -> bytes:
         """
         处理单个 PCM Chunk（20ms）。
-        Args:
-            pcm_bytes: 原始 PCM bytes
-        Returns:
-            处理后的 PCM bytes
         """
         if not pcm_bytes:
             return b""
 
         samples = self._pcm_bytes_to_samples(pcm_bytes)
-
-        # Normalize
-        samples = self._normalize_chunk(samples)
+        rms_before = self._rms(samples)
 
         # Silence Trim（裁剪首部静音）
         if not self._first_non_silence:
-            rms = self._rms(samples)
-            if rms < SILENCE_THRESHOLD:
+            if rms_before < SILENCE_THRESHOLD:
                 self._pre_silence_chunks.append(len(samples))
-                return b""  # 丢弃当前静音 chunk
+                logger.info(f"  [DSP] Trimmed silence chunk #{len(self._pre_silence_chunks)} (RMS={rms_before:.4f})")
+                return b""
             self._first_non_silence = True
+            trimmed_count = len(self._pre_silence_chunks)
+            if trimmed_count > 0:
+                logger.info(f"  [DSP] Trimmed {trimmed_count} leading silence chunks")
             self._pre_silence_chunks = []
 
-        return self._samples_to_pcm_bytes(samples)
+        # Normalize
+        samples = self._normalize_chunk(samples)
+        rms_after = self._rms(samples)
+
+        result = self._samples_to_pcm_bytes(samples)
+        logger.info(f"  [DSP] Chunk: {len(pcm_bytes)}B → {len(result)}B, RMS {rms_before:.4f} → {rms_after:.4f}")
+        return result
 
     def reset(self):
         """重置 DSP 状态（每个新请求调用）。"""

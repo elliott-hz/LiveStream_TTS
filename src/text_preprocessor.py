@@ -3,8 +3,11 @@ M3 — Text Preprocessor (Text Normalizer)
 POC: 简化实现，只做 HTML 清洗 + 基本数字/日期转写
 """
 
+import logging
 import re
 from typing import Optional
+
+logger = logging.getLogger("M3.TN")
 
 
 class TextPreprocessor:
@@ -129,10 +132,20 @@ class TextPreprocessor:
         输出: 规范化后的纯文本
         """
         if not text or not text.strip():
+            logger.warning("Empty input text")
             return ""
+        original = text
+        logger.info("╔═══════════════════════════════════════════")
+        logger.info(f"║ INPUT:  \"{text[:80]}{'...' if len(text)>80 else ''}\"")
+        logger.info(f"║ LENGTH: {len(text)} chars")
         for name, fn in self.rules:
+            before = text
             try:
                 text = fn(text)
+                if text != before:
+                    logger.info(f"║ ├─ {name}: \"{before[:40]}\" → \"{text[:40]}\"")
             except Exception as e:
-                pass  # 单条规则失败不阻塞管线
+                logger.warning(f"║ ├─ {name}: ERROR {e}")
+        logger.info(f"║ OUTPUT: \"{text[:80]}{'...' if len(text)>80 else ''}\"")
+        logger.info(f"╚═══════════════════════════════════════════")
         return text
