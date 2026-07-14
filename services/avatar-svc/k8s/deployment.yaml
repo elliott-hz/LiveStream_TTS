@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: avatar-svc
+  namespace: livestream-tts
+  labels:
+    app: avatar-svc
+    service: avatar
+    tier: backend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: avatar-svc
+  template:
+    metadata:
+      labels:
+        app: avatar-svc
+        service: avatar
+        tier: backend
+    spec:
+      serviceAccountName: avatar-svc
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: avatar-svc
+          image: ghcr.io/livestream-tts/avatar-svc:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 50051
+              name: grpc
+              protocol: TCP
+            - containerPort: 8004
+              name: http
+              protocol: TCP
+          env:
+            - name: ENV
+              value: "production"
+            - name: AVATAR_SVC_GRPC_PORT
+              value: "50051"
+            - name: AVATAR_SVC_HTTP_PORT
+              value: "8004"
+            - name: AVATAR_SVC_DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-svc-config
+                  key: DB_HOST
+            - name: AVATAR_SVC_DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-svc-config
+                  key: DB_PORT
+            - name: AVATAR_SVC_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: avatar-svc-config
+                  key: DB_NAME
+            - name: AVATAR_SVC_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: avatar-svc-secret
+                  key: DB_USER
+            - name: AVATAR_SVC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: avatar-svc-secret
+                  key: DB_PASSWORD
+            - name: AVATAR_SVC_DB_POOL_SIZE
+              value: "10"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8004
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8004
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: config
+              mountPath: /etc/config/avatar-svc
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: avatar-svc-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: avatar-svc
+  namespace: livestream-tts
+  labels:
+    app: avatar-svc

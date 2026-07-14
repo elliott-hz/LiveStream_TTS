@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: live-mgr-svc-config
+  namespace: livestream-tts
+  labels:
+    app: live-mgr-svc
+data:
+  DB_HOST: "postgres-postgresql.livestream-tts.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "livestream_tts"
+  KAFKA_BOOTSTRAP_SERVERS: "kafka.livestream-tts.svc.cluster.local:9092"

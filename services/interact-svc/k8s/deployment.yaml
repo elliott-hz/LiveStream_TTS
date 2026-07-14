@@ -1,0 +1,107 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: interact-svc
+  namespace: livestream-tts
+  labels:
+    app: interact-svc
+    tier: core
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: interact-svc
+  template:
+    metadata:
+      labels:
+        app: interact-svc
+        tier: core
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: livestream-tts-sa
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: interact-svc
+          image: ghcr.io/livestream-tts/interact-svc:latest
+          imagePullPolicy: Always
+          ports:
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: ENV
+              value: "production"
+            - name: INTERACT_SVC_HTTP_HOST
+              value: "0.0.0.0"
+            - name: INTERACT_SVC_HTTP_PORT
+              value: "8080"
+            - name: INTERACT_SVC_GRPC_PORT
+              value: "50051"
+            - name: INTERACT_SVC_LOG_LEVEL
+              value: "INFO"
+            - name: INTERACT_SVC_LOG_JSON
+              value: "true"
+            - name: INTERACT_SVC_KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka.livestream-tts.svc.cluster.local:9093"
+            - name: INTERACT_SVC_KAFKA_GROUP_ID
+              value: "interact-svc"
+            - name: INTERACT_SVC_DEDUP_TTL_SECONDS
+              value: "300"
+            - name: INTERACT_SVC_DEFAULT_REPLY_THRESHOLD
+              value: "0.3"
+            - name: INTERACT_SVC_COMMENT_INTERVAL_SECONDS
+              value: "30"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - interact-svc
+                topologyKey: kubernetes.io/hostname

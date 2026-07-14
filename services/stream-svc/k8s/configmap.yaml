@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stream-svc-config
+  labels:
+    app: stream-svc
+data:
+  config.yaml: |
+    # Stream Service Configuration
+    # Mounted at /etc/config/stream-svc/config.yaml
+
+    ENV: "production"
+    LOG_LEVEL: "INFO"
+
+    # gRPC
+    GRPC_PORT: 50054
+    GRPC_MAX_WORKERS: 20
+
+    # HTTP
+    HTTP_PORT: 8084
+    HTTP_HOST: "0.0.0.0"
+
+    # Streaming
+    STREAM_RTMP_BASE_URL: "rtmp://push.livestream-tts.com/live"
+    STREAM_RECORDING_DIR: "/data/recordings"
+    STREAM_TRANSCODE_QUEUE: 10
+
+    # Database (future)
+    DB_HOST: "postgres-lb.livestream-tts.svc.cluster.local"
+    DB_PORT: 5432
+    DB_NAME: "livestream_tts"
+    DB_POOL_SIZE: 10
+
+    # Redis / Cache (future)
+    REDIS_HOST: "redis-cluster.livestream-tts.svc.cluster.local"
+    REDIS_PORT: 6379
+
+    # Kafka (future)
+    KAFKA_BOOTSTRAP_SERVERS: "kafka-cluster.livestream-tts.svc.cluster.local:9093"

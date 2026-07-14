@@ -1,0 +1,8 @@
+[project]
+name = "render-svc"
+version = "0.1.0"
+description = "Render Service — Visual Rendering, Lip Sync, GPU Composition"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+gpu = ["torch>=2.1", "tensorrt>=8.6"]

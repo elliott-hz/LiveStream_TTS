@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: profile-svc
+  namespace: livestream-tts
+  labels:
+    app: profile-svc
+spec:
+  selector:
+    app: profile-svc
+  ports:
+    - name: http
+      port: 8018
+      targetPort: http
+    - name: grpc
+      port: 50051
+      targetPort: grpc
+  type: ClusterIP

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: billing-config
+  namespace: livestream-tts
+data:
+  ENV: "production"
+  HTTP_PORT: "8015"
+  GRPC_PORT: "50051"
+  DB_POOL_SIZE: "10"
+  LOG_LEVEL: "INFO"

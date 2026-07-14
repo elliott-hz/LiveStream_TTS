@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: interact-svc
+  namespace: livestream-tts
+  labels:
+    app: interact-svc
+    tier: core
+spec:
+  type: ClusterIP
+  selector:
+    app: interact-svc
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: 50051
+      protocol: TCP
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

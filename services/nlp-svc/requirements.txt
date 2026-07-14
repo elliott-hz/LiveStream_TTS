@@ -1,0 +1,30 @@
+# ── NLP Service Dependencies ──
+# gRPC + protobuf
+grpcio>=1.62.0
+grpcio-tools>=1.62.0
+protobuf>=4.25.0
+
+# HTTP
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+
+# Shared libs
+structlog>=24.1.0
+pyyaml>=6.0
+pyahocorasick>=2.0.0
+
+# Async
+anyio>=4.2.0
+
+# gRPC health + reflection
+grpcio-health-checking>=1.62.0
+grpcio-reflection>=1.62.0
+
+# HTTP client for health checks
+httpx>=0.26.0
+
+# ── Dev / Test ──
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0

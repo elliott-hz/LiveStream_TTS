@@ -1,0 +1,27 @@
+# Render Service Dependencies
+# Core
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+grpcio>=1.66.0
+grpcio-tools>=1.66.0
+grpcio-health-checking>=1.66.0
+grpcio-reflection>=1.66.0
+protobuf>=4.25.0
+
+# Data
+numpy>=1.26.0
+
+# Infrastructure
+aiokafka>=0.10.0
+redis>=5.0.0
+asyncpg>=0.29.0
+sqlalchemy[asyncio]>=2.0
+
+# Observability
+structlog>=24.0.0
+prometheus-client>=0.19.0
+
+# Shared libs (editable install in Docker)
+-e ../../libs/common
+-e ../../libs/db
+-e ../../libs/kafka

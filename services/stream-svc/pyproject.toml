@@ -1,0 +1,5 @@
+[project]
+name = "stream-svc"
+version = "0.1.0"
+description = "Stream Service — RTMP/SRT Push, Transcoding, Recording, HLS Packaging"
+requires-python = ">=3.11"

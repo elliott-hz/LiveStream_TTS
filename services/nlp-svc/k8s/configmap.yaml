@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nlp-svc-config
+  namespace: livestream-tts
+data:
+  NLP_SVC_LOG_LEVEL: "INFO"
+  NLP_SVC_LOG_JSON: "true"
+  NLP_SVC_LLM_SEMANTIC_ENABLED: "false"
+  NLP_SVC_SENSITIVE_DICT_PATH: ""

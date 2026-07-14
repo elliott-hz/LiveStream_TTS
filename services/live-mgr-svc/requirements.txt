@@ -1,0 +1,28 @@
+# ── Core ──
+grpcio>=1.60.0
+grpcio-tools>=1.60.0
+grpcio-health-checking>=1.60.0
+grpcio-reflection>=1.60.0
+protobuf>=4.25.0
+
+# ── HTTP API ──
+fastapi>=0.109.0
+uvicorn>=0.27.0
+
+# ── Database ──
+sqlalchemy>=2.0.25
+asyncpg>=0.29.0
+aiosqlite>=0.19.0
+
+# ── Messaging ──
+aiokafka>=0.10.0
+
+# ── Observability ──
+structlog>=24.1.0
+
+# ── Config ──
+pyyaml>=6.0
+
+# ── Dev / Test ──
+pytest>=8.0.0
+pytest-asyncio>=0.23.0

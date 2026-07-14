@@ -1,0 +1,27 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: interact-svc-config
+  namespace: livestream-tts
+  labels:
+    app: interact-svc
+data:
+  config.yaml: |
+    HTTP_HOST: "0.0.0.0"
+    HTTP_PORT: 8080
+    GRPC_PORT: 50051
+    LOG_LEVEL: "INFO"
+    LOG_JSON: true
+    KAFKA_BOOTSTRAP_SERVERS: "kafka.livestream-tts.svc.cluster.local:9093"
+    KAFKA_GROUP_ID: "interact-svc"
+    DEFAULT_VOICE_ID: "default"
+    DEFAULT_AVATAR_ID: "default"
+    DEFAULT_REPLY_THRESHOLD: 0.3
+    MODERATOR_ACCOUNT_ID: "mod_official"
+    COMMENT_INTERVAL_SECONDS: 30
+    DEDUP_TTL_SECONDS: 300
+    MAX_DANMAKU_QUEUE_SIZE: 10000
+    PRODUCT_TITLE: "超润保湿精华液"
+    PRODUCT_PRICE: "99.9"
+    PRODUCT_HIGHLIGHT: "三重玻尿酸补水, 24小时长效锁水, 敏感肌可用"

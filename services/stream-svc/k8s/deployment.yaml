@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stream-svc
+  labels:
+    app: stream-svc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stream-svc
+  template:
+    metadata:
+      labels:
+        app: stream-svc
+    spec:
+      serviceAccountName: livestream-tts-sa
+      containers:
+        - name: stream-svc
+          image: ghcr.io/livestream-tts/stream-svc:latest
+          ports:
+            - containerPort: 50054
+              name: grpc
+            - containerPort: 8084
+              name: http
+          env:
+            - name: ENV
+              value: "production"
+            - name: STREAM_RTMP_BASE_URL
+              value: "rtmp://push.livestream-tts.com/live"
+            - name: STREAM_RECORDING_DIR
+              value: "/data/recordings"
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+          volumeMounts:
+            - name: recordings
+              mountPath: /data/recordings
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8084
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: recordings
+          emptyDir: {}
