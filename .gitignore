@@ -1,0 +1,44 @@
+# Claude Code
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+.venv/
+venv/
+*.whl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Tests & Coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.cover
+
+# Environment
+.env
+.env.*
+
+# Model weights (large binary files)
+*.pt
+*.bin
+*.safetensors
+*.onnx
+checkpoints/
+
+# Logs
+*.log
+logs/
