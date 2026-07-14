@@ -12,7 +12,13 @@ pydantic>=2.5.0
 # Shared libs
 structlog>=24.1.0
 pyyaml>=6.0
-pyahocorasick>=2.0.0
+
+# Chinese NLP
+pypinyin>=0.52.0          # G2P + homophone detection (~20MB)
+
+# ML Backend (optional — only needed when NLP_BACKEND=model)
+# transformers>=4.38.0     # HuggingFace Transformers (~2GB)
+# torch>=2.1.0             # PyTorch CPU (~700MB)
 
 # Async
 anyio>=4.2.0

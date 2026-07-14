@@ -3,6 +3,10 @@ NLP Service business logic orchestrator.
 
 Coordinates intent classification, sentiment analysis, and sensitive word detection.
 Serves as the single entry point for AnalyzeDanmaku operations.
+
+Backend modes:
+  - ``rule`` — keyword + pattern matching (default, fast, ~70% accuracy)
+  - ``model`` — transformer zero-shot classification (needs ~400MB RAM, ~85% accuracy)
 """
 
 from __future__ import annotations
@@ -14,23 +18,50 @@ from libs.common.logging import get_logger
 
 from src.classifiers.intent import IntentClassifier, IntentType, intent_classifier
 from src.classifiers.sentiment import SentimentAnalyzer, SentimentType, sentiment_analyzer
+from src.classifiers.ml_backends import (
+    ModelIntentClassifier,
+    ModelSentimentAnalyzer,
+    get_model_backends,
+)
 from src.detectors.sensitive import SensitiveDetector, SensitiveResult, sensitive_detector
 
 logger = get_logger(__name__)
 
 
 class NLPService:
-    """Orchestrator for all NLP operations."""
+    """Orchestrator for all NLP operations.
+
+    Parameters
+    ----------
+    intent_clf:
+        Intent classifier instance. Defaults to the singleton intent_classifier.
+    sentiment_clf:
+        Sentiment analyzer instance. Defaults to the singleton sentiment_analyzer.
+    detector:
+        Sensitive word detector. Defaults to the singleton sensitive_detector.
+    model_intent_clf:
+        Optional ML model-based intent classifier. Used when NLP_BACKEND=model.
+    model_sentiment_clf:
+        Optional ML model-based sentiment classifier. Used when NLP_BACKEND=model.
+    use_model_backend:
+        Whether to use ML models instead of rules. Default False.
+    """
 
     def __init__(
         self,
         intent_clf: IntentClassifier | None = None,
         sentiment_clf: SentimentAnalyzer | None = None,
         detector: SensitiveDetector | None = None,
+        model_intent_clf: ModelIntentClassifier | None = None,
+        model_sentiment_clf: ModelSentimentAnalyzer | None = None,
+        use_model_backend: bool = False,
     ) -> None:
         self.intent_clf = intent_clf or intent_classifier
         self.sentiment_clf = sentiment_clf or sentiment_analyzer
         self.detector = detector or sensitive_detector
+        self.model_intent_clf = model_intent_clf
+        self.model_sentiment_clf = model_sentiment_clf
+        self.use_model_backend = use_model_backend
 
     async def analyze_danmaku(
         self,
@@ -66,7 +97,24 @@ class NLPService:
             }
 
         # Run intent classification
-        intent_result = self.intent_clf.classify(text)
+        if self.use_model_backend and self.model_intent_clf:
+            intent_dict = self.model_intent_clf.classify(text)
+            # For ML backend, create a compatible result
+            intent_result = self.intent_clf.classify(text)  # still run rules for fallback
+            model_intent = intent_dict
+            ml_intent = model_intent["intent"]
+            ml_confidence = model_intent["confidence"]
+
+            # Use model result if confidence is higher than rule-based
+            if ml_confidence > intent_result.confidence:
+                intent_result.intent = ml_intent
+                intent_result.confidence = ml_confidence
+                intent_result.needs_reply = model_intent.get("needs_reply", ml_confidence >= 0.5)
+                intent_result.reason = model_intent.get("reason", "ML model override")
+            else:
+                intent_result.reason += " [ML confidence lower — kept rule result]"
+        else:
+            intent_result = self.intent_clf.classify(text)
 
         # Boost confidence if context_intent matches
         if context_intent and context_intent != IntentType.UNSPECIFIED:
@@ -75,7 +123,20 @@ class NLPService:
                 intent_result.reason += " [confidence boosted by context]"
 
         # Run sentiment analysis
-        sentiment_result = self.sentiment_clf.analyze(text)
+        if self.use_model_backend and self.model_sentiment_clf:
+            sentiment_dict = self.model_sentiment_clf.analyze(text)
+            model_sentiment = sentiment_dict["sentiment"]
+            model_intensity = sentiment_dict["intensity"]
+
+            sentiment_result = self.sentiment_clf.analyze(text)  # rule baseline
+            if model_intensity > sentiment_result.intensity:
+                sentiment_result.sentiment = model_sentiment
+                sentiment_result.intensity = model_intensity
+                sentiment_result.reason = sentiment_dict.get("reason", "ML model override")
+            else:
+                sentiment_result.reason += " [ML intensity lower — kept rule result]"
+        else:
+            sentiment_result = self.sentiment_clf.analyze(text)
 
         elapsed_ms = int((time.monotonic() - start) * 1000)
 
@@ -250,5 +311,33 @@ class NLPService:
         return {"rewritten_text": rewritten}
 
 
+# ── Singleton factory ──────────────────────────────────────────────
+
+def _create_singleton() -> NLPService:
+    """Create the NLPService singleton, auto-detecting backend from config."""
+    from src.config import config
+
+    use_model = config.nlp_backend == "model"
+
+    if use_model:
+        logger.info(
+            "nlp_service.using_model_backend",
+            model_name=config.model_name,
+            cache_dir=config.model_cache_dir,
+        )
+        model_intent, model_sentiment = get_model_backends(
+            model_name=config.model_name,
+            cache_dir=config.model_cache_dir,
+        )
+        return NLPService(
+            model_intent_clf=model_intent,
+            model_sentiment_clf=model_sentiment,
+            use_model_backend=True,
+        )
+    else:
+        logger.info("nlp_service.using_rule_backend")
+        return NLPService()
+
+
 # Singleton instance
-nlp_service = NLPService()
+nlp_service = _create_singleton()

@@ -82,12 +82,14 @@ EMOTION_PROTO_TO_STR: dict[int, str] = {
 def create_http_app(
     grpc_service: Any,
     voice_store: Any,
+    cloud_config: Any = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
     Args:
         grpc_service: An instance of ``TTSGrpcService`` (duck-typed).
         voice_store: An instance of ``VoiceStore`` (duck-typed).
+        cloud_config: Optional ``CloudTTSConfig`` for cloud TTS backend.
     """
     app = FastAPI(
         title="TTS Service",
@@ -191,6 +193,7 @@ def create_http_app(
 
         async for msg in synthesize_async(
             request_id, data.text, data.voice_id, emotion_str, data.speed,
+            cloud_config=cloud_config,
         ):
             if msg["type"] == "audio_chunk":
                 all_audio.extend(msg["data"])
@@ -297,7 +300,7 @@ async def _handle_ws_synthesis(ws: WebSocket, frame: dict, session_id: str) -> N
 
     from src.grpc_service import synthesize_async
 
-    async for msg in synthesize_async(request_id, text, voice_id, emotion_str, speed):
+    async for msg in synthesize_async(request_id, text, voice_id, emotion_str, speed, cloud_config=cloud_config):
         msg_type = msg.get("type")
 
         if msg_type == "audio_chunk":

@@ -39,6 +39,7 @@ from ..pipeline import (
     PromptOrchestrator,
     TextModerator,
 )
+from .reply_service import LLMConfig, ReplyService, ReplyResult
 
 logger = get_logger(__name__)
 
@@ -52,11 +53,26 @@ class InteractionService:
         router: ChannelRouter | None = None,
         profile_lookup: ProfileLookup | None = None,
         orchestrator: PromptOrchestrator | None = None,
+        reply_service: ReplyService | None = None,
     ) -> None:
         self._kafka = kafka
         self._router = router or ChannelRouter()
         self._profile = profile_lookup or ProfileLookup()
         self._orchestrator = orchestrator or PromptOrchestrator()
+
+        # Initialize LLM reply service
+        if reply_service is not None:
+            self._reply_svc = reply_service
+        else:
+            llm_config = LLMConfig(
+                api_key=svc_config.llm_api_key,
+                api_base=svc_config.llm_api_base,
+                model=svc_config.llm_model,
+                max_tokens=svc_config.llm_max_tokens,
+                temperature=svc_config.llm_temperature,
+                timeout_seconds=svc_config.llm_timeout_seconds,
+            )
+            self._reply_svc = ReplyService(llm_config)
 
         # In-memory session store (PostgreSQL in production)
         self._sessions: dict[str, Session] = {}
@@ -78,6 +94,9 @@ class InteractionService:
 
         session = Session.create(live_room_id, config)
         self._sessions[session.session_id] = session
+
+        # Clear conversation history for fresh session
+        self._reply_svc.clear_history(session.session_id)
 
         # Create moderator for this session
         self._moderators[session.session_id] = TextModerator(
@@ -106,6 +125,9 @@ class InteractionService:
 
         # Clean up moderator
         self._moderators.pop(session_id, None)
+
+        # Clear conversation history
+        self._reply_svc.clear_history(session_id)
 
         logger.info("session.stopped", session_id=session_id)
 
@@ -204,9 +226,25 @@ class InteractionService:
                 latency_ms=latency,
             )
 
-        # Step 6: In production — orchestrate LLM prompt and call LLM
-        # For MVP, generate a mock reply based on intent
-        reply_text, emotion, action = self._mock_reply(event, session)
+        # Step 6: Orchestrate LLM prompt and generate reply
+        prompt = await self._orchestrator.assemble(
+            session=session,
+            event=event,
+            product_context={
+                "title": svc_config.product_title,
+                "price": svc_config.product_price,
+                "highlight": svc_config.product_highlight,
+            },
+        )
+
+        reply_result = await self._reply_svc.generate(
+            prompt=prompt,
+            session_id=session_id,
+            system_prompt=session.config.system_prompt,
+            product_title=svc_config.product_title,
+            product_price=svc_config.product_price,
+        )
+        reply_text, emotion, action = reply_result.text, reply_result.emotion, reply_result.action
 
         # Step 7: Build reply record
         latency = (time.monotonic() - start_time) * 1000

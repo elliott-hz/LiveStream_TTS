@@ -41,6 +41,7 @@ from modules.preprocessor.text_preprocessor import TextPreprocessor
 from modules.linguistic.linguistic_engine import LinguisticEngine
 from modules.emotion.emotion_engine import EmotionEngine, EmotionTag
 from modules.engine.tts_engine import TTSEngine, TTSResult
+from modules.engine.cloud_tts_client import CloudTTSConfig
 from modules.dsp.dsp import DSP
 from modules.cache.audio_cache import AudioCache
 from modules.session.session_manager import SessionManager
@@ -168,6 +169,7 @@ def _run_synthesis_pipeline(
     sample_rate: int,
     queue: asyncio.Queue,
     loop: asyncio.AbstractEventLoop,
+    cloud_config: CloudTTSConfig | None = None,
 ) -> None:
     """Synchronous pipeline runner — executes in a thread pool executor.
 
@@ -202,7 +204,10 @@ def _run_synthesis_pipeline(
         )
 
         # M7 + M8: TTS Synthesis + DSP
-        engine = TTSEngine(sample_rate=sample_rate)
+        engine = TTSEngine(
+            sample_rate=sample_rate,
+            cloud_config=cloud_config,
+        )
         dsp = DSP(sample_rate=sample_rate)
         mixer = AudioMixer()
 
@@ -277,6 +282,7 @@ async def synthesize_async(
     emotion_str: str,
     speed: float,
     sample_rate: int = SAMPLE_RATE,
+    cloud_config: CloudTTSConfig | None = None,
 ) -> AsyncGenerator[dict, None]:
     """Async generator that yields pipeline result dicts.
 
@@ -298,6 +304,7 @@ async def synthesize_async(
         sample_rate,
         queue,
         loop,
+        cloud_config,
     )
 
     while True:
@@ -320,9 +327,11 @@ class TTSGrpcService(tts_pb2_grpc.TTSServiceServicer):
         self,
         voice_store: VoiceStore | None = None,
         audio_cache: AudioCache | None = None,
+        cloud_config: CloudTTSConfig | None = None,
     ) -> None:
         self.voice_store = voice_store or VoiceStore()
         self.cache = audio_cache or AudioCache()
+        self.cloud_config = cloud_config
         self._start_time = time.time()
 
     # ── Streaming Synthesis ──
@@ -412,6 +421,7 @@ class TTSGrpcService(tts_pb2_grpc.TTSServiceServicer):
         try:
             async for msg in synthesize_async(
                 request_id, text, voice_id, emotion_str, speed, sample_rate,
+                cloud_config=self.cloud_config,
             ):
                 msg_type = msg.get("type")
 
@@ -586,6 +596,7 @@ class TTSGrpcService(tts_pb2_grpc.TTSServiceServicer):
                 request_id = f"warmup-{uuid.uuid4().hex[:8]}"
                 async for msg in synthesize_async(
                     request_id, text, voice_id, emotion_str, 1.0,
+                    cloud_config=self.cloud_config,
                 ):
                     if msg["type"] == "audio_chunk":
                         # Accumulate pcm to cache

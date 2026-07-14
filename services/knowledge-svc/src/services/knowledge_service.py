@@ -1,6 +1,9 @@
 """
 KnowledgeService — business logic for Knowledge Base CRUD,
-document upload, FAQ management, and vector search (mock).
+document upload, FAQ management, and vector search.
+
+Phase 2 upgrade: replaces mock keyword search with real vector search
+using configurable embedding + vector store backends.
 """
 
 import hashlib
@@ -14,6 +17,8 @@ from libs.common.errors import AppError, ErrorCode, not_found, invalid_arg
 from libs.common.logging import get_logger
 
 from models.knowledge import KnowledgeBase, Document, FAQ, Chunk
+from .embedding_service import EmbeddingBackend, HashEmbedding
+from .vector_store import VectorStore, MemoryVectorStore, VectorSearchResponse
 
 logger = get_logger(__name__)
 
@@ -26,10 +31,20 @@ MAX_PAGE_SIZE = 100
 
 
 class KnowledgeService:
-    """Knowledge Base business logic — injected with a DB session."""
+    """Knowledge Base business logic — injected with a DB session.
 
-    def __init__(self, db: AsyncSession):
+    Phase 2: supports vector search via pluggable embedding + vector store.
+    """
+
+    def __init__(
+        self,
+        db: AsyncSession,
+        embedding: EmbeddingBackend | None = None,
+        vector_store: VectorStore | None = None,
+    ):
         self.db = db
+        self.embedding = embedding or HashEmbedding()
+        self.vector_store = vector_store or MemoryVectorStore()
 
     # ──────────────────────────────────────────────────────────
     #  Knowledge Base CRUD
@@ -278,7 +293,7 @@ class KnowledgeService:
         return faqs, total_count
 
     # ──────────────────────────────────────────────────────────
-    #  Search (mock vector search)
+    #  Search (vector + keyword hybrid)
     # ──────────────────────────────────────────────────────────
 
     async def search(
@@ -288,9 +303,15 @@ class KnowledgeService:
         top_k: int = 5,
         min_score: float = 0.0,
     ) -> dict[str, Any]:
-        """Mock vector search: fuzzy text match on chunks.
+        """Vector search on knowledge base chunks.
 
-        Returns results list and simulated retrieval time.
+        Pipeline:
+        1. Embed query text → vector
+        2. Search vector store for similar chunks
+        3. Augment results with source document metadata
+        4. Fall back to keyword search if vector store is empty
+
+        Returns dict with ``results`` list and ``retrieval_ms``.
         """
         await self.get_kb(kb_id)
 
@@ -299,7 +320,75 @@ class KnowledgeService:
 
         top_k = max(1, min(top_k, 50))
 
-        # Simple keyword matching as mock vector search
+        # Step 1: Embed the query
+        try:
+            query_vec = await self.embedding.embed(query.strip())
+        except Exception as e:
+            logger.warning("kb.search.embed_failed", error=str(e), query=query[:50])
+            return await self._keyword_search_fallback(kb_id, query, top_k, min_score)
+
+        # Step 2: Vector search
+        try:
+            response: VectorSearchResponse = await self.vector_store.search(
+                query_vector=query_vec,
+                top_k=top_k,
+                min_score=min_score,
+            )
+        except Exception as e:
+            logger.warning("kb.search.vector_search_failed", error=str(e))
+            return await self._keyword_search_fallback(kb_id, query, top_k, min_score)
+
+        # If vector store returned nothing (empty store), fall back to keyword
+        if not response.results and self.vector_store.size == 0:
+            return await self._keyword_search_fallback(kb_id, query, top_k, min_score)
+
+        # Step 3: Augment with source document metadata from DB
+        results = []
+        for hit in response.results:
+            result = {
+                "chunk_id": hit.chunk_id,
+                "content": hit.content,
+                "score": hit.score,
+                "source_doc_id": hit.doc_id,
+                "source_filename": hit.metadata.get("filename", ""),
+            }
+
+            # If doc info not in vector metadata, fetch from DB
+            if not result["source_filename"] and hit.doc_id:
+                doc_stmt = select(Document).where(Document.doc_id == hit.doc_id)
+                doc_result = await self.db.execute(doc_stmt)
+                doc = doc_result.scalars().one_or_none()
+                if doc:
+                    result["source_filename"] = doc.filename
+
+            results.append(result)
+
+        logger.debug(
+            "kb.search.complete",
+            kb_id=kb_id,
+            query=query[:80],
+            hits=len(results),
+            backend=response.backend,
+            retrieval_ms=response.retrieval_ms,
+        )
+
+        return {
+            "results": results,
+            "retrieval_ms": response.retrieval_ms,
+            "backend": response.backend,
+        }
+
+    async def _keyword_search_fallback(
+        self,
+        kb_id: str,
+        query: str,
+        top_k: int,
+        min_score: float,
+    ) -> dict[str, Any]:
+        """Fallback: keyword matching on DB chunks."""
+        import time
+        start = time.monotonic()
+
         keywords = query.strip().lower().split()
         conditions = [Chunk.kb_id == kb_id]
 
@@ -313,24 +402,20 @@ class KnowledgeService:
             select(Chunk)
             .where(*conditions)
             .order_by(Chunk.chunk_index)
-            .limit(top_k * 3)  # fetch extra for scoring
+            .limit(top_k * 3)
         )
         result = await self.db.execute(stmt)
         chunks = list(result.scalars().all())
 
-        # Score results by keyword density
         scored = []
         for chunk in chunks:
             content_lower = chunk.content.lower()
             match_count = sum(content_lower.count(kw) for kw in keywords)
             score = min(1.0, match_count / max(len(chunk.content.split()), 1))
-
             if score >= min_score:
-                # Fetch source document info
                 doc_stmt = select(Document).where(Document.doc_id == chunk.doc_id)
                 doc_result = await self.db.execute(doc_stmt)
                 doc = doc_result.scalars().one_or_none()
-
                 scored.append({
                     "chunk_id": chunk.chunk_id,
                     "content": chunk.content,
@@ -339,17 +424,68 @@ class KnowledgeService:
                     "source_filename": doc.filename if doc else "",
                 })
 
-        # Sort by score desc, take top_k
         scored.sort(key=lambda x: x["score"], reverse=True)
         scored = scored[:top_k]
-
-        # Simulate retrieval time
-        retrieval_ms = max(5, len(keywords) * 3 + len(chunks))
+        retrieval_ms = (time.monotonic() - start) * 1000
 
         return {
             "results": scored,
-            "retrieval_ms": retrieval_ms,
+            "retrieval_ms": round(retrieval_ms, 2),
+            "backend": "keyword_fallback",
         }
+
+    # ──────────────────────────────────────────────────────────
+    #  Index (build vector index for a knowledge base)
+    # ──────────────────────────────────────────────────────────
+
+    async def index_kb(self, kb_id: str) -> dict[str, Any]:
+        """Index all chunks in a knowledge base into the vector store.
+
+        This should be called after uploading documents to enable
+        vector search for the knowledge base.
+        """
+        await self.get_kb(kb_id)
+
+        # Fetch all chunks for this KB
+        stmt = (
+            select(Chunk)
+            .where(Chunk.kb_id == kb_id)
+            .order_by(Chunk.chunk_index)
+        )
+        result = await self.db.execute(stmt)
+        chunks = list(result.scalars().all())
+
+        if not chunks:
+            return {"indexed": 0, "message": "No chunks to index"}
+
+        # Embed all chunks in batches
+        texts = [chunk.content for chunk in chunks]
+        try:
+            vectors = await self.embedding.embed_batch(texts)
+        except Exception as e:
+            logger.error("kb.index.embed_failed", error=str(e))
+            return {"indexed": 0, "error": str(e)}
+
+        # Insert into vector store
+        doc_ids = [chunk.doc_id for chunk in chunks]
+        chunk_ids = [chunk.chunk_id for chunk in chunks]
+        contents = [chunk.content for chunk in chunks]
+
+        count = await self.vector_store.insert(
+            vectors=vectors,
+            doc_ids=doc_ids,
+            chunk_ids=chunk_ids,
+            contents=contents,
+        )
+
+        logger.info(
+            "kb.indexed",
+            kb_id=kb_id,
+            chunks=count,
+            vector_store_size=self.vector_store.size,
+        )
+
+        return {"indexed": count}
 
 
 # ── Internal helpers ──

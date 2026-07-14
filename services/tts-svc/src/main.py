@@ -24,11 +24,12 @@ TTS_SVC_ROOT = REPO_ROOT / "services" / "tts-svc"
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(TTS_SVC_ROOT))
 
-from libs.common.config import ServiceConfig
-from libs.common.logging import setup_logging, get_logger
+from modules.engine.cloud_tts_client import CloudTTSConfig
 from src.config import TTSConfig
 from src.grpc_service import TTSGrpcService, VoiceStore
 from src.http_server import create_http_app
+
+from libs.common.logging import get_logger, setup_logging
 
 
 async def main() -> None:
@@ -42,11 +43,26 @@ async def main() -> None:
     # ── Shared state ──
     voice_store = VoiceStore()
 
+    # ── Cloud TTS config (optional, only used when TTS_BACKEND=cloud) ──
+    cloud_config: CloudTTSConfig | None = None
+    if config.tts_backend == "cloud":
+        cloud_config = CloudTTSConfig(
+            access_key_id=config.aliyun_access_key_id,
+            access_key_secret=config.aliyun_access_key_secret,
+            app_key=config.aliyun_nls_app_key,
+            endpoint=config.aliyun_nls_endpoint,
+            voice=config.cloud_voice_name,
+            sample_rate=16000,
+            speech_rate=config.cloud_speech_rate,
+            volume=config.cloud_volume,
+        )
+        logger.info("tts_svc.cloud_backend", voice=cloud_config.voice, endpoint=cloud_config.endpoint)
+
     # ── gRPC Service ──
     from libs.common.grpc_utils import create_grpc_server
     from libs.proto.tts.v1 import tts_pb2_grpc
 
-    grpc_service = TTSGrpcService(voice_store=voice_store)
+    grpc_service = TTSGrpcService(voice_store=voice_store, cloud_config=cloud_config)
     grpc_server = create_grpc_server(
         service_name="tts-svc",
         port=config.grpc_port,
@@ -59,7 +75,7 @@ async def main() -> None:
     # ── HTTP Server (FastAPI) ──
     import uvicorn
 
-    http_app = create_http_app(grpc_service, voice_store)
+    http_app = create_http_app(grpc_service, voice_store, cloud_config=cloud_config)
     http_config = uvicorn.Config(
         http_app,
         host=config.get("HTTP_HOST", "0.0.0.0"),

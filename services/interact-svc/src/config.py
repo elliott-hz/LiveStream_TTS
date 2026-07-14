@@ -110,6 +110,40 @@ class InteractConfig(ServiceConfig):
             default="三重玻尿酸补水, 24小时长效锁水, 敏感肌可用",
         )
 
+    # ── LLM API (DeepSeek / OpenAI-compatible) ──
+
+    @property
+    def llm_api_key(self) -> str:
+        """DeepSeek API key. Empty = use keyword template fallback."""
+        return self.get("DEEPSEEK_API_KEY", default="")
+
+    @property
+    def llm_api_base(self) -> str:
+        """LLM API base URL (OpenAI-compatible)."""
+        return self.get("DEEPSEEK_BASE_URL", default="https://api.deepseek.com")
+
+    @property
+    def llm_model(self) -> str:
+        """Model name for the chat API."""
+        return self.get("LLM_MODEL", default="deepseek-chat")
+
+    @property
+    def llm_max_tokens(self) -> int:
+        return self.get_int("LLM_MAX_TOKENS", 80)
+
+    @property
+    def llm_temperature(self) -> float:
+        return self.get_float("LLM_TEMPERATURE", 0.9)
+
+    @property
+    def llm_timeout_seconds(self) -> float:
+        return self.get_float("LLM_TIMEOUT_SECONDS", 5.0)
+
+    @property
+    def llm_enable_fallback(self) -> bool:
+        """Enable keyword template fallback when LLM is unavailable."""
+        return self.get_bool("LLM_ENABLE_FALLBACK", default=True)
+
     # Deprecation shim: get_float is not in base ServiceConfig
     def get_float(self, key: str, default: float = 0.0) -> float:
         val = self.get(key, default)

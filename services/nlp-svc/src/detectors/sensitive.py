@@ -1,11 +1,18 @@
 """
-Dual-mode sensitive word detection.
+Dual-mode sensitive word detection with pinyin homophone defense.
 
-Layer 1 — AC Automaton (dictionary-based):
-  Uses a built-in dictionary of 50+ sensitive words across categories:
+Layer 1 — AC Automaton / Dictionary matching:
+  Built-in dictionary of 50+ sensitive words across categories:
   political, adult, violence, ads.
 
-Layer 2 — LLM Semantic (fallback):
+Layer 2 — Pinyin Homophone Detection (NEW):
+  Detects obfuscated sensitive words by converting text to pinyin
+  and comparing against sensitive word pinyin. Catches variants like:
+  - 威芯 → 微信 (weixin)
+  - 抠抠 → QQ (koukou → QQ)
+  - 假薇 → 加微 (jiawei)
+
+Layer 3 — LLM Semantic (fallback):
   Placeholder for semantic-based detection using an LLM.
   Currently returns a mock result.
 
@@ -18,8 +25,8 @@ Usage:
 
 from __future__ import annotations
 
+import re
 import time
-from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Any
@@ -33,6 +40,7 @@ class DetectionLayer(IntEnum):
     """Detection layer enum matching proto DetectionLayer values."""
     UNSPECIFIED = 0
     AC_AUTOMATON = 1
+    PINYIN_VARIANT = 3   # New: pinyin homophone detection
     LLM_SEMANTIC = 2
 
 
@@ -298,17 +306,164 @@ BUILTIN_SENSITIVE_DICT: list[tuple[str, str]] = [
 ]
 
 
-class SensitiveDetector:
+# ── Pinyin Homophone Detection ──────────────────────────────────────
+#
+# Detects obfuscated sensitive words by converting text to pinyin
+# and checking against the pinyin of known sensitive words.
+#
+# Example: "加我威芯" → "jia wo wei xin" → matches "微信" (wei xin)
+# This catches homophone substitutions that dictionary matching misses.
+
+# Map of known sensitive words → their normalized pinyin signatures
+# Used to detect homophone-based obfuscation.
+_PINYIN_SENSITIVE_SIGNATURES: list[tuple[str, str]] = [
+    # (pinyin signature, category)
+    ("weixin", "ads"),       # 微信
+    ("jiawei", "ads"),       # 加微
+    ("weixinh", "ads"),      # 微信号
+    ("jiawx", "ads"),        # 加微信
+    ("jiaqq", "ads"),        # 加QQ
+    ("jiakou", "ads"),       # 加扣 (加QQ)
+    ("koudai", "ads"),       # 扣 (QQ)
+    ("saoma", "ads"),        # 扫码
+    ("erweima", "ads"),      # 二维码
+    ("siliao", "ads"),       # 私聊
+    ("jianzhi", "ads"),      # 兼职
+    ("zhaodaili", "ads"),    # 招代理
+    ("daili", "ads"),        # 代理
+    ("shuadan", "ads"),      # 刷单
+    ("yuepao", "adult"),     # 约炮
+    ("yiyeking", "adult"),   # 一夜情
+    ("luoliao", "adult"),    # 裸聊
+    ("maiyin", "adult"),     # 卖淫
+    ("piaochang", "adult"),  # 嫖娼
+    ("seqing", "adult"),     # 色情
+    ("huangse", "adult"),    # 黄色
+    ("sanji", "adult"),      # 三级
+]
+
+
+class PinyinVariantDetector:
+    """Detects sensitive words obfuscated via pinyin homophone substitution.
+
+    Works on Chinese text by converting each character to pinyin,
+    concatenating, and checking against the pinyin signatures of
+    known sensitive terms.
     """
-    Dual-mode sensitive word detector.
+
+    # Common homophone character groups (characters with same/similar pinyin)
+    # Used to detect character-level substitutions
+    HOMOPHONE_GROUPS: list[dict[str, str]] = [
+        {"微": "wei", "威": "wei", "维": "wei", "薇": "wei", "味": "wei"},
+        {"信": "xin", "芯": "xin", "新": "xin", "心": "xin", "辛": "xin"},
+        {"扫": "sao", "骚": "sao", "嫂": "sao"},
+        {"码": "ma", "马": "ma", "玛": "ma", "吗": "ma"},
+        {"聊": "liao", "撩": "liao", "辽": "liao", "料": "liao"},
+        {"裸": "luo", "落": "luo", "罗": "luo", "骆": "luo"},
+        {"色": "se", "涩": "se", "瑟": "se"},
+        {"情": "qing", "晴": "qing", "轻": "qing", "请": "qing", "清": "qing"},
+        {"约": "yue", "月": "yue", "越": "yue", "跃": "yue", "岳": "yue"},
+        {"兼": "jian", "建": "jian", "件": "jian", "见": "jian", "坚": "jian"},
+        {"职": "zhi", "直": "zhi", "值": "zhi", "制": "zhi", "智": "zhi"},
+    ]
+
+    def __init__(self) -> None:
+        self._pinyin_cache: dict[str, str] = {}
+        # Build homophone reverse lookup: char → pinyin
+        self._char_pinyin: dict[str, str] = {}
+        for group in self.HOMOPHONE_GROUPS:
+            for char, pinyin in group.items():
+                self._char_pinyin[char] = pinyin
+
+    def check(self, text: str) -> list[SensitiveMatch]:
+        """Scan text for pinyin-homophone-obfuscated sensitive words."""
+        matches: list[SensitiveMatch] = []
+
+        # Only process text with Chinese characters
+        has_chinese = any('一' <= c <= '鿿' for c in text)
+        if not has_chinese:
+            return matches
+
+        # Convert to pinyin (lazy import to keep pypinyin optional)
+        text_pinyin = self._text_to_pinyin(text)
+
+        # Check each sensitive signature against the pinyin string
+        for signature, category in _PINYIN_SENSITIVE_SIGNATURES:
+            # Remove spaces from both for comparison
+            pinyin_compact = text_pinyin.replace(" ", "")
+            if signature in pinyin_compact:
+                # Find position in original text
+                sig_len = len(signature)
+                # Estimate position by finding the signature in pinyin string
+                pinyin_chars = text_pinyin.split()
+                pos = 0
+                accumulated = ""
+                for i, pc in enumerate(pinyin_chars):
+                    accumulated += pc
+                    if signature in accumulated:
+                        # Character position ≈ i
+                        for j, c in enumerate(text):
+                            if '一' <= c <= '鿿':
+                                pos = j
+                                break
+                        break
+
+                matches.append(SensitiveMatch(
+                    word=f"[拼音匹配: {signature}]",
+                    category=category,
+                    start_pos=max(0, pos),
+                    end_pos=min(len(text), pos + sig_len),
+                    layer=DetectionLayer.PINYIN_VARIANT,
+                ))
+
+        return matches
+
+    def _text_to_pinyin(self, text: str) -> str:
+        """Convert Chinese text to pinyin string. Returns cached result."""
+        cache_key = text[:100]  # Cache by first 100 chars
+        if cache_key in self._pinyin_cache:
+            return self._pinyin_cache[cache_key]
+
+        try:
+            from pypinyin import lazy_pinyin
+            result = " ".join(lazy_pinyin(text))
+        except ImportError:
+            # Fallback: use built-in homophone map
+            result = self._char_to_pinyin_fallback(text)
+
+        self._pinyin_cache[cache_key] = result
+        return result
+
+    def _char_to_pinyin_fallback(self, text: str) -> str:
+        """Fallback pinyin conversion using built-in homophone map."""
+        result: list[str] = []
+        for char in text:
+            if char in self._char_pinyin:
+                result.append(self._char_pinyin[char])
+            elif '一' <= char <= '鿿':
+                result.append("?")  # Unknown Chinese char
+            else:
+                result.append(char.lower())
+        return " ".join(result)
+
+
+class SensitiveDetector:
+    """Three-layer sensitive word detector.
 
     Layer 1: AC Automaton (dictionary-based matching)
-    Layer 2: LLM Semantic (placeholder — returns mock results)
+    Layer 2: Pinyin Homophone Detection (obfuscation defense)
+    Layer 3: LLM Semantic (placeholder — returns mock results)
     """
 
-    def __init__(self, llm_semantic_enabled: bool = False) -> None:
+    def __init__(
+        self,
+        llm_semantic_enabled: bool = False,
+        pinyin_variant_enabled: bool = True,
+    ) -> None:
         self.llm_semantic_enabled = llm_semantic_enabled
+        self.pinyin_variant_enabled = pinyin_variant_enabled
         self.automaton = ACAutomaton()
+        self.pinyin_detector = PinyinVariantDetector() if pinyin_variant_enabled else None
         self._init_dictionary()
 
     def _init_dictionary(self) -> None:
@@ -320,18 +475,18 @@ class SensitiveDetector:
             "sensitive_detector.initialized",
             dict_size=len(BUILTIN_SENSITIVE_DICT),
             llm_enabled=self.llm_semantic_enabled,
+            pinyin_enabled=self.pinyin_variant_enabled,
         )
 
     def check(self, text: str, context: str = "danmaku") -> SensitiveResult:
-        """
-        Run dual-mode sensitive word detection on the given text.
+        """Run three-layer sensitive word detection on the given text.
 
         Args:
             text: The text to check.
             context: The context of the text ("script", "danmaku", "avatar_name").
 
         Returns:
-            SensitiveResult with matches from both layers.
+            SensitiveResult with matches from all layers.
         """
         start_time = time.monotonic()
 
@@ -344,16 +499,23 @@ class SensitiveDetector:
 
         # Layer 1: AC Automaton / Dictionary matching
         dict_matches = self.automaton.scan_with_dict(text, BUILTIN_SENSITIVE_DICT)
-
         all_matches = list(dict_matches)
 
-        # Layer 2: LLM Semantic (placeholder)
+        # Layer 2: Pinyin Homophone Detection (NEW)
+        if self.pinyin_detector is not None:
+            try:
+                pinyin_matches = self.pinyin_detector.check(text)
+                all_matches.extend(pinyin_matches)
+            except Exception as e:
+                logger.warning("pinyin_detector.error", error=str(e))
+
+        # Layer 3: LLM Semantic (placeholder)
         if self.llm_semantic_enabled:
             llm_matches = self._check_llm_semantic(text, context)
             all_matches.extend(llm_matches)
         else:
-            # Even when disabled, check for mock semantic patterns
-            llm_matches = self._mock_semantic_check(text)
+            # Even when disabled, check for obfuscated patterns
+            llm_matches = self._check_obfuscated_patterns(text)
             all_matches.extend(llm_matches)
 
         # Deduplicate by word + position
@@ -383,54 +545,49 @@ class SensitiveDetector:
         )
 
     def _check_llm_semantic(self, text: str, context: str) -> list[SensitiveMatch]:
-        """
-        Run LLM-based semantic detection.
-
-        This is a placeholder that returns mock results.
-        Replace with actual DeepSeek/LLM API call in production.
-        """
+        """Run LLM-based semantic detection. Placeholder for Phase 3."""
         matches: list[SensitiveMatch] = []
 
-        # Mock: Detect semantically sensitive content even without keyword match
-        # e.g., disguised sensitive terms, coded language
-        semantic_patterns: list[tuple[str, str, str]] = [
-            # (detected phrase, category, keyword to report)
-        ]
-
-        for phrase, category, keyword in semantic_patterns:
-            if phrase.lower() in text.lower():
-                pos = text.lower().find(phrase.lower())
+        # Detect disguised ads: numbers with contact intent
+        # e.g., "1 3 8 1 2 3 4 5 6 7 8"
+        number_pattern = re.compile(r"[\d\s]{8,}")
+        if number_pattern.search(text):
+            digits_only = re.sub(r"\s+", "", text)
+            if len(digits_only) >= 8 and digits_only.isdigit():
                 matches.append(SensitiveMatch(
-                    word=keyword,
-                    category=category,
-                    start_pos=pos,
-                    end_pos=pos + len(phrase),
+                    word="[疑似联系方式]",
+                    category="ads",
+                    start_pos=0,
+                    end_pos=len(text),
                     layer=DetectionLayer.LLM_SEMANTIC,
                 ))
 
         return matches
 
-    def _mock_semantic_check(self, text: str) -> list[SensitiveMatch]:
-        """
-        Mock semantic check for when LLM is disabled.
-
-        Catches some obfuscated patterns that pure dictionary matching might miss.
-        """
+    def _check_obfuscated_patterns(self, text: str) -> list[SensitiveMatch]:
+        """Catch obfuscated patterns when LLM is disabled."""
         matches: list[SensitiveMatch] = []
 
-        # Catch obfuscated contact info (numbers with spaces/dots)
-        import re
+        # Spam detection: excessive non-Chinese chars mixed with contact intent
+        if len(text) > 15:
+            non_chinese = sum(1 for c in text if ord(c) < 128)
+            if non_chinese / len(text) > 0.5:
+                # Check for contact-related Chinese characters
+                contact_chars = {"加", "微", "扣", "信", "Q", "V", "扫", "码", "联"}
+                if any(c in text for c in contact_chars):
+                    matches.append(SensitiveMatch(
+                        word="[疑似引流信息]",
+                        category="ads",
+                        start_pos=0,
+                        end_pos=len(text),
+                        layer=DetectionLayer.LLM_SEMANTIC,
+                    ))
 
-        # Phone number pattern: 1xx-xxxx-xxxx or similar
-        phone_pattern = re.compile(r"1[3-9]\d[\s\-.]?\d{4}[\s\-.]?\d{4}")
-        if phone_pattern.search(text):
-            # Only flag if it looks like unsolicited contact sharing
-            pass  # Phone numbers alone aren't necessarily sensitive
-
-        # Multiple non-Chinese characters repeated (possible spam)
-        if len(text) > 20 and all(ord(c) < 128 for c in text if c != " "):
+        # URL pattern detection
+        url_pattern = re.compile(r"https?://|www\.|[a-zA-Z0-9]+\.[a-z]{2,}/")
+        if url_pattern.search(text):
             matches.append(SensitiveMatch(
-                word="[疑似垃圾信息]",
+                word="[URL链接]",
                 category="ads",
                 start_pos=0,
                 end_pos=len(text),

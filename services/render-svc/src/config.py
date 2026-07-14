@@ -52,3 +52,15 @@ class RenderConfig(ServiceConfig):
     @property
     def fps(self) -> int:
         return self.get_int("RENDER_FPS", 30)
+
+    # ── Rendering Engine ──
+
+    @property
+    def render_engine(self) -> str:
+        """Rendering engine: 'viseme' (2D CPU) or 'wav2lip' (GPU, Phase 3)."""
+        return self.get("RENDER_ENGINE", "viseme")
+
+    @property
+    def avatar_image_dir(self) -> str:
+        """Directory for 2D avatar base images and viseme PNGs."""
+        return self.get("AVATAR_IMAGE_DIR", "/assets/avatars")
