@@ -1,76 +1,50 @@
-# LiveStream TTS — 数字人直播带货 SaaS 平台
+# CLAUDE.md
 
-> Monorepo | 16 microservices | Python 3.11 FastAPI | gRPC + Kafka | ~500 tests
->
-> 面向国内电商环境的 AI 数字人直播带货平台。数字人 7×24 小时直播，听懂弹幕、生成回复、情感 TTS 播报、口型同步、RTMP 推流。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 技术栈
+## 项目概述
 
-| 层 | 技术 |
-|---|---|
-| 语言 | **Python 3.11** (全部服务) |
-| HTTP | FastAPI + Uvicorn |
-| 服务间通信 | **gRPC** (同步调用) + **Kafka** (异步事件) |
-| 数据库 | PostgreSQL 15 + TimescaleDB, Redis 7 |
-| ORM | SQLAlchemy 2.0 async + asyncpg |
-| 对象存储 | MinIO (S3 兼容) |
-| 向量数据库 | Milvus (Phase 2) |
-| AI 模型 | CosyVoice2 (TTS), Wav2Lip (口型), Qwen-3-7B (LLM), 0.5B 小模型 (NLP) |
-| 容器化 | Docker (multi-stage) + K8s (Kustomize overlays) |
-| CI/CD | GitHub Actions |
+数字人直播带货 SaaS 平台 — 16 个 Python 3.11 微服务，gRPC + Kafka 通信，PostgreSQL + Redis + MinIO。
 
-## 项目结构
+## 常用命令
 
-```
-LiveStream_TTS/
-├── services/          # 16 个微服务 (每个独立部署)
-│   ├── gateway-svc/   # API 网关: JWT, 限流, gRPC 代理
-│   ├── user-svc/      # 用户中心: 注册/登录, RBAC, 店铺管理
-│   ├── product-svc/   # 商品 CRUD
-│   ├── script-svc/    # 直播脚本生成
-│   ├── live-mgr-svc/  # 直播间管理, 状态机
-│   ├── avatar-svc/    # 数字人形象管理 + 克隆任务
-│   ├── voice-svc/     # 音色管理 + 克隆任务
-│   ├── knowledge-svc/ # 知识库 RAG
-│   ├── tts-svc/       # TTS 引擎: CosyVoice2 + 情感引擎 + DSP
-│   ├── nlp-svc/       # NLP: 意图/情感/敏感词 (CPU)
-│   ├── render-svc/    # 画面渲染: Wav2Lip + BlendShape + 合成
-│   ├── interact-svc/  # 实时互动管线: 弹幕→LLM→TTS→渲染
-│   ├── platform-sync-svc/ # 多平台适配 (抖音/淘宝/京东)
-│   ├── analytics-svc/ # 数据分析
-│   ├── billing-svc/   # 计费 + 用量
-│   ├── audit-svc/     # 审计日志
-│   ├── stream-svc/    # RTMP/SRT 推流 + FFmpeg
-│   └── profile-svc/   # 用户画像 (实时特征)
-├── libs/              # 5 个共享库
-│   ├── common/        # 配置, 错误码, 日志(structlog), gRPC 工具
-│   ├── db/            # SQLAlchemy async session 工厂
-│   ├── kafka/         # aiokafka producer/consumer 封装
-│   ├── proto/         # 19 个 protobuf 定义 + 生成桩代码
-│   └── testing/       # 测试 fixtures, 假数据生成器
-├── deploy/            # K8s Kustomize (base + dev/staging/prod overlays)
-├── docs/              # PRD, 架构设计, 开发计划, Phase2 计划, 竞品分析
-├── specs/             # 开发规范 (分支管理, 代码风格, Commit, Review)
-├── scripts/           # Proto 编译脚本
-├── static/            # TTS 调测前端 (index.html)
-└── docker-compose.yml # 本地开发基础设施 (PG, Redis, Kafka, MinIO, Milvus, ES)
+```bash
+# 基础设施
+docker compose up -d                          # PG, Redis, Kafka
+docker compose --profile phase2 up -d          # + Milvus, MinIO (Phase 2)
+
+# 测试
+pytest                                          # 全部测试 (~500)
+pytest services/tts-svc/tests/                  # 单个服务
+pytest services/tts-svc/tests/test_http_server.py  # 单个文件
+pytest -m unit                                  # 仅单元测试
+pytest -m "not slow"                            # 跳过慢测试
+pytest -m "not integration"                     # 跳过集成测试
+
+# 代码质量
+ruff check .                                    # Lint
+black --check .                                 # 格式检查
+black .                                         # 自动格式化
+mypy libs/ services/                            # 类型检查
+
+# Proto
+bash scripts/compile_protos.sh                  # 编译所有 .proto → Python stubs
+
+# Docker
+docker build -f services/gateway-svc/Dockerfile -t gateway-svc .
 ```
 
-## 架构核心概念
+## 架构核心
 
 ### 通信模式
-- **gRPC**: 同步 service-to-service 调用, 19 个 proto 服务定义在 `libs/proto/`
-- **Kafka**: 异步事件流 (弹幕采集→处理→回复, 直播状态变更, 审计日志等)
-- **FastAPI HTTP**: 外部 REST API (通过 gateway-svc 暴露)
-- **WebSocket**: TTS 流式音频输出
+| 通道 | 用途 |
+|---|---|
+| **FastAPI HTTP** | 外部 REST API，通过 `gateway-svc` 统一暴露 |
+| **gRPC** | 服务间同步调用，19 个 proto 定义在 `libs/proto/` |
+| **Kafka** | 异步事件流，9 个 topic 定义在 `libs/kafka/__init__.py:Topics` |
+| **WebSocket** | TTS 流式音频输出 |
 
-### 多租户
-- 租户 = `Store` (店铺)
-- 所有核心实体带 `store_id` 外键
-- JWT token 包含 `store_id`, gateway 代理自动注入
-- RBAC 角色: `merchant_admin/editor/viewer` (租户级) + `super_admin` (平台级)
-
-### 实时互动管线 (核心运行时)
+### 实时互动管线（核心运行时路径）
 ```
 弹幕 → interact-svc → nlp-svc (意图/情感/敏感词)
                     → knowledge-svc (RAG 检索)
@@ -78,75 +52,90 @@ LiveStream_TTS/
                     → tts-svc (语音合成) → render-svc (口型渲染) → stream-svc (RTMP 推流)
 ```
 
-### 标准微服务结构
+### 多租户隔离
+- 租户 = `Store`（店铺），所有核心实体带 `store_id`
+- JWT 包含 `store_id`，gateway 代理自动注入 gRPC metadata
+- 数据库查询必须通过 `store_id` 过滤
+- RBAC: `merchant_admin / editor / viewer`（租户级）+ `super_admin`（平台级）
+
+### 配置优先级
 ```
-services/{name}-svc/
-├── Dockerfile
-├── pyproject.toml
-├── requirements.txt
-├── k8s/               # configmap, deployment, service (hpa 可选)
+环境变量 > K8s ConfigMap > 代码默认值
+```
+所有配置类继承 `libs.common.config.ServiceConfig`。
+
+### 错误码体系（`libs/common/errors.py`）
+| 范围 | 类别 |
+|---|---|
+| 1xxx | Auth (UNAUTHENTICATED, PERMISSION_DENIED, TOKEN_EXPIRED) |
+| 2xxx | Validation (INVALID_ARGUMENT, MISSING_REQUIRED_FIELD) |
+| 3xxx | Not Found (USER_NOT_FOUND, PRODUCT_NOT_FOUND, ...) |
+| 4xxx | Business Logic (QUOTA_EXCEEDED, INSUFFICIENT_BALANCE, ...) |
+| 5xxx | Internal (INTERNAL_ERROR, DATABASE_ERROR, CACHE_ERROR) |
+| 6xxx | External (LLM_API_ERROR, TTS_SYNTHESIS_FAILED, ...) |
+
+使用方式：`raise AppError(code=ErrorCode.USER_NOT_FOUND, domain=Domain.USER, message="...")`
+快捷函数：`not_found()`, `invalid_arg()`, `internal()`
+
+## 项目结构
+
+```
+services/{name}-svc/       # 16 个微服务，命名统一 -svc 后缀
 ├── src/
-│   ├── main.py        # FastAPI + gRPC 入口
-│   ├── config.py      # ServiceConfig 子类 (3 层: env > ConfigMap > default)
-│   ├── api/grpc_impl.py
-│   ├── http/routes.py
-│   ├── models/        # SQLAlchemy ORM
-│   └── services/      # 业务逻辑
-└── tests/
+│   ├── main.py            # FastAPI + gRPC 双入口
+│   ├── config.py          # 继承 ServiceConfig
+│   ├── api/grpc_impl.py   # gRPC servicer 实现
+│   ├── http/routes.py     # REST 路由
+│   ├── models/            # SQLAlchemy ORM
+│   └── services/          # 业务逻辑
+├── tests/                 # conftest.py + test_*.py
+├── k8s/                   # configmap, deployment, service
+├── Dockerfile
+└── requirements.txt
+
+libs/                      # 5 个共享库
+├── common/                # ServiceConfig, AppError/ErrorCode, gRPC 工具, structlog
+├── db/                    # SQLAlchemy async session 工厂
+├── kafka/                 # aiokafka producer/consumer + Topics 常量
+├── proto/                 # 19 个 protobuf 定义 + 生成桩代码
+└── testing/               # 共享测试 fixtures (async_db) + 假数据 (fake_product/script/user)
 ```
 
 ## 开发规范
 
-**所有规范在 `specs/` 目录，必须遵守：**
-- `specs/01-git-branch.md` — 分支管理 (Trunk-Based, feature/fix/docs 前缀, Squash Merge)
-- `specs/02-code-style.md` — 代码风格 (类型标注, 异步优先, 错误码体系, 命名约定)
-- `specs/03-commit.md` — Commit 格式 (`<type>: <描述>`, AI 代码必须标注 `Co-Authored-By`)
-- `specs/04-review.md` — PR 流程 (Draft→Review→Approve→Merge, PR < 500 行)
+所有规范在 `specs/` 目录，摘要如下：
 
-## 常用命令
-
-```bash
-# 基础设施
-docker compose up -d                          # 启动 PG, Redis, Kafka, MinIO
-docker compose --profile phase2 up -d          # 启动 Phase 2 中间件 (Milvus, ES)
-
-# 开发
-pytest                                         # 全部测试
-pytest services/tts-svc/tests/                 # 单服务测试
-ruff check .                                   # Lint
-black --check .                                # 格式检查
-mypy libs/ services/                           # 类型检查
-
-# Proto
-bash scripts/compile_protos.sh                 # 编译所有 .proto → Python stubs
-
-# Docker
-docker build -f services/gateway-svc/Dockerfile -t gateway-svc .
-```
+- **分支**: Trunk-Based，Solo 模式无需 PR。从 `main` 切 `feature/` / `fix/` / `docs/` 分支，自检通过后 `--no-ff` merge 回 main，立即删分支
+- **合并前自检**: `ruff check . && black --check . && pytest` 全绿
+- **Commit**: `<type>: <中文描述>`，AI 生成代码必须标注 `Co-Authored-By: Claude <noreply@anthropic.com>`
+- **代码风格**: Python 3.11+, async/await 所有 I/O, structlog 不用 print(), AppError 不用裸 Exception, 类型标注所有公共函数
 
 ## 开发阶段
 
-| 阶段 | 状态 | 内容 |
+| 阶段 | 状态 | 说明 |
 |---|---|---|
-| **Phase 1** | ✅ 完成 | 16 微服务骨架, gRPC+Kafka, CI/CD, ~500 测试 (所有 AI 模块为 mock) |
-| **Phase 2** | 📋 计划 | AI 集成: CosyVoice2, Wav2Lip, Qwen-3-7B, NLP, RAG, 自托管 LLM |
-| **Phase 3** | 📋 计划 | 全人克隆: 3DGS/NeRF 实时渲染, Few-shot 音色克隆, 微表情/动作克隆 |
+| **Phase 1** | ✅ | 16 微服务骨架，gRPC+Kafka，CI/CD，~500 测试。**所有 AI 模块为 mock** |
+| **Phase 2** | 📋 进行中 | AI 集成：CosyVoice2 TTS, Wav2Lip 口型, Qwen-3-7B LLM, NLP, RAG |
+| **Phase 3** | 📋 计划 | 全人克隆：3DGS/NeRF 实时渲染，Few-shot 音色克隆，微表情/动作克隆 |
 
 详见 `docs/Phase2-AI集成实施计划.md`
 
-## AI 辅助规则
+## Kafka Topics
 
-1. **所有 AI 生成代码必须在 commit message 中标注 `Co-Authored-By: Claude <noreply@anthropic.com>`**
-2. Claude Code 自动创建的 `worktree-*` 分支是临时的，合并后必须删除
-3. 永远不要直接 push 到 `main` — 从 `main` 切 feature 分支，PR 合并
-4. 合并策略: Squash Merge，一个 PR 压成一个干净 commit
-5. 优先使用项目共享库 (`libs/common`, `libs/db`, `libs/kafka`)，不要重复造轮子
+| Topic | 用途 |
+|---|---|
+| `danmaku.raw` | 平台弹幕原始消息 |
+| `danmaku.processed` | NLP 处理后的弹幕 |
+| `interaction.reply` | 互动回复 |
+| `live.events` | 直播生命周期事件 |
+| `audit.events` | 审核事件 |
+| `analytics.events` | 数据分析事件 |
+| `platform.sync` | 多平台同步任务 |
+| `notification.send` | 通知发送 |
+| `billing.usage` | 用量计量 |
 
-## 关键约定
+## Proto 修改注意
 
-- **Python 3.11+** 后，所有 I/O 操作用 `async/await`
-- **错误处理**用 `libs.common.errors.AppError`，不要用裸 `Exception` 或 `HTTPException`
-- **日志**用 `structlog`，不用 `print()`
-- **配置**继承 `libs.common.config.ServiceConfig`，优先级: 环境变量 > ConfigMap > 代码默认值
-- **数据库**所有查询通过 `store_id` 过滤 (多租户隔离)
-- **Proto**字段只能加不能删，新字段用 optional/默认值保持向后兼容
+- **字段只能加不能删**，新字段用 optional/默认值
+- 修改 `.proto` 后运行 `bash scripts/compile_protos.sh` 重新生成桩代码
+- 编译依赖：`pip install grpcio-tools mypy-protobuf`
