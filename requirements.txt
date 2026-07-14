@@ -1,9 +1,0 @@
-# TTS Platform POC Dependencies
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-websockets>=13.0
-pydantic>=2.0
-pypinyin>=0.52.0
-numpy>=1.26.0
-grpcio>=1.66.0
-grpcio-tools>=1.66.0
