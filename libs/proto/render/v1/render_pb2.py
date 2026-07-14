@@ -22,10 +22,10 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from libs.proto.common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
+from common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16render/v1/render.proto\x12\trender.v1\x1a\x16\x63ommon/v1/common.proto\"\xca\x01\n\rRenderRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x11\n\tavatar_id\x18\x02 \x01(\t\x12\x12\n\naudio_data\x18\x03 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x04 \x01(\x05\x12\x15\n\rbackground_id\x18\x05 \x01(\t\x12$\n\x08overlays\x18\x06 \x03(\x0b\x32\x12.render.v1.Overlay\x12,\n\x0cvideo_config\x18\x07 \x01(\x0b\x32\x16.render.v1.VideoConfig\"a\n\x0eRenderResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x13\n\x0bvideo_frame\x18\x02 \x01(\x0c\x12\x14\n\x0c\x66rame_number\x18\x03 \x01(\x05\x12\x10\n\x08is_final\x18\x04 \x01(\x08\"H\n\x0bVideoConfig\x12\r\n\x05width\x18\x01 \x01(\x05\x12\x0e\n\x06height\x18\x02 \x01(\x05\x12\x0b\n\x03\x66ps\x18\x03 \x01(\x05\x12\r\n\x05\x63odec\x18\x04 \x01(\t\"{\n\x07Overlay\x12\x12\n\noverlay_id\x18\x01 \x01(\t\x12$\n\x04type\x18\x02 \x01(\x0e\x32\x16.render.v1.OverlayType\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\x12%\n\x08position\x18\x04 \x01(\x0b\x32\x13.render.v1.Position\"P\n\x08Position\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\x12\r\n\x05width\x18\x03 \x01(\x05\x12\x0e\n\x06height\x18\x04 \x01(\x05\x12\x0f\n\x07opacity\x18\x05 \x01(\x02\"S\n\x15PredictLipSyncRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x02 \x01(\x05\x12\x11\n\tavatar_id\x18\x03 \x01(\t\"I\n\x16PredictLipSyncResponse\x12\x1a\n\x12\x62lendshape_weights\x18\x01 \x03(\x02\x12\x13\n\x0b\x66rame_count\x18\x02 \x01(\x05\"\x15\n\x13GetGPUStatusRequest\"\x86\x01\n\tGPUStatus\x12\x13\n\x0b\x64\x65vice_name\x18\x01 \x01(\t\x12\x17\n\x0ftotal_memory_mb\x18\x02 \x01(\x05\x12\x16\n\x0eused_memory_mb\x18\x03 \x01(\x05\x12\x1b\n\x13gpu_utilization_pct\x18\x04 \x01(\x05\x12\x16\n\x0e\x61\x63tive_streams\x18\x05 \x01(\x05*\xb2\x01\n\x0bOverlayType\x12\x1c\n\x18OVERLAY_TYPE_UNSPECIFIED\x10\x00\x12\x1d\n\x19OVERLAY_TYPE_PRODUCT_CARD\x10\x01\x12\x1a\n\x16OVERLAY_TYPE_PRICE_TAG\x10\x02\x12\x17\n\x13OVERLAY_TYPE_COUPON\x10\x03\x12\x1a\n\x16OVERLAY_TYPE_WATERMARK\x10\x04\x12\x15\n\x11OVERLAY_TYPE_LOGO\x10\x05\x32\xeb\x01\n\rRenderService\x12=\n\x06Render\x12\x18.render.v1.RenderRequest\x1a\x19.render.v1.RenderResponse\x12U\n\x0ePredictLipSync\x12 .render.v1.PredictLipSyncRequest\x1a!.render.v1.PredictLipSyncResponse\x12\x44\n\x0cGetGPUStatus\x12\x1e.render.v1.GetGPUStatusRequest\x1a\x14.render.v1.GPUStatusB4Z2github.com/livestream-tts/proto/render/v1;renderv1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16render/v1/render.proto\x12\trender.v1\x1a\x16\x63ommon/v1/common.proto\"\xdb\x02\n\rRenderRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x11\n\tavatar_id\x18\x02 \x01(\t\x12\x13\n\x0b\x61vatar_type\x18\x03 \x01(\t\x12\x12\n\naudio_data\x18\x04 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x05 \x01(\x05\x12\x15\n\rbackground_id\x18\x06 \x01(\t\x12$\n\x08overlays\x18\x07 \x03(\x0b\x32\x12.render.v1.Overlay\x12,\n\x0cvideo_config\x18\x08 \x01(\x0b\x32\x16.render.v1.VideoConfig\x12\x31\n\nexpression\x18\t \x01(\x0b\x32\x1d.render.v1.ExpressionOverride\x12\x30\n\x0egesture_config\x18\n \x01(\x0b\x32\x18.render.v1.GestureConfig\x12\x15\n\rrender_engine\x18\x0b \x01(\t\"y\n\x0eRenderResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x13\n\x0bvideo_frame\x18\x02 \x01(\x0c\x12\x14\n\x0c\x66rame_number\x18\x03 \x01(\x05\x12\x10\n\x08is_final\x18\x04 \x01(\x08\x12\x16\n\x0erender_time_ms\x18\x05 \x01(\x02\"^\n\x0bVideoConfig\x12\r\n\x05width\x18\x01 \x01(\x05\x12\x0e\n\x06height\x18\x02 \x01(\x05\x12\x0b\n\x03\x66ps\x18\x03 \x01(\x05\x12\r\n\x05\x63odec\x18\x04 \x01(\t\x12\x14\n\x0c\x62itrate_kbps\x18\x05 \x01(\x05\"\x91\x01\n\x07Overlay\x12\x12\n\noverlay_id\x18\x01 \x01(\t\x12$\n\x04type\x18\x02 \x01(\x0e\x32\x16.render.v1.OverlayType\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\x12%\n\x08position\x18\x04 \x01(\x0b\x32\x13.render.v1.Position\x12\x14\n\x0c\x64uration_sec\x18\x05 \x01(\x02\"a\n\x08Position\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\x12\r\n\x05width\x18\x03 \x01(\x05\x12\x0e\n\x06height\x18\x04 \x01(\x05\x12\x0f\n\x07opacity\x18\x05 \x01(\x02\x12\x0f\n\x07z_index\x18\x06 \x01(\x05\"h\n\x15PredictLipSyncRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x02 \x01(\x05\x12\x11\n\tavatar_id\x18\x03 \x01(\t\x12\x13\n\x0b\x61vatar_type\x18\x04 \x01(\t\"]\n\x16PredictLipSyncResponse\x12\x1a\n\x12\x62lendshape_weights\x18\x01 \x03(\x02\x12\x13\n\x0b\x66rame_count\x18\x02 \x01(\x05\x12\x12\n\nconfidence\x18\x03 \x01(\x02\"y\n\x18PredictExpressionRequest\x12\x15\n\remotion_label\x18\x01 \x01(\t\x12\x19\n\x11\x65motion_intensity\x18\x02 \x01(\x02\x12\x11\n\tavatar_id\x18\x03 \x01(\t\x12\x18\n\x10\x62\x61se_blendshapes\x18\x04 \x03(\x02\"s\n\x19PredictExpressionResponse\x12\x1a\n\x12\x62lendshape_weights\x18\x01 \x03(\x02\x12\x1b\n\x13\x64ominant_expression\x18\x02 \x01(\t\x12\x1d\n\x15\x65xpression_confidence\x18\x03 \x01(\x02\"V\n\x12\x45xpressionOverride\x12\x15\n\remotion_label\x18\x01 \x01(\t\x12\x11\n\tintensity\x18\x02 \x01(\x02\x12\x16\n\x0eoverride_mouth\x18\x03 \x01(\x08\"\x8a\x01\n\x17GenerateGesturesRequest\x12\x12\n\naudio_text\x18\x01 \x01(\t\x12\x17\n\x0f\x61udio_amplitude\x18\x02 \x03(\x02\x12\x11\n\tavatar_id\x18\x03 \x01(\t\x12\x15\n\rgesture_style\x18\x04 \x01(\t\x12\x18\n\x10\x62locked_gestures\x18\x05 \x03(\t\"@\n\x18GenerateGesturesResponse\x12$\n\x08gestures\x18\x01 \x03(\x0b\x32\x12.render.v1.Gesture\"t\n\x07Gesture\x12\x12\n\ngesture_id\x18\x01 \x01(\t\x12\x16\n\x0estart_time_sec\x18\x02 \x01(\x02\x12\x14\n\x0c\x64uration_sec\x18\x03 \x01(\x02\x12\x11\n\tintensity\x18\x04 \x01(\x02\x12\x14\n\x0cjoint_angles\x18\x05 \x03(\x02\"t\n\rGestureConfig\x12\x17\n\x0f\x65nable_gestures\x18\x01 \x01(\x08\x12\x15\n\rgesture_style\x18\x02 \x01(\t\x12\x19\n\x11gesture_frequency\x18\x03 \x01(\x02\x12\x18\n\x10sync_to_keywords\x18\x04 \x01(\x08\"\x15\n\x13GetGPUStatusRequest\"\xba\x01\n\tGPUStatus\x12\x13\n\x0b\x64\x65vice_name\x18\x01 \x01(\t\x12\x17\n\x0ftotal_memory_mb\x18\x02 \x01(\x05\x12\x16\n\x0eused_memory_mb\x18\x03 \x01(\x05\x12\x1b\n\x13gpu_utilization_pct\x18\x04 \x01(\x05\x12\x16\n\x0e\x61\x63tive_streams\x18\x05 \x01(\x05\x12\x15\n\rrender_engine\x18\x06 \x01(\t\x12\x1b\n\x13loaded_avatar_count\x18\x07 \x01(\x05*\xe7\x01\n\x0bOverlayType\x12\x1c\n\x18OVERLAY_TYPE_UNSPECIFIED\x10\x00\x12\x1d\n\x19OVERLAY_TYPE_PRODUCT_CARD\x10\x01\x12\x1a\n\x16OVERLAY_TYPE_PRICE_TAG\x10\x02\x12\x17\n\x13OVERLAY_TYPE_COUPON\x10\x03\x12\x1a\n\x16OVERLAY_TYPE_WATERMARK\x10\x04\x12\x15\n\x11OVERLAY_TYPE_LOGO\x10\x05\x12\x18\n\x14OVERLAY_TYPE_DANMAKU\x10\x06\x12\x19\n\x15OVERLAY_TYPE_AI_LABEL\x10\x07\x32\xaa\x03\n\rRenderService\x12?\n\x06Render\x12\x18.render.v1.RenderRequest\x1a\x19.render.v1.RenderResponse0\x01\x12U\n\x0ePredictLipSync\x12 .render.v1.PredictLipSyncRequest\x1a!.render.v1.PredictLipSyncResponse\x12^\n\x11PredictExpression\x12#.render.v1.PredictExpressionRequest\x1a$.render.v1.PredictExpressionResponse\x12[\n\x10GenerateGestures\x12\".render.v1.GenerateGesturesRequest\x1a#.render.v1.GenerateGesturesResponse\x12\x44\n\x0cGetGPUStatus\x12\x1e.render.v1.GetGPUStatusRequest\x1a\x14.render.v1.GPUStatusB4Z2github.com/livestream-tts/proto/render/v1;renderv1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,26 +33,40 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'render.v1.render_pb2', _glo
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z2github.com/livestream-tts/proto/render/v1;renderv1'
-  _globals['_OVERLAYTYPE']._serialized_start=967
-  _globals['_OVERLAYTYPE']._serialized_end=1145
+  _globals['_OVERLAYTYPE']._serialized_start=2062
+  _globals['_OVERLAYTYPE']._serialized_end=2293
   _globals['_RENDERREQUEST']._serialized_start=62
-  _globals['_RENDERREQUEST']._serialized_end=264
-  _globals['_RENDERRESPONSE']._serialized_start=266
-  _globals['_RENDERRESPONSE']._serialized_end=363
-  _globals['_VIDEOCONFIG']._serialized_start=365
-  _globals['_VIDEOCONFIG']._serialized_end=437
-  _globals['_OVERLAY']._serialized_start=439
-  _globals['_OVERLAY']._serialized_end=562
-  _globals['_POSITION']._serialized_start=564
-  _globals['_POSITION']._serialized_end=644
-  _globals['_PREDICTLIPSYNCREQUEST']._serialized_start=646
-  _globals['_PREDICTLIPSYNCREQUEST']._serialized_end=729
-  _globals['_PREDICTLIPSYNCRESPONSE']._serialized_start=731
-  _globals['_PREDICTLIPSYNCRESPONSE']._serialized_end=804
-  _globals['_GETGPUSTATUSREQUEST']._serialized_start=806
-  _globals['_GETGPUSTATUSREQUEST']._serialized_end=827
-  _globals['_GPUSTATUS']._serialized_start=830
-  _globals['_GPUSTATUS']._serialized_end=964
-  _globals['_RENDERSERVICE']._serialized_start=1148
-  _globals['_RENDERSERVICE']._serialized_end=1383
+  _globals['_RENDERREQUEST']._serialized_end=409
+  _globals['_RENDERRESPONSE']._serialized_start=411
+  _globals['_RENDERRESPONSE']._serialized_end=532
+  _globals['_VIDEOCONFIG']._serialized_start=534
+  _globals['_VIDEOCONFIG']._serialized_end=628
+  _globals['_OVERLAY']._serialized_start=631
+  _globals['_OVERLAY']._serialized_end=776
+  _globals['_POSITION']._serialized_start=778
+  _globals['_POSITION']._serialized_end=875
+  _globals['_PREDICTLIPSYNCREQUEST']._serialized_start=877
+  _globals['_PREDICTLIPSYNCREQUEST']._serialized_end=981
+  _globals['_PREDICTLIPSYNCRESPONSE']._serialized_start=983
+  _globals['_PREDICTLIPSYNCRESPONSE']._serialized_end=1076
+  _globals['_PREDICTEXPRESSIONREQUEST']._serialized_start=1078
+  _globals['_PREDICTEXPRESSIONREQUEST']._serialized_end=1199
+  _globals['_PREDICTEXPRESSIONRESPONSE']._serialized_start=1201
+  _globals['_PREDICTEXPRESSIONRESPONSE']._serialized_end=1316
+  _globals['_EXPRESSIONOVERRIDE']._serialized_start=1318
+  _globals['_EXPRESSIONOVERRIDE']._serialized_end=1404
+  _globals['_GENERATEGESTURESREQUEST']._serialized_start=1407
+  _globals['_GENERATEGESTURESREQUEST']._serialized_end=1545
+  _globals['_GENERATEGESTURESRESPONSE']._serialized_start=1547
+  _globals['_GENERATEGESTURESRESPONSE']._serialized_end=1611
+  _globals['_GESTURE']._serialized_start=1613
+  _globals['_GESTURE']._serialized_end=1729
+  _globals['_GESTURECONFIG']._serialized_start=1731
+  _globals['_GESTURECONFIG']._serialized_end=1847
+  _globals['_GETGPUSTATUSREQUEST']._serialized_start=1849
+  _globals['_GETGPUSTATUSREQUEST']._serialized_end=1870
+  _globals['_GPUSTATUS']._serialized_start=1873
+  _globals['_GPUSTATUS']._serialized_end=2059
+  _globals['_RENDERSERVICE']._serialized_start=2296
+  _globals['_RENDERSERVICE']._serialized_end=2722
 # @@protoc_insertion_point(module_scope)

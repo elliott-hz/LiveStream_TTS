@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-数字人直播带货 SaaS 平台 — 16 个 Python 3.11 微服务，gRPC + Kafka 通信，PostgreSQL + Redis + MinIO。
+数字人直播带货 SaaS 平台 — 8 个 Python 3.11 微服务，gRPC + Kafka 通信，PostgreSQL + Redis + MinIO。
 
 ## 常用命令
 
@@ -80,18 +80,16 @@ docker build -f services/gateway-svc/Dockerfile -t gateway-svc .
 ## 项目结构
 
 ```
-services/{name}-svc/       # 16 个微服务，命名统一 -svc 后缀
-├── src/
-│   ├── main.py            # FastAPI + gRPC 双入口
-│   ├── config.py          # 继承 ServiceConfig
-│   ├── api/grpc_impl.py   # gRPC servicer 实现
-│   ├── http/routes.py     # REST 路由
-│   ├── models/            # SQLAlchemy ORM
-│   └── services/          # 业务逻辑
-├── tests/                 # conftest.py + test_*.py
-├── k8s/                   # configmap, deployment, service
-├── Dockerfile
-└── requirements.txt
+services/
+├── platform-svc/      # 管理平台 (user/product/script/live-mgr/avatar/voice/billing/analytics/audit/platform-sync/profile 合并)
+│   └── src/modules/   # 11 个业务模块，共享 DB/Kafka/config
+├── gateway-svc/       # API 网关: JWT, 限流, gRPC 代理
+├── interact-svc/      # 实时互动管线: 弹幕→LLM→TTS→渲染
+├── nlp-svc/           # NLP: 意图/情感/敏感词 (CPU)
+├── knowledge-svc/     # 知识库 RAG
+├── tts-svc/           # TTS 引擎: CosyVoice2 + 情感引擎 + DSP
+├── render-svc/        # 画面渲染: 2D Viseme / Wav2Lip
+└── stream-svc/        # RTMP/SRT 推流 + FFmpeg
 
 libs/                      # 5 个共享库
 ├── common/                # ServiceConfig, AppError/ErrorCode, gRPC 工具, structlog

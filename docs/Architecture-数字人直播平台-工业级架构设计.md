@@ -1785,7 +1785,7 @@ L5 运营安全:
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-> **Phase 2 简化部署:** Phase 2 采用全云化方案，无需 GPU，无需 K8s。15 个微服务跑在单台 24C 48G ECS 上，中间件全部阿里云托管（RDS/Redis/Kafka/OSS/DashVector），TTS 用阿里云 API，LLM 用 DeepSeek API，render 用 2D Viseme (CPU)。详见 [Phase2 AI 集成实施计划](./Phase2-AI集成实施计划.md)。
+> **Phase 2 简化部署:** Phase 2 采用全云化方案，无需 GPU，无需 K8s。7 个微服务 (platform-svc 合并了11个管理服务)跑在单台 24C 48G ECS 上，中间件全部阿里云托管（RDS/Redis/Kafka/OSS/DashVector），TTS 用阿里云 API，LLM 用 DeepSeek API，render 用 2D Viseme (CPU)。详见 [Phase2 AI 集成实施计划](./Phase2-AI集成实施计划.md)。
 >
 > 以下为 **Phase 3 / 规模化阶段 (100 路+)** 的自建集群方案。
 

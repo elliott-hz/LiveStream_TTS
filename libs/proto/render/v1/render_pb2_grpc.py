@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from libs.proto.render.v1 import render_pb2 as render_dot_v1_dot_render__pb2
+from render.v1 import render_pb2 as render_dot_v1_dot_render__pb2
 
 GRPC_GENERATED_VERSION = '1.82.1'
 GRPC_VERSION = grpc.__version__
@@ -34,7 +34,7 @@ class RenderServiceStub:
         Args:
             channel: A grpc.Channel.
         """
-        self.Render = channel.unary_unary(
+        self.Render = channel.unary_stream(
                 '/render.v1.RenderService/Render',
                 request_serializer=render_dot_v1_dot_render__pb2.RenderRequest.SerializeToString,
                 response_deserializer=render_dot_v1_dot_render__pb2.RenderResponse.FromString,
@@ -43,6 +43,16 @@ class RenderServiceStub:
                 '/render.v1.RenderService/PredictLipSync',
                 request_serializer=render_dot_v1_dot_render__pb2.PredictLipSyncRequest.SerializeToString,
                 response_deserializer=render_dot_v1_dot_render__pb2.PredictLipSyncResponse.FromString,
+                _registered_method=True)
+        self.PredictExpression = channel.unary_unary(
+                '/render.v1.RenderService/PredictExpression',
+                request_serializer=render_dot_v1_dot_render__pb2.PredictExpressionRequest.SerializeToString,
+                response_deserializer=render_dot_v1_dot_render__pb2.PredictExpressionResponse.FromString,
+                _registered_method=True)
+        self.GenerateGestures = channel.unary_unary(
+                '/render.v1.RenderService/GenerateGestures',
+                request_serializer=render_dot_v1_dot_render__pb2.GenerateGesturesRequest.SerializeToString,
+                response_deserializer=render_dot_v1_dot_render__pb2.GenerateGesturesResponse.FromString,
                 _registered_method=True)
         self.GetGPUStatus = channel.unary_unary(
                 '/render.v1.RenderService/GetGPUStatus',
@@ -68,6 +78,19 @@ class RenderServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def PredictExpression(self, request, context):
+        """── Expression & Gesture (Phase 2/3) ──
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GenerateGestures(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetGPUStatus(self, request, context):
         """── Health ──
         """
@@ -78,7 +101,7 @@ class RenderServiceServicer:
 
 def add_RenderServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Render': grpc.unary_unary_rpc_method_handler(
+            'Render': grpc.unary_stream_rpc_method_handler(
                     servicer.Render,
                     request_deserializer=render_dot_v1_dot_render__pb2.RenderRequest.FromString,
                     response_serializer=render_dot_v1_dot_render__pb2.RenderResponse.SerializeToString,
@@ -87,6 +110,16 @@ def add_RenderServiceServicer_to_server(servicer, server):
                     servicer.PredictLipSync,
                     request_deserializer=render_dot_v1_dot_render__pb2.PredictLipSyncRequest.FromString,
                     response_serializer=render_dot_v1_dot_render__pb2.PredictLipSyncResponse.SerializeToString,
+            ),
+            'PredictExpression': grpc.unary_unary_rpc_method_handler(
+                    servicer.PredictExpression,
+                    request_deserializer=render_dot_v1_dot_render__pb2.PredictExpressionRequest.FromString,
+                    response_serializer=render_dot_v1_dot_render__pb2.PredictExpressionResponse.SerializeToString,
+            ),
+            'GenerateGestures': grpc.unary_unary_rpc_method_handler(
+                    servicer.GenerateGestures,
+                    request_deserializer=render_dot_v1_dot_render__pb2.GenerateGesturesRequest.FromString,
+                    response_serializer=render_dot_v1_dot_render__pb2.GenerateGesturesResponse.SerializeToString,
             ),
             'GetGPUStatus': grpc.unary_unary_rpc_method_handler(
                     servicer.GetGPUStatus,
@@ -115,7 +148,7 @@ class RenderService:
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(
+        return grpc.experimental.unary_stream(
             request,
             target,
             '/render.v1.RenderService/Render',
@@ -148,6 +181,60 @@ class RenderService:
             '/render.v1.RenderService/PredictLipSync',
             render_dot_v1_dot_render__pb2.PredictLipSyncRequest.SerializeToString,
             render_dot_v1_dot_render__pb2.PredictLipSyncResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def PredictExpression(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/render.v1.RenderService/PredictExpression',
+            render_dot_v1_dot_render__pb2.PredictExpressionRequest.SerializeToString,
+            render_dot_v1_dot_render__pb2.PredictExpressionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GenerateGestures(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/render.v1.RenderService/GenerateGestures',
+            render_dot_v1_dot_render__pb2.GenerateGesturesRequest.SerializeToString,
+            render_dot_v1_dot_render__pb2.GenerateGesturesResponse.FromString,
             options,
             channel_credentials,
             insecure,

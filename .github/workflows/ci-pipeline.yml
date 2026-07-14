@@ -23,23 +23,13 @@ jobs:
         with:
           filters: |
             gateway-svc: services/gateway-svc/**
-            user-svc: services/user-svc/**
-            product-svc: services/product-svc/**
-            script-svc: services/script-svc/**
-            live-mgr-svc: services/live-mgr-svc/**
-            avatar-svc: services/avatar-svc/**
-            voice-svc: services/voice-svc/**
+            platform-svc: services/platform-svc/**
             knowledge-svc: services/knowledge-svc/**
             tts-svc: services/tts-svc/**
             nlp-svc: services/nlp-svc/**
             render-svc: services/render-svc/**
             interact-svc: services/interact-svc/**
-            platform-sync-svc: services/platform-sync-svc/**
-            analytics-svc: services/analytics-svc/**
-            billing-svc: services/billing-svc/**
-            audit-svc: services/audit-svc/**
             stream-svc: services/stream-svc/**
-            profile-svc: services/profile-svc/**
             libs: libs/**
             proto: libs/proto/**
 
@@ -104,24 +94,14 @@ jobs:
       fail-fast: false
       matrix:
         service:
+          - platform-svc
           - gateway-svc
-          - user-svc
-          - product-svc
-          - script-svc
-          - live-mgr-svc
-          - avatar-svc
-          - voice-svc
           - knowledge-svc
           - tts-svc
           - nlp-svc
           - render-svc
           - interact-svc
-          - platform-sync-svc
-          - analytics-svc
-          - billing-svc
-          - audit-svc
           - stream-svc
-          - profile-svc
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx

@@ -3,8 +3,8 @@
 import grpc
 import warnings
 
-from libs.proto.common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
-from libs.proto.tts.v1 import tts_pb2 as tts_dot_v1_dot_tts__pb2
+from common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
+from tts.v1 import tts_pb2 as tts_dot_v1_dot_tts__pb2
 
 GRPC_GENERATED_VERSION = '1.82.1'
 GRPC_VERSION = grpc.__version__

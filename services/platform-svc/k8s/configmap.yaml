@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-svc-config
+  labels:
+    app.kubernetes.io/name: platform-svc
+data:
+  ENV: "prod"
+  GRPC_PORT: "50050"
+  HTTP_PORT: "8081"
+  DB_POOL_SIZE: "10"

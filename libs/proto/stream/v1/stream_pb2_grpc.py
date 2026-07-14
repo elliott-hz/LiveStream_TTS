@@ -3,8 +3,8 @@
 import grpc
 import warnings
 
-from libs.proto.common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
-from libs.proto.stream.v1 import stream_pb2 as stream_dot_v1_dot_stream__pb2
+from common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
+from stream.v1 import stream_pb2 as stream_dot_v1_dot_stream__pb2
 
 GRPC_GENERATED_VERSION = '1.82.1'
 GRPC_VERSION = grpc.__version__
