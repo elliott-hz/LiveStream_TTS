@@ -104,17 +104,17 @@
 |:----:|:------------:|:------------:|:--------:|
 | **M1** | WS `/ws/v1/tts` | M2.Session CRUD | — |
 | | gRPC `BidirectionalSynthesize` | M7.SynthesizeStream | — |
-| **M2** | — | — | 会话状态（Redis） |
+| **M2** | — | — | 会话状态（POC: 内存 / 生产: Redis） |
 | **M3** | — | — | TN 规则表（内存） |
 | **M4** | — | M5.GetEmotionTag | G2P 字典（内存） |
 | **M5** | — | — | 情感分类模型 / LLM 接口 |
-| **M6** | REST `/api/v1/voices/*` | — | 音色元数据（PG）、文件（MinIO） |
+| **M6** | REST `/api/v1/voices/*` | — | 音色元数据（POC: JSON 文件 / 生产: PG + MinIO） |
 | **M7** | — | M4.GetLinguisticFeatures | — |
 | | | M5.GetEmotionTag | |
 | | | M6.GetVoice | |
 | | | M9.Get / M9.Set | |
 | **M8** | — | — | DSP 参数配置（内存） |
-| **M9** | — | — | 音频缓存（Redis） |
+| **M9** | — | — | 音频缓存（POC: 内存 dict / 生产: Redis） |
 | **M10** | — | — | 混音配置（内存） |
 
 ---
@@ -130,6 +130,7 @@
 - 从 M7 接收 PCM Chunk → 流式推回客户端
 - 处理 cancel、ping/pong 等控制帧
 - **不负责任何 REST 合成接口**
+- **额外提供：** REST 音色管理（代理 M6）、健康检查、静态页面服务
 
 #### 2.1.2 接口设计
 
@@ -235,6 +236,23 @@ M7.SynthesizeStream(ctx, SessionState, text)
   → on_error(Error)
 ```
 
+**额外提供的 REST 路由（POC 实现，非合成用途）：**
+
+```
+# 健康检查
+GET  /api/v1/health              → {"status": "healthy", "version": "1.0.0-poc", "uptime_seconds": N}
+
+# 音色管理（代理至 M6 SpeakerManager）
+GET    /api/v1/voices             → 音色列表
+GET    /api/v1/voices/{voice_id}  → 音色详情
+POST   /api/v1/voices             → 创建音色
+DELETE /api/v1/voices/{voice_id}  → 删除音色
+
+# 静态页面
+GET /                            → 浏览器测试客户端（static/index.html）
+GET /static/{filename}           → 静态资源
+```
+
 #### 2.1.3 数据架构
 
 **数据持有：** 无。仅维护连接 → session_id 映射（内存）。
@@ -275,11 +293,11 @@ DestroySession(id) → error
 
 #### 2.2.3 数据架构
 
-**Redis：**
-```
-Key: tts:session:{session_id}
-Type: Hash
-TTL: 30min（每次活跃刷新）
+**POC（内存 dict）：**
+```python
+_sessions: dict[str, SessionState]  # key = session_id
+# 空闲超时: 30s — 后台线程定期清理
+# 生产规划：迁移至 Redis，TTL 30min
 ```
 
 ---
@@ -303,12 +321,11 @@ M3.Process(text string) → (normalized_text string, error)
 | 子模块 | 职责 | 示例 |
 |--------|------|------|
 | HTML/Markdown 清洗 | 去除标签、控制字符 | `<b>你好</b>` → `你好` |
-| 数字转写 | 阿拉伯数字 → 中文数字 | `123` → `一百二十三` |
+| 数字转写 | 阿拉伯数字 → 中文数字（≤ 9999） | `123` → `一百二十三` |
 | 日期转写 | 数字日期 → 自然语言 | `2026-07-13` → `二零二六年七月十三日` |
 | 货币转写 | 货币符号+数字 → 金额 | `￥1999` → `一千九百九十九元` |
 | URL/Email 转写 | 链接 → 可读形式 | `www.abc.com` → `三达不溜点 abc 点 com` |
 | Emoji 转写 | 表情 → 文字 | `😊` → `微笑` |
-| 量词/单位转写 | 科学单位 → 中文 | `100km/h` → `一百公里每小时` |
 
 **处理顺序：** HTML 清洗 → Emoji → 数字/日期/货币 → URL/Email → 量词。此顺序敏感。
 
@@ -466,7 +483,13 @@ M6.LoadPromptAudio(voice_id) → []byte
 
 #### 2.6.3 数据架构
 
-**PostgreSQL：**
+**POC（JSON 文件）：**
+```
+voices/{voice_id}/voice.json   ← VoiceProfile 元数据（JSON 序列化）
+embedding / prompt_audio 文件     ← POC 阶段暂未存储（返回空占位符）
+```
+
+**生产规划（PostgreSQL + MinIO）：**
 ```sql
 CREATE TABLE voice_profiles (
     id                BIGSERIAL       PRIMARY KEY,
@@ -485,10 +508,10 @@ CREATE TABLE voice_profiles (
 CREATE INDEX idx_voice_status ON voice_profiles(status);
 ```
 
-**MinIO：**
 ```
-voice/prompt/{voice_id}/prompt.wav
-voice/embedding/{voice_id}/embedding.npy
+MinIO:
+  voice/prompt/{voice_id}/prompt.wav
+  voice/embedding/{voice_id}/embedding.npy
 ```
 
 ---
@@ -519,33 +542,32 @@ M7.SynthesizeStream(
 
 **内部管线：**
 ```
-SynthesizeStream(session_id, text, voice_id, emotion, speed)
+SynthesizeStream(session_id, features, emotion, speed, on_chunk, ...)
+  │
+  ├─ 输入: 由上游 Pipeline Runner 提前组装好的
+  │   • LinguisticFeatures（M4 产出）
+  │   • EmotionTag（M5 产出）
+  │   • Speaker Embedding（M6 产出）
   │
   ├─ 0. 查缓存: M9.Get(cache_key)
   │     ├─ 命中 → 逐 chunk 回调 on_chunk, on_complete, 返回
   │     └─ 未命中 → 继续
   │
-  ├─ 1. M3.Process(text) → normalized_text              // Text Normalization
-  ├─ 2. M5.Classify(normalized_text) → emotion_tag       // Emotion 分类
-  ├─ 3. M4.Process(normalized_text, emotion_tag)         // Linguistic
-  │       → linguistic_features
-  ├─ 4. M6.LoadEmbedding(voice_id) → embedding           // 音色加载
-  │
-  ├─ 5. 模型推理
+  ├─ 1. 模型推理（POC: 正弦波生成）
   │     ├─ 输入: linguistic_features + embedding + emotion_tag
-  │     ├─ 处理: CosyVoice2 / FishSpeech 推理
+  │     ├─ 处理: 按 Emotion 选择频率/音量生成正弦波
+  │     │   （目标: CosyVoice2 / FishSpeech 推理）
   │     └─ 输出: 每 20ms PCM
   │         └─ on_chunk(AudioChunk)
   │
-  ├─ 6. 写缓存: M9.Set(cache_key, full_pcm)
-  └─ 7. on_complete(SynthesisComplete)
+  ├─ 2. 写缓存: M9.Set(cache_key, full_pcm)
+  └─ 3. on_complete(SynthesisComplete)
 ```
 
-> **重要**：上述管线是架构定义的全部逻辑步骤。POC 实现时，
-> `M3.Process` 可以是 pass-through（LLM 已输出纯文本），
-> `M5.Classify` 可以返回固定 neutral，
-> `M4.Process` 可以使用模型内置的 G2P 而非独立调用。
-> 但**管线顺序不变**，每个模块的接口保持稳定。
+> **⚠️ 重要 — 管线所有权说明**：上述 `M3→M5→M4→M6→M9` 的编排**不属于 M7**。
+> 在代码中，这些模块的调用由 `main.py:build_pipeline_runner()` 统一编排，
+> M7 只接收准备好的 `(LinguisticFeatures, EmotionTag, embedding)` 执行推理。
+> 这是架构设计的有意分离：M7 只关注"合成"，不关心"文本怎么来的"。
 
 #### 2.7.3 数据架构
 
@@ -625,12 +647,11 @@ cache_key = fmt.Sprintf("%x:%s:%s", md5(text), voice_id, emotion)
 
 #### 2.9.3 数据架构
 
-**Redis：**
-```
-Key: tts:cache:{cache_key}
-Type: String (bytes)
-Value: 完整 PCM 二进制（不含 WAV Header）
-TTL: 24h
+**POC（内存 dict）：**
+```python
+_store: dict[str, tuple[bytes, float]]  # key → (pcm_data, expire_at)
+# TTL: 24h
+# 生产规划: 迁移至 Redis
 ```
 
 ---
@@ -676,14 +697,14 @@ M10.Mix(tracks []AudioTrack) → (mixed_pcm []byte, error)
 | 模块 | POC 实现 | 说明 |
 |:----:|----------|------|
 | **M1 Gateway** | ✅ 完整实现 | WS + gRPC 双向流 |
-| **M2 Session** | ✅ 完整实现 | Redis 会话存储 |
+| **M2 Session** | ✅ 完整实现 | 内存 dict 会话存储（生产规划: Redis） |
 | **M3 Text Preproc** | ⚠️ 简化实现 | 仅 HTML 清洗 + 基本数字转写。正则规则引擎 |
 | **M4 Linguistic** | ⚠️ 简化实现 | 调用 TTS 模型内置 G2P，不独立部署 Prosody 模型 |
 | **M5 Emotion** | ⚠️ Mock 实现 | 默认返回 `neutral(1.0)`。接口保留，不调 LLM |
-| **M6 Speaker** | ✅ 完整实现 | CRUD + MinIO 存储。POC 预置 1-2 音色 |
-| **M7 TTS Engine** | ✅ 完整实现 | CosyVoice2 推理，流式 PCM 输出 |
+| **M6 Speaker** | ⚠️ 逻辑完整，数据简化 | CRUD + JSON 文件存储。Embedding 和 Prompt Audio 返回空占位符 |
+| **M7 TTS Engine** | ❌ Mock 实现 | **正弦波生成器**（非真实语音合成）。按 Emotion 选择正弦波频率/音量。待集成 CosyVoice2 / FishSpeech |
 | **M8 DSP** | ⚠️ 简化实现 | 仅 Normalize + Silence Trim，不做 Noise Reduction |
-| **M9 Cache** | ✅ 完整实现 | Redis 缓存读写 |
+| **M9 Cache** | ✅ 接口完整，存储简化 | 内存 dict 缓存（生产规划: Redis） |
 | **M10 Mixer** | ❌ 暂不实现 | POC 仅合成单音轨人声。接口保留 |
 
 ### 3.2 POC 管线数据流
@@ -722,10 +743,40 @@ M7: linguistic_features + emotion_tag + speaker_embedding
 |:-:|------|------|----------|
 | V1 | **WS 流式合成** | 客户端 → `synthesis_request{text:"你好"}` | 收到 N 个 `audio_chunk`，最后 `synthesis_complete`，PCM 可播放 |
 | V2 | **gRPC 双向流** | gRPC → `SynthesizeRequest{text:"欢迎"}` | stream 返回 N 个 `AudioChunk` + `SynthesisComplete` |
-| V3 | **取消合成** | synthesis_request 后立即 cancel | 合成中途停止，不再收 audio_chunk |
+| V3 | **取消合成** | synthesis_request 后立即 cancel | ⚠️ POC 仅记录 cancel 日志，不会中止合成（生产需实现） |
 | V4 | **缓存命中** | 同一文本合成两次 | 第二次首包延迟 < 5ms |
 | V5 | **会话超时** | WS 连接 30s 不发送消息 | 服务端主动断开 |
 | V6 | **音色切换** | 两次不同 voice_id | 两段音频音色不同 |
 | V7 | **完整管线** | text="今天是2026年7月13日，😊欢迎！" | TN 正确转写日期和 Emoji，PCM 输出正常 |
 | V8 | **错误处理** | 未知 voice_id | error{error_code: 3001} |
 | V9 | **健康检查** | gRPC Health() | status: "healthy" |
+
+### 3.4 代码库中本文未提及的组件
+
+以下组件存在于仓库中，但本文未覆盖：
+
+| 组件 | 位置 | 说明 |
+|:----:|------|------|
+| **浏览器测试客户端** | `static/index.html` | WebSocket 连接测试页，支持文本输入、音色/情感选择、Web Audio API 播放 |
+| **启动脚本** | `scripts/start.sh` | 杀掉旧进程 → `python3 -m src.main` |
+| **安装脚本** | `scripts/install.sh` | pip 安装依赖 + 生成 gRPC stubs |
+| **端到端测试** | `tests/test_e2e.py` | 覆盖 V1–V9 验证场景，session 级 fixture 自动起停服务 |
+| **音色 JSON 持久化** | `voices/{voice_id}/voice.json` | 通过 REST API 创建的音色持久化为 JSON 文件 |
+| **Emotion→音频映射** | `tts_engine.py:EMOTION_AUDIO_MAP` | 正弦波 Mock 中 emotion 到频率/音量的映射表 |
+
+---
+
+## 四、POC 代码与架构文档的关键差异总结
+
+| 差异点 | Architecture.md 原始描述 | 实际代码 | 严重程度 |
+|:-------|:-------------------------|:---------|:---------|
+| M7 TTS Engine | "CosyVoice2 推理" | 正弦波生成器 | ❌ 高 |
+| M7 管线所有权 | M7 内部编排 M3/M4/M5/M6 | 由 main.py Pipeline Runner 编排 | ⚠️ 中 |
+| M6 数据存储 | PostgreSQL + MinIO | JSON 文件 | ⚠️ 中 |
+| M6 Embedding | 返回 numpy 向量 | 返回空列表 `[]` | ⚠️ 中 |
+| M9 数据存储 | Redis | 内存 dict | ⚠️ 低 |
+| M2 数据存储 | Redis | 内存 dict | ⚠️ 低 |
+| M2 空闲超时 | 30min | 30s | ⚠️ 低 |
+| M3 量词/单位 | 文档有但未实现 | 代码不存在 | ⚠️ 低 |
+| Cancel | "合成中途停止" | 仅记录日志 | ⚠️ 低 |
+| 浏览器客户端/脚本/测试 | 未提及 | 仓库中存在 | ℹ️ 遗漏 |

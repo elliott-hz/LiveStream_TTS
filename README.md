@@ -1,5 +1,24 @@
 # 企业级 TTS 平台架构设计
 
+> ⚠️ **本文档描述的是目标架构（Target Architecture）**，即项目希望演进到的最终形态，并非当前实现。
+> 当前 **POC 阶段** 的实际实现请详见 [`Architecture.md`](Architecture.md) 第 3 节（POC 实现策略），
+> 或直接阅读 [`src/`](src/) 目录下的源代码。
+>
+> 下表快速对照当前实现与目标架构的差距：
+
+| 能力 | 目标架构 | POC 当前实现 |
+|:-----|:---------|:-------------|
+| TTS 引擎 | CosyVoice2 / FishSpeech | 正弦波 Mock（无真实语音合成） |
+| 音色存储 | PostgreSQL + MinIO | JSON 文件（voices/ 目录） |
+| 音频缓存 | Redis | 内存 dict |
+| 会话存储 | Redis | 内存 dict |
+| 流式传输 | WebRTC / RTMP / HLS | 裸 WebSocket + PCM |
+| 消息队列 | Kafka / RabbitMQ | 无 |
+| 监控 | Prometheus + Grafana | 无 |
+| 容器化 | Docker + Kubernetes | 无 |
+| ML 推理优化 | ONNX / TensorRT / INT8 | 无 |
+| 认证 / 限流 | Auth + Rate Limit | 无 |
+
 > 站在 **企业级 AI 数字人 / AI Agent / AI 客服** 的角度，一个真正可商用的 TTS 平台，已经不是单个模型，而是一个完整的**语音生成平台（Speech Generation Platform）**。
 >
 > 一般拆成 **8~10 个微服务**。
