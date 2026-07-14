@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tts-svc
+  labels:
+    app: tts-svc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tts-svc
+  template:
+    metadata:
+      labels:
+        app: tts-svc
+    spec:
+      serviceAccountName: livestream-tts-sa
+      nodeSelector:
+        accelerator: nvidia-l40s  # GPU node pool
+      containers:
+        - name: tts-svc
+          image: ghcr.io/livestream-tts/tts-svc:latest
+          ports:
+            - containerPort: 50051
+              name: grpc
+            - containerPort: 8080
+              name: http
+          env:
+            - name: ENV
+              value: "production"
+            - name: TTS_USE_GPU
+              value: "true"
+            - name: TTS_MODEL_PATH
+              value: "/models/cosyvoice2"
+          resources:
+            requests:
+              cpu: "2"
+              memory: "4Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "8"
+              memory: "16Gi"
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: models
+              mountPath: /models
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: models
+          hostPath:
+            path: /data/models

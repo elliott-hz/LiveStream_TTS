@@ -1,0 +1,164 @@
+// Script Service — AI Script Generation, Editing, Versioning, Templates
+syntax = "proto3";
+
+package script.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/script/v1;scriptv1";
+
+service ScriptService {
+  // ── Script CRUD ──
+  rpc CreateScript(CreateScriptRequest) returns (Script);
+  rpc GetScript(GetScriptRequest) returns (Script);
+  rpc UpdateScript(UpdateScriptRequest) returns (Script);
+  rpc DeleteScript(DeleteScriptRequest) returns (common.v1.Error);
+  rpc ListScripts(ListScriptsRequest) returns (ListScriptsResponse);
+
+  // ── AI Generation ──
+  rpc GenerateScript(GenerateScriptRequest) returns (Script);
+
+  // ── Version Management ──
+  rpc PublishVersion(PublishVersionRequest) returns (Script);
+  rpc RollbackVersion(RollbackVersionRequest) returns (Script);
+
+  // ── Templates ──
+  rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
+}
+
+// ── Script Entity ──
+
+message Script {
+  string script_id = 1;
+  string product_id = 2;
+  string store_id = 3;
+  int32 version = 4;
+  ScriptStatus status = 5;
+  ScriptStyle style = 6;
+  string industry = 7;
+  repeated ScriptSection sections = 8;
+  int32 total_duration_estimate_ms = 9;
+  string ai_generated_prompt = 10;
+  common.v1.AuditInfo audit_info = 11;
+}
+
+message ScriptSection {
+  string section_id = 1;
+  int32 order = 2;
+  SectionType type = 3;
+  string text = 4;
+  int32 duration_estimate_ms = 5;
+  string emotion = 6;          // neutral, happy, excited, warm, sad
+  string action = 7;           // wave_hand, point_product, show_detail, show_product_card
+  bool show_product_card = 8;
+  string highlight_selling_point = 9;
+}
+
+enum ScriptStatus {
+  SCRIPT_STATUS_UNSPECIFIED = 0;
+  SCRIPT_STATUS_DRAFT = 1;
+  SCRIPT_STATUS_PENDING_REVIEW = 2;
+  SCRIPT_STATUS_APPROVED = 3;
+  SCRIPT_STATUS_REJECTED = 4;
+  SCRIPT_STATUS_ARCHIVED = 5;
+}
+
+enum ScriptStyle {
+  SCRIPT_STYLE_UNSPECIFIED = 0;
+  SCRIPT_STYLE_PASSIONATE = 1;      // 激情带货
+  SCRIPT_STYLE_PROFESSIONAL = 2;    // 专业讲解
+  SCRIPT_STYLE_STORY = 3;           // 故事营销
+  SCRIPT_STYLE_COMPARISON = 4;      // 对比评测
+  SCRIPT_STYLE_FLASH_SALE = 5;      // 限时秒杀
+}
+
+enum SectionType {
+  SECTION_TYPE_UNSPECIFIED = 0;
+  SECTION_TYPE_OPENING = 1;
+  SECTION_TYPE_PRODUCT_INTRO = 2;
+  SECTION_TYPE_FABRIC_DETAIL = 3;
+  SECTION_TYPE_SIZE_GUIDE = 4;
+  SECTION_TYPE_TRY_ON = 5;
+  SECTION_TYPE_PRICE_PROMO = 6;
+  SECTION_TYPE_CALL_TO_ACTION = 7;
+  SECTION_TYPE_CLOSING = 8;
+  SECTION_TYPE_QA = 9;
+}
+
+// ── CRUD ──
+
+message CreateScriptRequest {
+  string product_id = 1;
+  string store_id = 2;
+  ScriptStyle style = 3;
+  repeated ScriptSection sections = 4;
+}
+
+message GetScriptRequest {
+  string script_id = 1;
+  optional int32 version = 2;
+}
+
+message UpdateScriptRequest {
+  string script_id = 1;
+  optional ScriptStyle style = 2;
+  repeated ScriptSection sections = 3;
+}
+
+message DeleteScriptRequest {
+  string script_id = 1;
+}
+
+message ListScriptsRequest {
+  string store_id = 1;
+  optional ScriptStatus status = 2;
+  optional string product_id = 3;
+  common.v1.Pagination pagination = 4;
+}
+
+message ListScriptsResponse {
+  repeated Script scripts = 1;
+  common.v1.PageInfo page_info = 2;
+}
+
+// ── AI Generation ──
+
+message GenerateScriptRequest {
+  string product_id = 1;
+  ScriptStyle style = 2;
+  int32 target_duration_seconds = 3;  // target 60-300
+  repeated string highlight_selling_points = 4;
+  string extra_context = 5;
+}
+
+// ── Version ──
+
+message PublishVersionRequest {
+  string script_id = 1;
+  string note = 2;
+}
+
+message RollbackVersionRequest {
+  string script_id = 1;
+  int32 target_version = 2;
+}
+
+// ── Template ──
+
+message ListTemplatesRequest {
+  optional string industry = 1;
+  optional ScriptStyle style = 2;
+}
+
+message ListTemplatesResponse {
+  repeated ScriptTemplate templates = 1;
+}
+
+message ScriptTemplate {
+  string template_id = 1;
+  string name = 2;
+  string industry = 3;
+  ScriptStyle style = 4;
+  repeated ScriptSection template_sections = 5;
+  string description = 6;
+}

@@ -1,0 +1,103 @@
+// Avatar Service — Digital Human Avatar CRUD, Clone, Audit
+syntax = "proto3";
+
+package avatar.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/avatar/v1;avatarv1";
+
+service AvatarService {
+  rpc CreateAvatar(CreateAvatarRequest) returns (Avatar);
+  rpc GetAvatar(GetAvatarRequest) returns (Avatar);
+  rpc UpdateAvatar(UpdateAvatarRequest) returns (Avatar);
+  rpc DeleteAvatar(DeleteAvatarRequest) returns (common.v1.Error);
+  rpc ListAvatars(ListAvatarsRequest) returns (ListAvatarsResponse);
+
+  // Clone
+  rpc StartClone(StartCloneRequest) returns (CloneTask);
+  rpc GetCloneTask(GetCloneTaskRequest) returns (CloneTask);
+}
+
+message Avatar {
+  string avatar_id = 1;
+  string store_id = 2;
+  string name = 3;
+  AvatarType type = 4;
+  AvatarStatus status = 5;
+  string thumbnail_url = 6;
+  string model_path = 7;
+  AvatarCustomParam custom_params = 8;
+  common.v1.AuditInfo audit_info = 9;
+}
+
+enum AvatarType {
+  AVATAR_TYPE_UNSPECIFIED = 0;
+  AVATAR_TYPE_2D_REAL = 1;
+  AVATAR_TYPE_3D_CARTOON = 2;
+  AVATAR_TYPE_2D_CARTOON = 3;
+}
+
+enum AvatarStatus {
+  AVATAR_STATUS_UNSPECIFIED = 0;
+  AVATAR_STATUS_ACTIVE = 1;
+  AVATAR_STATUS_CLONING = 2;
+  AVATAR_STATUS_PENDING_AUDIT = 3;
+  AVATAR_STATUS_REJECTED = 4;
+}
+
+message AvatarCustomParam {
+  float skin_smooth = 1;
+  float face_thin = 2;
+  float eye_size = 3;
+  float lip_thickness = 4;
+}
+
+message CloneTask {
+  string task_id = 1;
+  string avatar_id = 2;
+  CloneStatus status = 3;
+  int32 progress_percent = 4;
+  string error_message = 5;
+  int64 created_at = 6;
+  int64 completed_at = 7;
+}
+
+enum CloneStatus {
+  CLONE_STATUS_UNSPECIFIED = 0;
+  CLONE_STATUS_UPLOADING = 1;
+  CLONE_STATUS_PROCESSING = 2;
+  CLONE_STATUS_TRAINING = 3;
+  CLONE_STATUS_SUCCESS = 4;
+  CLONE_STATUS_FAILED = 5;
+}
+
+message CreateAvatarRequest {
+  string store_id = 1;
+  string name = 2;
+  AvatarType type = 3;
+}
+
+message GetAvatarRequest { string avatar_id = 1; }
+message UpdateAvatarRequest {
+  string avatar_id = 1;
+  optional string name = 2;
+  optional AvatarCustomParam custom_params = 3;
+}
+message DeleteAvatarRequest { string avatar_id = 1; }
+message ListAvatarsRequest {
+  string store_id = 1;
+  optional AvatarType type = 2;
+  common.v1.Pagination pagination = 3;
+}
+message ListAvatarsResponse {
+  repeated Avatar avatars = 1;
+  common.v1.PageInfo page_info = 2;
+}
+
+message StartCloneRequest {
+  string avatar_id = 1;
+  bytes video_data = 2;
+  int32 duration_seconds = 3;
+}
+message GetCloneTaskRequest { string task_id = 1; }

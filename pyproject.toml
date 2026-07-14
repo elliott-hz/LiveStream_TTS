@@ -1,0 +1,63 @@
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  \.git
+  | \.venv
+  | __pycache__
+  | \.mypy_cache
+  | \.pytest_cache
+  | build
+  | dist
+  | proto
+)/'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["proto/", ".git/", ".venv/", "__pycache__/", "build/", "dist/"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "W",   # pycodestyle warnings
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+ignore = ["E501"]  # line too long handled by black
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+show_error_codes = true
+exclude = ["proto/", "build/", "dist/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "services/*/tests"]
+pythonpath = ["."]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "unit: unit tests",
+    "integration: integration tests requiring external services",
+    "e2e: end-to-end tests",
+    "slow: slow running tests",
+]
+
+[tool.coverage.run]
+source = ["services", "libs"]
+omit = ["*/tests/*", "*/proto/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]

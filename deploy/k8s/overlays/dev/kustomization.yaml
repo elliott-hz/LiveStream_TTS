@@ -1,0 +1,18 @@
+# Dev Environment Overlay
+# Minimal replicas, lower resource limits, debug logging
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+namespace: livestream-tts-dev
+
+commonLabels:
+  environment: dev
+
+# Dev-specific patches
+patchesStrategicMerge:
+  - replicas-patch.yaml
+  - resources-patch.yaml

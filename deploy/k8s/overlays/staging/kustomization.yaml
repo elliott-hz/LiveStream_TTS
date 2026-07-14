@@ -1,0 +1,13 @@
+# Staging Environment Overlay
+# 2 replicas, pre-production config
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+namespace: livestream-tts-staging
+
+commonLabels:
+  environment: staging

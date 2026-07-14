@@ -1,0 +1,173 @@
+// TTS Service — CosyVoice2 Speech Synthesis Engine
+// Migrated & expanded from existing proto/tts.proto
+syntax = "proto3";
+
+package tts.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/tts/v1;ttsv1";
+
+service TTSService {
+  // ── Streaming Synthesis ──
+  rpc Synthesize(SynthesisRequest) returns (stream SynthesisResponse);
+
+  // ── Voice Management ──
+  rpc ListVoices(ListVoicesRequest) returns (ListVoicesResponse);
+  rpc GetVoice(GetVoiceRequest) returns (Voice);
+  rpc CreateVoice(CreateVoiceRequest) returns (Voice);
+  rpc DeleteVoice(DeleteVoiceRequest) returns (common.v1.Error);
+
+  // ── Audio Cache ──
+  rpc WarmupCache(WarmupCacheRequest) returns (WarmupCacheResponse);
+}
+
+// ── Synthesis ──
+
+message SynthesisRequest {
+  string request_id = 1;
+  string text = 2;
+  string voice_id = 3;
+  Emotion emotion = 4;
+  float speed = 5;               // 0.5 - 2.0, default 1.0
+  float pitch = 6;               // -12.0 - 12.0 (semitones), default 0.0
+  AudioFormat format = 7;
+  bool enable_cache = 8;         // default true
+  map<string, string> metadata = 9;
+}
+
+message SynthesisResponse {
+  oneof payload {
+    AudioChunk audio_chunk = 1;
+    SynthesisComplete complete = 2;
+    SynthesisError error = 3;
+  }
+}
+
+message AudioChunk {
+  string request_id = 1;
+  int32 sequence = 2;
+  bytes data = 3;                // PCM or encoded audio
+  int32 sample_rate = 4;
+  bool is_final = 5;
+}
+
+message SynthesisComplete {
+  string request_id = 1;
+  int32 total_chunks = 2;
+  int32 duration_ms = 3;
+  int32 sample_rate = 4;
+  bool cache_hit = 5;
+}
+
+message SynthesisError {
+  string request_id = 1;
+  int32 error_code = 2;
+  string message = 3;
+}
+
+enum Emotion {
+  EMOTION_UNSPECIFIED = 0;
+  EMOTION_NEUTRAL = 1;
+  EMOTION_HAPPY = 2;
+  EMOTION_EXCITED = 3;
+  EMOTION_WARM = 4;
+  EMOTION_SAD = 5;
+  EMOTION_ANGRY = 6;
+}
+
+enum AudioFormat {
+  AUDIO_FORMAT_UNSPECIFIED = 0;
+  AUDIO_FORMAT_PCM16 = 1;           // 16-bit PCM, 16000 Hz
+  AUDIO_FORMAT_PCM24 = 2;           // 24-bit PCM, 24000 Hz
+  AUDIO_FORMAT_MP3 = 3;
+  AUDIO_FORMAT_AAC = 4;
+}
+
+// ── Voice ──
+
+message Voice {
+  string voice_id = 1;
+  string name = 2;
+  Gender gender = 3;
+  string age_range = 4;              // "25-35"
+  string language = 5;               // zh-CN, en-US
+  VoiceStyle style = 6;
+  string description = 7;
+  VoiceStatus status = 8;
+  VoiceQualityMetrics quality = 9;
+  common.v1.AuditInfo audit_info = 10;
+}
+
+enum Gender {
+  GENDER_UNSPECIFIED = 0;
+  GENDER_MALE = 1;
+  GENDER_FEMALE = 2;
+}
+
+enum VoiceStyle {
+  VOICE_STYLE_UNSPECIFIED = 0;
+  VOICE_STYLE_PASSIONATE = 1;        // 激情带货
+  VOICE_STYLE_PROFESSIONAL = 2;      // 专业讲解
+  VOICE_STYLE_GENTLE = 3;            // 温柔知性
+  VOICE_STYLE_LIVELY = 4;            // 活泼可爱
+}
+
+enum VoiceStatus {
+  VOICE_STATUS_UNSPECIFIED = 0;
+  VOICE_STATUS_ACTIVE = 1;
+  VOICE_STATUS_CLONING = 2;
+  VOICE_STATUS_FAILED = 3;
+}
+
+message VoiceQualityMetrics {
+  float mos_score = 1;               // 0-5 Mean Opinion Score
+  float similarity_score = 2;        // 0-1 speaker similarity
+  int64 evaluated_at = 3;
+}
+
+// ── Voice CRUD ──
+
+message ListVoicesRequest {
+  optional Gender gender = 1;
+  optional VoiceStyle style = 2;
+  optional string language = 3;
+  common.v1.Pagination pagination = 4;
+}
+
+message ListVoicesResponse {
+  repeated Voice voices = 1;
+  common.v1.PageInfo page_info = 2;
+}
+
+message GetVoiceRequest {
+  string voice_id = 1;
+}
+
+message CreateVoiceRequest {
+  string name = 1;
+  Gender gender = 2;
+  string age_range = 3;
+  string language = 4;
+  VoiceStyle style = 5;
+  string description = 6;
+  bytes prompt_audio = 7;            // 15s reference audio for cloning
+  string prompt_transcript = 8;
+}
+
+message DeleteVoiceRequest {
+  string voice_id = 1;
+}
+
+// ── Cache ──
+
+message WarmupCacheRequest {
+  repeated string texts = 1;
+  string voice_id = 2;
+  Emotion emotion = 3;
+}
+
+message WarmupCacheResponse {
+  int32 cached_count = 1;
+  int32 failed_count = 2;
+}

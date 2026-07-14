@@ -1,0 +1,132 @@
+// Voice Service — Voice/Timbre CRUD, Clone, Embedding Management
+syntax = "proto3";
+
+package voice.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/voice/v1;voicev1";
+
+service VoiceService {
+  rpc CreateVoice(CreateVoiceRequest) returns (Voice);
+  rpc GetVoice(GetVoiceRequest) returns (Voice);
+  rpc UpdateVoice(UpdateVoiceRequest) returns (Voice);
+  rpc DeleteVoice(DeleteVoiceRequest) returns (common.v1.Error);
+  rpc ListVoices(ListVoicesRequest) returns (ListVoicesResponse);
+
+  // Clone
+  rpc StartClone(StartVoiceCloneRequest) returns (VoiceCloneTask);
+  rpc GetCloneTask(GetVoiceCloneTaskRequest) returns (VoiceCloneTask);
+
+  // Preview
+  rpc PreviewVoice(PreviewVoiceRequest) returns (PreviewVoiceResponse);
+}
+
+message Voice {
+  string voice_id = 1;
+  string store_id = 2;
+  string name = 3;
+  Gender gender = 4;
+  string age_range = 5;
+  string language = 6;
+  VoiceStyle style = 7;
+  VoiceStatus status = 8;
+  bool is_public = 9;
+  PaintingQualityMetrics quality = 10;
+  common.v1.AuditInfo audit_info = 11;
+}
+
+enum Gender {
+  GENDER_UNSPECIFIED = 0;
+  GENDER_MALE = 1;
+  GENDER_FEMALE = 2;
+}
+
+enum VoiceStyle {
+  VOICE_STYLE_UNSPECIFIED = 0;
+  VOICE_STYLE_PASSIONATE = 1;
+  VOICE_STYLE_PROFESSIONAL = 2;
+  VOICE_STYLE_GENTLE = 3;
+  VOICE_STYLE_LIVELY = 4;
+}
+
+enum VoiceStatus {
+  VOICE_STATUS_UNSPECIFIED = 0;
+  VOICE_STATUS_ACTIVE = 1;
+  VOICE_STATUS_CLONING = 2;
+  VOICE_STATUS_FAILED = 3;
+}
+
+message PaintingQualityMetrics {
+  float mos_score = 1;
+  float similarity_score = 2;
+  int64 evaluated_at = 3;
+}
+
+message VoiceCloneTask {
+  string task_id = 1;
+  string voice_id = 2;
+  CloneStatus status = 3;
+  int32 progress_percent = 4;
+  string error_message = 5;
+  int64 created_at = 6;
+  int64 completed_at = 7;
+}
+
+enum CloneStatus {
+  CLONE_STATUS_UNSPECIFIED = 0;
+  CLONE_STATUS_UPLOADING = 1;
+  CLONE_STATUS_PROCESSING = 2;
+  CLONE_STATUS_SUCCESS = 3;
+  CLONE_STATUS_FAILED = 4;
+}
+
+message CreateVoiceRequest {
+  string store_id = 1;
+  string name = 2;
+  Gender gender = 3;
+  string age_range = 4;
+  string language = 5;
+  VoiceStyle style = 6;
+  bytes prompt_audio = 7;
+  string prompt_transcript = 8;
+}
+
+message GetVoiceRequest { string voice_id = 1; }
+
+message UpdateVoiceRequest {
+  string voice_id = 1;
+  optional string name = 2;
+}
+
+message DeleteVoiceRequest { string voice_id = 1; }
+
+message ListVoicesRequest {
+  string store_id = 1;
+  optional Gender gender = 2;
+  optional VoiceStyle style = 3;
+  common.v1.Pagination pagination = 4;
+}
+
+message ListVoicesResponse {
+  repeated Voice voices = 1;
+  common.v1.PageInfo page_info = 2;
+}
+
+message StartVoiceCloneRequest {
+  string voice_id = 1;
+  bytes prompt_audio = 2;
+  string prompt_transcript = 3;
+}
+
+message GetVoiceCloneTaskRequest { string task_id = 1; }
+
+message PreviewVoiceRequest {
+  string voice_id = 1;
+  string text = 2;
+}
+
+message PreviewVoiceResponse {
+  string preview_url = 1;
+  int32 duration_ms = 2;
+}

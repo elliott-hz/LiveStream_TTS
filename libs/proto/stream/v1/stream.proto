@@ -1,0 +1,113 @@
+// Stream Service — RTMP/SRT Push, Transcoding, Recording, HLS Packaging
+syntax = "proto3";
+
+package stream.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/stream/v1;streamv1";
+
+service StreamService {
+  // ── Push Stream ──
+  rpc StartPush(StartPushRequest) returns (StreamSession);
+  rpc StopPush(StopPushRequest) returns (common.v1.Error);
+  rpc GetPushStatus(GetPushStatusRequest) returns (PushStatus);
+
+  // ── Recording ──
+  rpc StartRecording(StartRecordingRequest) returns (Recording);
+  rpc StopRecording(StopRecordingRequest) returns (Recording);
+
+  // ── Transcoding ──
+  rpc Transcode(TranscodeRequest) returns (TranscodeJob);
+  rpc GetTranscodeJob(GetTranscodeJobRequest) returns (TranscodeJob);
+}
+
+message StreamSession {
+  string session_id = 1;
+  string live_room_id = 2;
+  StreamStatus status = 3;
+  string rtmp_url = 4;
+  string stream_key = 5;
+  repeated PlatformStream platforms = 6;
+  int64 started_at = 7;
+  int64 bytes_sent = 8;
+}
+
+message PlatformStream {
+  string platform = 1;
+  string rtmp_url = 2;
+  StreamStatus status = 3;
+}
+
+enum StreamStatus {
+  STREAM_STATUS_UNSPECIFIED = 0;
+  STREAM_STATUS_CONNECTING = 1;
+  STREAM_STATUS_STREAMING = 2;
+  STREAM_STATUS_DISCONNECTED = 3;
+  STREAM_STATUS_ERROR = 4;
+}
+
+message PushStatus {
+  string session_id = 1;
+  StreamStatus status = 2;
+  int32 fps = 3;
+  int32 bitrate_kbps = 4;
+  int32 uptime_seconds = 5;
+  int32 dropped_frames = 6;
+  float health_score = 7;
+}
+
+message Recording {
+  string recording_id = 1;
+  string live_room_id = 2;
+  RecordingStatus status = 3;
+  string hls_url = 4;
+  string mp4_url = 5;
+  int64 file_size_bytes = 6;
+  int32 duration_seconds = 7;
+  int64 started_at = 8;
+}
+
+enum RecordingStatus {
+  RECORDING_STATUS_UNSPECIFIED = 0;
+  RECORDING_STATUS_RECORDING = 1;
+  RECORDING_STATUS_COMPLETED = 2;
+  RECORDING_STATUS_FAILED = 3;
+}
+
+message TranscodeJob {
+  string job_id = 1;
+  TranscodeStatus status = 3;
+  string input_url = 4;
+  string output_url = 5;
+  int32 progress_percent = 6;
+}
+
+enum TranscodeStatus {
+  TRANSCODE_STATUS_UNSPECIFIED = 0;
+  TRANSCODE_STATUS_QUEUED = 1;
+  TRANSCODE_STATUS_PROCESSING = 2;
+  TRANSCODE_STATUS_COMPLETED = 3;
+  TRANSCODE_STATUS_FAILED = 4;
+}
+
+message StartPushRequest { string live_room_id = 1; }
+message StopPushRequest { string session_id = 1; }
+message GetPushStatusRequest { string session_id = 1; }
+
+message StartRecordingRequest { string live_room_id = 1; string format = 2; }
+message StopRecordingRequest { string recording_id = 1; }
+
+message TranscodeRequest {
+  string recording_id = 1;
+  VideoConfig target = 2;
+  message VideoConfig {
+    int32 width = 1;
+    int32 height = 2;
+    int32 fps = 3;
+    int32 bitrate_kbps = 4;
+    string format = 5;
+  }
+}
+
+message GetTranscodeJobRequest { string job_id = 1; }

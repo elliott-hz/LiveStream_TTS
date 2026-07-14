@@ -1,0 +1,26 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v1
+      - name: Build manifests
+        run: |
+          kustomize build deploy/k8s/overlays/staging > staging-manifests.yaml
+      - name: Deploy to K8s
+        uses: azure/k8s-deploy@v4
+        with:
+          manifests: staging-manifests.yaml
+          namespace: livestream-tts-staging
+      - name: Verify deployment
+        run: |
+          echo "Deployment to staging initiated. Monitor via ArgoCD dashboard."

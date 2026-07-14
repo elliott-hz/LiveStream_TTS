@@ -1,0 +1,67 @@
+// Profile Service — User Profile, Behavior Tracking, Audience Segmentation
+syntax = "proto3";
+
+package profile.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/profile/v1;profilev1";
+
+service ProfileService {
+  // ── Profile ──
+  rpc GetProfile(GetProfileRequest) returns (AudienceProfile);
+  rpc UpdateProfile(UpdateProfileRequest) returns (AudienceProfile);
+
+  // ── Behavior Tracking ──
+  rpc TrackEvent(TrackEventRequest) returns (common.v1.Error);
+
+  // ── Segmentation ──
+  rpc GetSegment(GetSegmentRequest) returns (Segment);
+}
+
+message AudienceProfile {
+  string profile_id = 1;
+  string platform_user_id = 2;
+  string platform = 3;
+  string nickname = 4;
+  repeated string tags = 5;
+  int32 visit_count = 6;
+  int32 purchase_count = 7;
+  int64 total_spent_fen = 8;
+  repeated string interest_categories = 9;
+  string last_interaction_text = 10;
+  int64 last_seen_at = 11;
+  int64 created_at = 12;
+}
+
+message Segment {
+  string segment_id = 1;
+  string store_id = 2;
+  string name = 3;
+  string rule_json = 4;
+  int32 audience_size = 5;
+}
+
+message GetProfileRequest {
+  string platform_user_id = 1;
+  string platform = 2;
+}
+
+message UpdateProfileRequest {
+  string platform_user_id = 1;
+  string platform = 2;
+  optional string nickname = 3;
+  repeated string tags = 4;
+}
+
+message TrackEventRequest {
+  string platform_user_id = 1;
+  string platform = 2;
+  string event_type = 3;
+  string live_room_id = 4;
+  map<string, string> properties = 5;
+}
+
+message GetSegmentRequest {
+  string segment_id = 1;
+}

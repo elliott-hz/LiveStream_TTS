@@ -1,0 +1,8 @@
+[project]
+name = "tts-svc"
+version = "0.1.0"
+description = "TTS Engine Service — CosyVoice2 Speech Synthesis"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+gpu = ["torch>=2.1", "tensorrt>=8.6", "cosyvoice2"]

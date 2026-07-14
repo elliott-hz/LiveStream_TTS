@@ -1,0 +1,159 @@
+// Interaction Service — Real-time Interaction Pipeline (Core Runtime)
+// Covers: Danmaku → Profile → NLP → RAG → LLM → [Voice | Text Comment]
+syntax = "proto3";
+
+package interact.v1;
+
+import "common/v1/common.proto";
+import "tts/v1/tts.proto";
+import "nlp/v1/nlp.proto";
+
+option go_package = "github.com/livestream-tts/proto/interact/v1;interactv1";
+
+service InteractionService {
+  // ── Session ──
+  rpc StartSession(StartSessionRequest) returns (Session);
+  rpc StopSession(StopSessionRequest) returns (common.v1.Error);
+  rpc GetSession(GetSessionRequest) returns (Session);
+
+  // ── Pipeline ──
+  rpc ProcessDanmaku(ProcessDanmakuRequest) returns (ProcessDanmakuResponse);
+
+  // ── Channel Router ──
+  rpc RouteChannel(RouteChannelRequest) returns (RouteChannelResponse);
+
+  // ── AI Text Moderator (Field Control) ──
+  rpc GetModeratorAction(GetModeratorActionRequest) returns (ModeratorAction);
+}
+
+// ── Session ──
+
+message Session {
+  string session_id = 1;
+  string live_room_id = 2;
+  string store_id = 3;
+  SessionConfig config = 4;
+  SessionStatus status = 5;
+  SessionStats stats = 6;
+  int64 started_at = 7;
+  int64 ended_at = 8;
+}
+
+message SessionConfig {
+  string voice_id = 1;
+  string avatar_id = 2;
+  string system_prompt = 3;          // 主播人设 Prompt
+  repeated string banned_words = 4;
+  bool enable_moderator = 5;         // AI 文字场控开关
+  bool enable_product_card = 6;      // 自动弹商品卡
+  float reply_threshold = 7;         // 仅回复意图置信度 >= 此值
+  ModeratorConfig moderator_config = 8;
+}
+
+message ModeratorConfig {
+  string moderator_account_id = 1;   // 场控账号
+  bool auto_send_comments = 2;       // 自动发送场控评论
+  bool auto_send_coupons = 3;        // 自动弹券
+  bool auto_send_product_card = 4;   // 自动弹商品卡
+  bool auto_hide_negative = 5;       // 自动隐藏负面评论
+  double comment_interval_seconds = 6;  // 场控评论间隔
+}
+
+enum SessionStatus {
+  SESSION_STATUS_UNSPECIFIED = 0;
+  SESSION_STATUS_RUNNING = 1;
+  SESSION_STATUS_PAUSED = 2;
+  SESSION_STATUS_STOPPED = 3;
+}
+
+message SessionStats {
+  int32 total_danmaku = 1;
+  int32 voice_replies = 2;
+  int32 text_replies = 3;
+  int32 moderator_actions = 4;
+  int32 ignored_messages = 5;
+  float avg_latency_ms = 6;
+}
+
+message StartSessionRequest {
+  string live_room_id = 1;
+  SessionConfig config = 2;
+}
+
+message StopSessionRequest {
+  string session_id = 1;
+}
+
+message GetSessionRequest {
+  string session_id = 1;
+}
+
+// ── Danmaku Processing ──
+
+message ProcessDanmakuRequest {
+  string session_id = 1;
+  string danmaku_id = 2;
+  string text = 3;
+  string platform_user_id = 4;
+  string platform = 5;               // taobao, douyin, jd, kuaishou
+  int64 timestamp = 6;
+}
+
+message ProcessDanmakuResponse {
+  string reply_id = 1;
+  Channel channel = 2;               // routed channel
+  string reply_text = 3;
+  tts.v1.Emotion emotion = 4;
+  string action = 5;                 // wave_hand, point_product, show_detail, show_product_card
+  repeated string trigger_coupon_ids = 6;
+  int64 pipeline_latency_ms = 7;
+}
+
+enum Channel {
+  CHANNEL_UNSPECIFIED = 0;
+  CHANNEL_VOICE = 1;                 // 语音播报
+  CHANNEL_TEXT = 2;                  // 文字评论
+  CHANNEL_BOTH = 3;                  // 语音 + 文字
+  CHANNEL_IGNORE = 4;                // 不回复
+}
+
+// ── Channel Router ──
+
+message RouteChannelRequest {
+  string text = 1;
+  nlp.v1.IntentCategory intent = 2;
+  float intent_confidence = 3;
+  nlp.v1.Sentiment sentiment = 4;
+  string user_profile_tags = 5;      // JSON: {"is_vip": true, "purchase_count": 3}
+}
+
+message RouteChannelResponse {
+  Channel channel = 1;
+  string reason = 2;
+}
+
+// ── AI Text Moderator ──
+
+message GetModeratorActionRequest {
+  string session_id = 1;
+  string trigger_event = 2;          // "interval", "low_engagement", "negative_comment", "product_highlight"
+  map<string, string> context = 3;
+}
+
+message ModeratorAction {
+  ModeratorActionType action_type = 1;
+  string comment_text = 2;           // 要发送的评论文本
+  string coupon_id = 3;              // 要弹出的优惠券
+  string product_id = 4;             // 要弹出的商品卡
+  bool hide_comment_id = 5;          // 要隐藏的评论 ID
+}
+
+enum ModeratorActionType {
+  MODERATOR_ACTION_TYPE_UNSPECIFIED = 0;
+  MODERATOR_ACTION_TYPE_SEND_COMMENT = 1;
+  MODERATOR_ACTION_TYPE_POP_COUPON = 2;
+  MODERATOR_ACTION_TYPE_POP_PRODUCT_CARD = 3;
+  MODERATOR_ACTION_TYPE_HIDE_COMMENT = 4;
+  MODERATOR_ACTION_TYPE_PIN_COMMENT = 5;
+  MODERATOR_ACTION_TYPE_NO_ACTION = 6;
+}

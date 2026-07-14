@@ -1,0 +1,130 @@
+// Knowledge Service — Knowledge Base, Document Parsing, Vector Retrieval (RAG)
+syntax = "proto3";
+
+package knowledge.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/knowledge/v1;knowledgev1";
+
+service KnowledgeService {
+  // ── Knowledge Base ──
+  rpc CreateKB(CreateKBRequest) returns (KnowledgeBase);
+  rpc GetKB(GetKBRequest) returns (KnowledgeBase);
+  rpc DeleteKB(DeleteKBRequest) returns (common.v1.Error);
+  rpc ListKBs(ListKBsRequest) returns (ListKBsResponse);
+
+  // ── Documents ──
+  rpc UploadDocument(UploadDocumentRequest) returns (Document);
+  rpc DeleteDocument(DeleteDocumentRequest) returns (common.v1.Error);
+
+  // ── FAQ ──
+  rpc CreateFAQ(CreateFAQRequest) returns (FAQ);
+  rpc DeleteFAQ(DeleteFAQRequest) returns (common.v1.Error);
+  rpc ListFAQs(ListFAQsRequest) returns (ListFAQsResponse);
+
+  // ── Retrieval ──
+  rpc Search(SearchRequest) returns (SearchResponse);
+}
+
+message KnowledgeBase {
+  string kb_id = 1;
+  string store_id = 2;
+  string name = 3;
+  string description = 4;
+  string industry = 5;
+  int32 document_count = 6;
+  int32 faq_count = 7;
+  int32 total_chunks = 8;
+  KBStatus status = 9;
+  common.v1.AuditInfo audit_info = 10;
+}
+
+enum KBStatus {
+  KB_STATUS_UNSPECIFIED = 0;
+  KB_STATUS_ACTIVE = 1;
+  KB_STATUS_BUILDING = 2;
+  KB_STATUS_ERROR = 3;
+}
+
+message Document {
+  string doc_id = 1;
+  string kb_id = 2;
+  string filename = 3;
+  string file_type = 4;
+  int64 file_size_bytes = 5;
+  int32 chunk_count = 6;
+  DocStatus status = 7;
+  common.v1.AuditInfo audit_info = 8;
+}
+
+enum DocStatus {
+  DOC_STATUS_UNSPECIFIED = 0;
+  DOC_STATUS_UPLOADING = 1;
+  DOC_STATUS_CHUNKING = 2;
+  DOC_STATUS_EMBEDDING = 3;
+  DOC_STATUS_READY = 4;
+  DOC_STATUS_FAILED = 5;
+}
+
+message FAQ {
+  string faq_id = 1;
+  string kb_id = 2;
+  string question = 3;
+  string answer = 4;
+  repeated string tags = 5;
+  common.v1.AuditInfo audit_info = 6;
+}
+
+message SearchRequest {
+  string kb_id = 1;
+  string query = 2;
+  int32 top_k = 3;
+  float min_score = 4;
+}
+
+message SearchResponse {
+  repeated SearchResult results = 1;
+  int64 retrieval_ms = 2;
+}
+
+message SearchResult {
+  string chunk_id = 1;
+  string content = 2;
+  float score = 3;
+  string source_doc_id = 4;
+  string source_filename = 5;
+}
+
+message CreateKBRequest { string store_id = 1; string name = 2; string description = 3; string industry = 4; }
+message GetKBRequest { string kb_id = 1; }
+message DeleteKBRequest { string kb_id = 1; }
+message ListKBsRequest { string store_id = 1; common.v1.Pagination pagination = 2; }
+message ListKBsResponse { repeated KnowledgeBase kbs = 1; common.v1.PageInfo page_info = 2; }
+
+message UploadDocumentRequest {
+  string kb_id = 1;
+  string filename = 2;
+  bytes content = 3;
+}
+
+message DeleteDocumentRequest { string doc_id = 1; }
+
+message CreateFAQRequest {
+  string kb_id = 1;
+  string question = 2;
+  string answer = 3;
+  repeated string tags = 4;
+}
+
+message DeleteFAQRequest { string faq_id = 1; }
+
+message ListFAQsRequest {
+  string kb_id = 1;
+  common.v1.Pagination pagination = 2;
+}
+
+message ListFAQsResponse {
+  repeated FAQ faqs = 1;
+  common.v1.PageInfo page_info = 2;
+}

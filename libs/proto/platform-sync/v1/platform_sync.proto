@@ -1,0 +1,129 @@
+// Platform Sync Service — Multi-Platform Product & Order Sync
+syntax = "proto3";
+
+package platform_sync.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/platform_sync/v1;platformsyncv1";
+
+service PlatformSyncService {
+  // ── Product Sync ──
+  rpc SyncProduct(SyncProductRequest) returns (SyncJob);
+  rpc BulkSyncProducts(BulkSyncProductsRequest) returns (BulkSyncResponse);
+
+  // ── Store Binding ──
+  rpc BindPlatformStore(BindPlatformStoreRequest) returns (PlatformStoreBinding);
+  rpc UnbindPlatformStore(UnbindPlatformStoreRequest) returns (common.v1.Error);
+  rpc ListBindings(ListBindingsRequest) returns (ListBindingsResponse);
+
+  // ── Job Status ──
+  rpc GetSyncJob(GetSyncJobRequest) returns (SyncJob);
+  rpc ListSyncJobs(ListSyncJobsRequest) returns (ListSyncJobsResponse);
+}
+
+// ── Platform ──
+
+enum Platform {
+  PLATFORM_UNSPECIFIED = 0;
+  PLATFORM_TAOBAO = 1;
+  PLATFORM_DOUYIN = 2;
+  PLATFORM_JD = 3;
+  PLATFORM_KUAISHOU = 4;
+  PLATFORM_PINDUODUO = 5;
+}
+
+// ── Store Binding ──
+
+message PlatformStoreBinding {
+  string binding_id = 1;
+  string store_id = 2;
+  Platform platform = 3;
+  string platform_store_id = 4;
+  string platform_store_name = 5;
+  BindingStatus status = 6;
+  string access_token_encrypted = 7;
+  int64 token_expires_at = 8;
+  int64 bound_at = 9;
+}
+
+enum BindingStatus {
+  BINDING_STATUS_UNSPECIFIED = 0;
+  BINDING_STATUS_ACTIVE = 1;
+  BINDING_STATUS_EXPIRED = 2;
+  BINDING_STATUS_REVOKED = 3;
+}
+
+message BindPlatformStoreRequest {
+  string store_id = 1;
+  Platform platform = 2;
+  string auth_code = 3;          // OAuth authorization code
+}
+
+message UnbindPlatformStoreRequest {
+  string binding_id = 1;
+}
+
+message ListBindingsRequest {
+  string store_id = 1;
+}
+
+message ListBindingsResponse {
+  repeated PlatformStoreBinding bindings = 1;
+}
+
+// ── Sync ──
+
+message SyncProductRequest {
+  string product_id = 1;
+  Platform target_platform = 2;
+  SyncDirection direction = 3;
+}
+
+enum SyncDirection {
+  SYNC_DIRECTION_UNSPECIFIED = 0;
+  SYNC_DIRECTION_PUSH = 1;       // 推送至平台
+  SYNC_DIRECTION_PULL = 2;       // 从平台拉取
+}
+
+message BulkSyncProductsRequest {
+  repeated string product_ids = 1;
+  repeated Platform target_platforms = 2;
+}
+
+message BulkSyncResponse {
+  repeated SyncJob jobs = 1;
+}
+
+message SyncJob {
+  string job_id = 1;
+  string product_id = 2;
+  Platform platform = 3;
+  SyncJobStatus status = 4;
+  string platform_product_id = 5;
+  string error_message = 6;
+  int32 retry_count = 7;
+  int64 created_at = 8;
+  int64 completed_at = 9;
+}
+
+enum SyncJobStatus {
+  SYNC_JOB_STATUS_UNSPECIFIED = 0;
+  SYNC_JOB_STATUS_PENDING = 1;
+  SYNC_JOB_STATUS_IN_PROGRESS = 2;
+  SYNC_JOB_STATUS_SUCCESS = 3;
+  SYNC_JOB_STATUS_FAILED = 4;
+}
+
+message GetSyncJobRequest { string job_id = 1; }
+
+message ListSyncJobsRequest {
+  string store_id = 1;
+  optional SyncJobStatus status = 2;
+  common.v1.Pagination pagination = 3;
+}
+
+message ListSyncJobsResponse {
+  repeated SyncJob jobs = 1;
+  common.v1.PageInfo page_info = 2;
+}

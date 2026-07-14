@@ -1,0 +1,32 @@
+name: Proto Compilation Check
+
+on:
+  pull_request:
+    paths:
+      - "libs/proto/**"
+
+jobs:
+  proto-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install protoc
+        run: |
+          sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - name: Install Python tools
+        run: pip install grpcio-tools mypy-protobuf
+      - name: Compile protos
+        run: bash scripts/compile_protos.sh
+      - name: Check for uncommitted changes
+        run: |
+          if [ -n "$(git diff --name-only)" ]; then
+            echo "❌ Proto compilation produced uncommitted changes:"
+            git diff --name-only
+            echo ""
+            echo "Run 'bash scripts/compile_protos.sh' locally and commit the generated files."
+            exit 1
+          fi
+          echo "✅ Proto compilation is up to date."

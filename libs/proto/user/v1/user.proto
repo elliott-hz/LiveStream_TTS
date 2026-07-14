@@ -1,0 +1,169 @@
+// User Service — Authentication, RBAC, Store Management
+syntax = "proto3";
+
+package user.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/user/v1;userv1";
+
+service UserService {
+  // ── Auth ──
+  rpc Register(RegisterRequest) returns (AuthResponse);
+  rpc Login(LoginRequest) returns (AuthResponse);
+  rpc RefreshToken(RefreshRequest) returns (AuthResponse);
+  rpc Logout(LogoutRequest) returns (common.v1.Error);  // Empty on success → null
+
+  // ── User CRUD ──
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+
+  // ── Permission ──
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+  rpc AssignRole(AssignRoleRequest) returns (User);
+
+  // ── Store ──
+  rpc ListStores(ListStoresRequest) returns (ListStoresResponse);
+  rpc SwitchStore(SwitchStoreRequest) returns (Store);
+}
+
+// ── Entities ──
+
+message User {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  string phone = 4;
+  string avatar_url = 5;
+  Role role = 6;
+  repeated Store stores = 7;
+  string current_store_id = 8;
+  UserStatus status = 9;
+  common.v1.Timestamps timestamps = 10;
+}
+
+message Role {
+  string role_id = 1;
+  string name = 2;             // super_admin, platform_operator, content_reviewer, merchant_admin, merchant_editor, merchant_viewer
+  repeated string permissions = 3;  // e.g., ["product:read", "product:write"]
+  string description = 4;
+}
+
+message Store {
+  string store_id = 1;
+  string name = 2;
+  string logo_url = 3;
+  StorePlatform platforms = 4;
+  StoreStatus status = 5;
+}
+
+message StorePlatform {
+  bool taobao = 1;
+  bool douyin = 2;
+  bool jd = 3;
+  bool kuaishou = 4;
+  bool pinduoduo = 5;
+}
+
+enum UserStatus {
+  USER_STATUS_UNSPECIFIED = 0;
+  USER_STATUS_ACTIVE = 1;
+  USER_STATUS_SUSPENDED = 2;
+  USER_STATUS_DELETED = 3;
+}
+
+enum StoreStatus {
+  STORE_STATUS_UNSPECIFIED = 0;
+  STORE_STATUS_ACTIVE = 1;
+  STORE_STATUS_SUSPENDED = 2;
+}
+
+// ── Auth Messages ──
+
+message RegisterRequest {
+  string username = 1;
+  string email = 2;
+  string phone = 3;
+  string password = 4;
+  string store_name = 5;  // Initial store name
+}
+
+message LoginRequest {
+  string account = 1;     // email or phone
+  string password = 2;
+}
+
+message AuthResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;   // seconds
+  User user = 4;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message LogoutRequest {
+  string user_id = 1;
+}
+
+// ── User CRUD Messages ──
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message UpdateUserRequest {
+  string user_id = 1;
+  optional string username = 2;
+  optional string email = 3;
+  optional string phone = 4;
+  optional string avatar_url = 5;
+}
+
+message ListUsersRequest {
+  string store_id = 1;
+  optional UserStatus status = 2;
+  common.v1.Pagination pagination = 3;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  common.v1.PageInfo page_info = 2;
+}
+
+// ── Permission Messages ──
+
+message CheckPermissionRequest {
+  string user_id = 1;
+  string permission = 2;       // e.g., "product:write"
+  optional string store_id = 3;
+}
+
+message CheckPermissionResponse {
+  bool allowed = 1;
+  string reason = 2;
+}
+
+message AssignRoleRequest {
+  string user_id = 1;
+  string role_id = 2;
+  string store_id = 3;
+}
+
+// ── Store Messages ──
+
+message ListStoresRequest {
+  string user_id = 1;
+}
+
+message ListStoresResponse {
+  repeated Store stores = 1;
+}
+
+message SwitchStoreRequest {
+  string user_id = 1;
+  string store_id = 2;
+}

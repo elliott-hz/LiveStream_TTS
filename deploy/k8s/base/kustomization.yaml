@@ -1,0 +1,17 @@
+# K8s Base Configuration
+#
+# All services share these common settings.
+# Each environment overlay customizes: replicas, resource limits, image tags, env vars.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base resources shared by all environments
+resources:
+  - namespace.yaml
+  - rbac.yaml
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/part-of: livestream-tts
+  app.kubernetes.io/managed-by: argocd

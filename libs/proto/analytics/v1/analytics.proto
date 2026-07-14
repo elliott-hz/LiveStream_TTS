@@ -1,0 +1,102 @@
+// Analytics Service — Live Data Stats, Conversion Funnel, Real-time Dashboard
+syntax = "proto3";
+
+package analytics.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/analytics/v1;analyticsv1";
+
+service AnalyticsService {
+  // ── Live Metrics ──
+  rpc GetLiveMetrics(GetLiveMetricsRequest) returns (LiveMetrics);
+  rpc GetRealTimeMetrics(GetRealTimeMetricsRequest) returns (RealTimeMetrics);
+
+  // ── Historical ──
+  rpc GetSessionReport(GetSessionReportRequest) returns (SessionReport);
+  rpc ListSessionReports(ListSessionReportsRequest) returns (ListSessionReportsResponse);
+
+  // ── Product Analytics ──
+  rpc GetProductPerformance(GetProductPerformanceRequest) returns (ProductPerformance);
+}
+
+message LiveMetrics {
+  string live_room_id = 1;
+  int32 viewer_count = 2;
+  int32 peak_viewer_count = 3;
+  int32 danmaku_count = 4;
+  int32 interaction_count = 5;
+  float interaction_rate = 6;
+  int32 product_clicks = 7;
+  int32 orders = 8;
+  int64 gmv_fen = 9;
+  int64 duration_seconds = 10;
+}
+
+message RealTimeMetrics {
+  string live_room_id = 1;
+  int32 current_viewers = 2;
+  int32 danmaku_per_minute = 3;
+  int32 orders_last_5min = 4;
+  int64 gmv_last_5min_fen = 5;
+  float avg_watch_seconds = 6;
+  repeated TopProduct top_products = 7;
+}
+
+message TopProduct {
+  string product_id = 1;
+  string title = 2;
+  int32 clicks = 3;
+  int32 orders = 4;
+}
+
+message SessionReport {
+  string session_id = 1;
+  string live_room_id = 2;
+  LiveMetrics summary = 3;
+  repeated TimeSeriesPoint viewer_timeline = 4;
+  repeated TimeSeriesPoint danmaku_timeline = 5;
+  repeated TimeSeriesPoint gmv_timeline = 6;
+  FunnelMetrics funnel = 7;
+}
+
+message TimeSeriesPoint {
+  int64 timestamp = 1;
+  double value = 2;
+}
+
+message FunnelMetrics {
+  int32 impressions = 1;
+  int32 product_clicks = 2;
+  int32 add_to_cart = 3;
+  int32 orders = 4;
+  int32 payments = 5;
+}
+
+message ProductPerformance {
+  string product_id = 1;
+  int32 total_appearances = 2;
+  int32 total_clicks = 3;
+  float click_rate = 4;
+  int32 total_orders = 5;
+  int64 total_gmv_fen = 6;
+  int64 avg_attention_seconds = 7;
+}
+
+message GetLiveMetricsRequest { string live_room_id = 1; }
+message GetRealTimeMetricsRequest { string live_room_id = 1; }
+message GetSessionReportRequest { string session_id = 1; }
+
+message ListSessionReportsRequest {
+  string store_id = 1;
+  int64 start_date = 2;
+  int64 end_date = 3;
+  common.v1.Pagination pagination = 4;
+}
+
+message ListSessionReportsResponse {
+  repeated SessionReport reports = 1;
+  common.v1.PageInfo page_info = 2;
+}
+
+message GetProductPerformanceRequest { string product_id = 1; }

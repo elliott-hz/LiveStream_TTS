@@ -1,0 +1,141 @@
+// NLP Service — Intent Classification, Sentiment Analysis, Sensitive Word Detection
+syntax = "proto3";
+
+package nlp.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/nlp/v1;nlpv1";
+
+service NLPService {
+  // ── Danmaku Analysis ──
+  rpc AnalyzeDanmaku(AnalyzeDanmakuRequest) returns (AnalyzeDanmakuResponse);
+  rpc BatchAnalyzeDanmaku(BatchAnalyzeDanmakuRequest) returns (BatchAnalyzeDanmakuResponse);
+
+  // ── Sensitive Word Detection ──
+  rpc CheckSensitive(CheckSensitiveRequest) returns (CheckSensitiveResponse);
+
+  // ── Text Processing ──
+  rpc ExtractEntities(ExtractEntitiesRequest) returns (ExtractEntitiesResponse);
+  rpc RewriteText(RewriteTextRequest) returns (RewriteTextResponse);
+}
+
+// ── Danmaku Analysis ──
+
+message AnalyzeDanmakuRequest {
+  string text = 1;
+  string user_id = 2;          // platform user ID
+  string live_room_id = 3;
+  IntentCategory context_intent = 4;  // optional: expected intent for confidence boost
+}
+
+message AnalyzeDanmakuResponse {
+  IntentCategory intent = 1;
+  float intent_confidence = 2;
+  Sentiment sentiment = 3;
+  float sentiment_intensity = 4;  // 0.0-1.0
+  bool needs_reply = 5;
+  string reason = 6;            // why this message needs/doesn't need a reply
+  int64 processing_ms = 7;
+}
+
+message BatchAnalyzeDanmakuRequest {
+  repeated AnalyzeDanmakuRequest items = 1;
+  int32 max_batch_size = 2;     // default 32
+}
+
+message BatchAnalyzeDanmakuResponse {
+  repeated AnalyzeDanmakuResponse results = 1;
+  int32 total = 2;
+  int32 needs_reply_count = 3;
+}
+
+enum IntentCategory {
+  INTENT_CATEGORY_UNSPECIFIED = 0;
+  INTENT_CATEGORY_QUESTION = 1;         // 提问
+  INTENT_CATEGORY_REQUEST_DEMO = 2;     // 求讲解
+  INTENT_CATEGORY_PURCHASE_INTENT = 3;   // 下单意向
+  INTENT_CATEGORY_BARGAIN = 4;          // 议价
+  INTENT_CATEGORY_COMPLAINT = 5;        // 抱怨
+  INTENT_CATEGORY_GREETING = 6;         // 寒暄
+  INTENT_CATEGORY_PRAISE = 7;           // 赞美
+  INTENT_CATEGORY_QUESTION_PRODUCT = 8; // 质疑
+  INTENT_CATEGORY_URGE = 9;             // 催促
+  INTENT_CATEGORY_COMPARE = 10;         // 对比
+  INTENT_CATEGORY_AFTERSALES = 11;      // 售后
+  INTENT_CATEGORY_OTHER = 12;           // 其他
+}
+
+enum Sentiment {
+  SENTIMENT_UNSPECIFIED = 0;
+  SENTIMENT_POSITIVE = 1;
+  SENTIMENT_NEGATIVE = 2;
+  SENTIMENT_NEUTRAL = 3;
+  SENTIMENT_ANGRY = 4;
+  SENTIMENT_EXCITED = 5;
+}
+
+// ── Sensitive Word Detection ──
+
+message CheckSensitiveRequest {
+  string text = 1;
+  string context = 2;          // "script", "danmaku", "avatar_name"
+}
+
+message CheckSensitiveResponse {
+  bool is_sensitive = 1;
+  repeated SensitiveMatch matches = 2;
+  int64 processing_ms = 3;
+}
+
+message SensitiveMatch {
+  string word = 1;
+  string category = 2;         // "political", "adult", "violence", "ads"
+  int32 start_pos = 3;
+  int32 end_pos = 4;
+  DetectionLayer layer = 5;
+}
+
+enum DetectionLayer {
+  DETECTION_LAYER_UNSPECIFIED = 0;
+  DETECTION_LAYER_AC_AUTOMATON = 1;  // 字典匹配
+  DETECTION_LAYER_LLM_SEMANTIC = 2;  // 语义检测
+}
+
+// ── NER ──
+
+message ExtractEntitiesRequest {
+  string text = 1;
+  repeated string entity_types = 2;  // "product", "price", "brand", "size"
+}
+
+message ExtractEntitiesResponse {
+  repeated Entity entities = 1;
+}
+
+message Entity {
+  string text = 1;
+  string type = 2;
+  int32 start_pos = 3;
+  int32 end_pos = 4;
+  float confidence = 5;
+}
+
+// ── Text Rewrite ──
+
+message RewriteTextRequest {
+  string text = 1;
+  RewriteStyle style = 2;
+  string context = 3;          // product info, live room theme
+}
+
+enum RewriteStyle {
+  REWRITE_STYLE_UNSPECIFIED = 0;
+  REWRITE_STYLE_LIVE_COMMENT = 1;     // 直播评论风格
+  REWRITE_STYLE_PRODUCT_SCRIPT = 2;    // 商品脚本风格
+  REWRITE_STYLE_FIELD_CONTROL = 3;     // 场控话术
+}
+
+message RewriteTextResponse {
+  string rewritten_text = 1;
+}

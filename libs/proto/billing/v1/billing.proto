@@ -1,0 +1,161 @@
+// Billing Service — Subscription Plans, Usage Metering, Invoices, Payment
+syntax = "proto3";
+
+package billing.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/billing/v1;billingv1";
+
+service BillingService {
+  // ── Plans ──
+  rpc ListPlans(ListPlansRequest) returns (ListPlansResponse);
+  rpc Subscribe(SubscribeRequest) returns (Subscription);
+
+  // ── Usage ──
+  rpc ReportUsage(ReportUsageRequest) returns (common.v1.Error);
+  rpc GetCurrentUsage(GetCurrentUsageRequest) returns (Usage);
+
+  // ── Invoices ──
+  rpc GetInvoice(GetInvoiceRequest) returns (Invoice);
+  rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse);
+
+  // ── Payment ──
+  rpc CreatePayment(CreatePaymentRequest) returns (Payment);
+  rpc PaymentCallback(PaymentCallbackRequest) returns (common.v1.Error);
+}
+
+message Plan {
+  string plan_id = 1;
+  string name = 2;
+  string description = 3;
+  common.v1.Money monthly_price = 4;
+  PlanQuota quota = 5;
+  bool is_active = 6;
+}
+
+message PlanQuota {
+  int32 max_live_rooms = 1;
+  int32 max_concurrent_streams = 2;
+  int32 max_products = 3;
+  int32 max_avatars = 4;
+  int32 max_voices = 5;
+  int32 streaming_hours_per_month = 6;
+  bool includes_api_access = 7;
+}
+
+message Subscription {
+  string subscription_id = 1;
+  string store_id = 2;
+  string plan_id = 3;
+  SubscriptionStatus status = 4;
+  int64 started_at = 5;
+  int64 expires_at = 6;
+  bool auto_renew = 7;
+}
+
+enum SubscriptionStatus {
+  SUBSCRIPTION_STATUS_UNSPECIFIED = 0;
+  SUBSCRIPTION_STATUS_ACTIVE = 1;
+  SUBSCRIPTION_STATUS_EXPIRED = 2;
+  SUBSCRIPTION_STATUS_CANCELLED = 3;
+}
+
+message Usage {
+  string store_id = 1;
+  string billing_period = 2;
+  int32 streaming_minutes_used = 3;
+  int32 streaming_minutes_limit = 4;
+  int32 products_used = 5;
+  int32 products_limit = 6;
+  int32 api_calls_used = 7;
+  int64 llm_tokens_used = 8;
+  common.v1.Money estimated_cost = 9;
+}
+
+message Invoice {
+  string invoice_id = 1;
+  string store_id = 2;
+  string billing_period = 3;
+  common.v1.Money amount = 4;
+  InvoiceStatus status = 5;
+  string pdf_url = 6;
+  int64 issued_at = 7;
+  int64 paid_at = 8;
+}
+
+enum InvoiceStatus {
+  INVOICE_STATUS_UNSPECIFIED = 0;
+  INVOICE_STATUS_PENDING = 1;
+  INVOICE_STATUS_PAID = 2;
+  INVOICE_STATUS_OVERDUE = 3;
+}
+
+message Payment {
+  string payment_id = 1;
+  string invoice_id = 2;
+  PaymentMethod method = 3;
+  common.v1.Money amount = 4;
+  PaymentStatus status = 5;
+  string qr_code_url = 6;
+  string payment_url = 7;
+}
+
+enum PaymentMethod {
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  PAYMENT_METHOD_WECHAT = 1;
+  PAYMENT_METHOD_ALIPAY = 2;
+}
+
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PAYMENT_STATUS_PENDING = 1;
+  PAYMENT_STATUS_SUCCESS = 2;
+  PAYMENT_STATUS_FAILED = 3;
+}
+
+message ListPlansRequest {}
+
+message ListPlansResponse {
+  repeated Plan plans = 1;
+}
+
+message SubscribeRequest {
+  string store_id = 1;
+  string plan_id = 2;
+  bool auto_renew = 3;
+}
+
+message ReportUsageRequest {
+  string store_id = 1;
+  UsageMetric metric = 2;
+  int64 value = 3;
+}
+
+enum UsageMetric {
+  USAGE_METRIC_UNSPECIFIED = 0;
+  USAGE_METRIC_STREAMING_SECONDS = 1;
+  USAGE_METRIC_API_CALLS = 2;
+  USAGE_METRIC_LLM_TOKENS = 3;
+}
+
+message GetCurrentUsageRequest { string store_id = 1; }
+message GetInvoiceRequest { string invoice_id = 1; }
+
+message ListInvoicesRequest {
+  string store_id = 1;
+  optional InvoiceStatus status = 2;
+  common.v1.Pagination pagination = 3;
+}
+
+message ListInvoicesResponse {
+  repeated Invoice invoices = 1;
+  common.v1.PageInfo page_info = 2;
+}
+
+message CreatePaymentRequest { string invoice_id = 1; PaymentMethod method = 2; }
+
+message PaymentCallbackRequest {
+  string payment_id = 1;
+  string gateway_response = 2;
+}

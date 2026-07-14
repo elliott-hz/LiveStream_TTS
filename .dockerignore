@@ -1,0 +1,64 @@
+# LiveStream TTS — Digital Human Livestream Platform
+#
+# Monorepo: 16 microservices + shared libs
+# Each service independently built and deployed.
+#
+# Build context: repository root (to access libs/)
+# See deploy/docker/ for service Dockerfiles.
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+.venv/
+venv/
+*.whl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Git
+.git/
+.claude/
+
+# Tests & Coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.cover
+
+# Proto generated code
+libs/proto/**/*_pb2.py
+libs/proto/**/*_pb2_grpc.py
+
+# Docker
+.docker/
+
+# Model weights (large files)
+*.pt
+*.bin
+*.safetensors
+*.onnx
+checkpoints/
+
+# Configs with secrets (use ConfigMap / env vars)
+.env
+.env.*
+*.local.toml
+
+# K8s secrets
+deploy/k8s/**/secrets*.yaml
+
+# Logs
+*.log
+logs/

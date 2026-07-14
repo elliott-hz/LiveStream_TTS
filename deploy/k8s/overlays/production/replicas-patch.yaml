@@ -1,0 +1,7 @@
+# Production: 3 replicas minimum
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: placeholder
+spec:
+  replicas: 3

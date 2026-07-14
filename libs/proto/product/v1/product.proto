@@ -1,0 +1,220 @@
+// Product Service — Unified Product Master Data, SKU, Category
+syntax = "proto3";
+
+package product.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/product/v1;productv1";
+
+service ProductService {
+  // ── Product CRUD ──
+  rpc CreateProduct(CreateProductRequest) returns (Product);
+  rpc GetProduct(GetProductRequest) returns (Product);
+  rpc UpdateProduct(UpdateProductRequest) returns (Product);
+  rpc DeleteProduct(DeleteProductRequest) returns (common.v1.Error);
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+
+  // ── SKU Management ──
+  rpc AddSku(AddSkuRequest) returns (Product);
+  rpc UpdateSku(UpdateSkuRequest) returns (Product);
+  rpc DeleteSku(DeleteSkuRequest) returns (Product);
+
+  // ── Category ──
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+
+  // ── Import / Export ──
+  rpc ImportProducts(ImportProductsRequest) returns (ImportProductsResponse);
+
+  // ── Platform Sync Status ──
+  rpc GetPlatformSyncStatus(GetPlatformSyncStatusRequest) returns (PlatformSyncStatus);
+}
+
+// ── Entities ──
+
+message Product {
+  string product_id = 1;
+  string store_id = 2;
+  string title = 3;
+  string subtitle = 4;
+  string description = 5;
+  repeated string category_path = 6;
+  string brand = 7;
+  repeated ProductImage images = 8;
+  repeated ProductVideo videos = 9;
+  map<string, string> attributes = 10;
+  repeated string selling_points = 11;
+  repeated Sku skus = 12;
+  map<string, PlatformSyncStatus> platform_sync_status = 13;
+  ProductStatus status = 14;
+  common.v1.AuditInfo audit_info = 15;
+}
+
+message ProductImage {
+  string url = 1;
+  ImageType type = 2;
+  int32 width = 3;
+  int32 height = 4;
+  int32 sort_order = 5;
+}
+
+enum ImageType {
+  IMAGE_TYPE_UNSPECIFIED = 0;
+  IMAGE_TYPE_MAIN = 1;
+  IMAGE_TYPE_DETAIL = 2;
+  IMAGE_TYPE_COLOR_VARIANT = 3;
+}
+
+message ProductVideo {
+  string url = 1;
+  VideoType type = 2;
+  int32 duration_seconds = 3;
+  string thumbnail_url = 4;
+}
+
+enum VideoType {
+  VIDEO_TYPE_UNSPECIFIED = 0;
+  VIDEO_TYPE_SHOWCASE = 1;
+  VIDEO_TYPE_DEMO = 2;
+}
+
+message Sku {
+  string sku_id = 1;
+  map<string, string> spec = 2;    // e.g., {"颜色": "黑色", "尺码": "M"}
+  common.v1.Money price = 3;
+  common.v1.Money original_price = 4;
+  int32 stock = 5;
+  string barcode = 6;
+  SkuStatus status = 7;
+}
+
+enum SkuStatus {
+  SKU_STATUS_UNSPECIFIED = 0;
+  SKU_STATUS_ON_SALE = 1;
+  SKU_STATUS_OFF_SHELF = 2;
+  SKU_STATUS_DELETED = 3;
+}
+
+enum ProductStatus {
+  PRODUCT_STATUS_UNSPECIFIED = 0;
+  PRODUCT_STATUS_DRAFT = 1;
+  PRODUCT_STATUS_PUBLISHED = 2;
+  PRODUCT_STATUS_ARCHIVED = 3;
+}
+
+message PlatformSyncStatus {
+  string platform = 1;          // taobao, douyin, jd, kuaishou
+  SyncState state = 2;
+  string platform_product_id = 3;
+  int64 synced_at = 4;
+  string error_message = 5;
+}
+
+enum SyncState {
+  SYNC_STATE_UNSPECIFIED = 0;
+  SYNC_STATE_PENDING = 1;
+  SYNC_STATE_SYNCED = 2;
+  SYNC_STATE_FAILED = 3;
+  SYNC_STATE_NOT_SUPPORTED = 4;
+}
+
+// ── Request / Response ──
+
+message CreateProductRequest {
+  string store_id = 1;
+  string title = 2;
+  string subtitle = 3;
+  string description = 4;
+  repeated string category_path = 5;
+  string brand = 6;
+  repeated ProductImage images = 7;
+  map<string, string> attributes = 8;
+  repeated string selling_points = 9;
+}
+
+message GetProductRequest {
+  string product_id = 1;
+}
+
+message UpdateProductRequest {
+  string product_id = 1;
+  optional string title = 2;
+  optional string subtitle = 3;
+  optional string description = 4;
+  optional ProductStatus status = 5;
+}
+
+message DeleteProductRequest {
+  string product_id = 1;
+}
+
+message ListProductsRequest {
+  string store_id = 1;
+  optional string category = 2;
+  optional ProductStatus status = 3;
+  string search_query = 4;
+  common.v1.Pagination pagination = 5;
+}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+  common.v1.PageInfo page_info = 2;
+}
+
+message AddSkuRequest {
+  string product_id = 1;
+  map<string, string> spec = 2;
+  common.v1.Money price = 3;
+  common.v1.Money original_price = 4;
+  int32 stock = 5;
+  string barcode = 6;
+}
+
+message UpdateSkuRequest {
+  string product_id = 1;
+  string sku_id = 2;
+  optional common.v1.Money price = 3;
+  optional int32 stock = 4;
+  optional SkuStatus status = 5;
+}
+
+message DeleteSkuRequest {
+  string product_id = 1;
+  string sku_id = 2;
+}
+
+message ListCategoriesRequest {
+  string store_id = 1;
+}
+
+message ListCategoriesResponse {
+  repeated Category categories = 1;
+}
+
+message Category {
+  string category_id = 1;
+  string name = 2;
+  string parent_id = 3;
+  int32 level = 4;
+  int32 product_count = 5;
+}
+
+message ImportProductsRequest {
+  string store_id = 1;
+  string csv_url = 2;
+  oneof source {
+    bytes csv_content = 3;
+    string platform = 4;  // import from platform
+  }
+}
+
+message ImportProductsResponse {
+  int32 total = 1;
+  int32 success = 2;
+  int32 failed = 3;
+  repeated string errors = 4;
+}
+
+message GetPlatformSyncStatusRequest {
+  string product_id = 1;
+}

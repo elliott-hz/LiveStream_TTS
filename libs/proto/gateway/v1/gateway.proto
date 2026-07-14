@@ -1,0 +1,42 @@
+// Gateway Service — API Gateway, Rate Limiting, Auth Middleware, WS Proxy
+syntax = "proto3";
+
+package gateway.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/gateway/v1;gatewayv1";
+
+service GatewayService {
+  // ── Health ──
+  rpc Health(HealthRequest) returns (HealthResponse);
+
+  // ── Service Discovery (internal) ──
+  rpc GetServiceEndpoint(GetServiceEndpointRequest) returns (GetServiceEndpointResponse);
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;            // "healthy" | "degraded" | "unhealthy"
+  string version = 2;
+  int64 uptime_seconds = 3;
+  map<string, ServiceHealth> services = 4;
+}
+
+message ServiceHealth {
+  string status = 1;
+  int64 latency_ms = 2;
+  string error = 3;
+}
+
+message GetServiceEndpointRequest {
+  string service_name = 1;
+  string version = 2;
+}
+
+message GetServiceEndpointResponse {
+  string host = 1;
+  int32 port = 2;
+  bool healthy = 3;
+}

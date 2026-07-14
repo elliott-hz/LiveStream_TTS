@@ -1,0 +1,16 @@
+# Production Environment Overlay
+# 3+ replicas, full resource limits, production config
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+namespace: livestream-tts-prod
+
+commonLabels:
+  environment: production
+
+patchesStrategicMerge:
+  - replicas-patch.yaml

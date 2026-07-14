@@ -1,0 +1,62 @@
+// Shared message types used across all services.
+// Import this in every service proto file.
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "github.com/livestream-tts/proto/common/v1;commonv1";
+option java_package = "com.livestreamtts.proto.common.v1";
+
+// ── Pagination ──
+
+message Pagination {
+  int32 page = 1;       // 1-indexed
+  int32 page_size = 2;  // default: 20, max: 100
+}
+
+message PageInfo {
+  int32 page = 1;
+  int32 page_size = 2;
+  int32 total_count = 3;
+  int32 total_pages = 4;
+}
+
+// ── Standard error ──
+
+message Error {
+  int32 code = 1;         // Full error code (domain * 1000 + code)
+  string message = 2;
+  map<string, string> details = 3;
+}
+
+// ── Common fields ──
+
+message Timestamps {
+  int64 created_at = 1;   // Unix milliseconds
+  int64 updated_at = 2;   // Unix milliseconds
+}
+
+message AuditInfo {
+  string created_by = 1;
+  string updated_by = 2;
+  Timestamps timestamps = 3;
+}
+
+// ── Address / Contact ──
+
+message Address {
+  string country = 1;
+  string province = 2;
+  string city = 3;
+  string district = 4;
+  string line1 = 5;
+  string line2 = 6;
+  string postal_code = 7;
+}
+
+// ── Money ──
+
+message Money {
+  int64 amount = 1;    // In smallest unit (e.g., fen for CNY)
+  string currency = 2; // CNY, USD, etc.
+}

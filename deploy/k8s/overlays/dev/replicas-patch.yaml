@@ -1,0 +1,7 @@
+# Dev: Single replica for all services
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: placeholder
+spec:
+  replicas: 1

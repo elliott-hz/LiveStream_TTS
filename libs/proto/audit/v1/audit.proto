@@ -1,0 +1,109 @@
+// Audit Service — Compliance Review, Content Moderation, 3-Tier Risk Control
+syntax = "proto3";
+
+package audit.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/livestream-tts/proto/audit/v1;auditv1";
+
+service AuditService {
+  // ── Pre-flight Checks ──
+  rpc AuditAvatar(AuditAvatarRequest) returns (AuditResult);
+  rpc AuditScript(AuditScriptRequest) returns (AuditResult);
+
+  // ── Live Monitoring ──
+  rpc SubmitScreenshot(SubmitScreenshotRequest) returns (AuditResult);
+  rpc ReportViolation(ReportViolationRequest) returns (AuditResult);
+
+  // ── Post-session Archive ──
+  rpc GetAuditLog(GetAuditLogRequest) returns (AuditLog);
+  rpc ListAuditLogs(ListAuditLogsRequest) returns (ListAuditLogsResponse);
+}
+
+message AuditResult {
+  string audit_id = 1;
+  string target_type = 2;
+  string target_id = 3;
+  AuditVerdict verdict = 4;
+  string reason = 5;
+  repeated Violation violations = 6;
+  int64 audited_at = 7;
+  string auditor = 8;          // "system" or human reviewer ID
+}
+
+enum AuditVerdict {
+  AUDIT_VERDICT_UNSPECIFIED = 0;
+  AUDIT_VERDICT_APPROVED = 1;
+  AUDIT_VERDICT_REJECTED = 2;
+  AUDIT_VERDICT_MANUAL_REVIEW = 3;
+}
+
+message Violation {
+  string category = 1;
+  string description = 2;
+  Severity severity = 3;
+}
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_LOW = 1;
+  SEVERITY_MEDIUM = 2;
+  SEVERITY_HIGH = 3;
+  SEVERITY_CRITICAL = 4;
+}
+
+message AuditLog {
+  string audit_log_id = 1;
+  string session_id = 2;
+  string live_room_id = 3;
+  repeated AuditResult results = 4;
+  int32 violation_count = 5;
+  RiskLevel risk_level = 6;
+  int64 created_at = 7;
+}
+
+enum RiskLevel {
+  RISK_LEVEL_UNSPECIFIED = 0;
+  RISK_LEVEL_SAFE = 1;
+  RISK_LEVEL_LOW = 2;
+  RISK_LEVEL_MEDIUM = 3;
+  RISK_LEVEL_HIGH = 4;
+}
+
+message AuditAvatarRequest {
+  string avatar_id = 1;
+  bytes thumbnail = 2;
+  string celebrity_check = 3;
+}
+
+message AuditScriptRequest {
+  string script_id = 1;
+  string full_text = 2;
+}
+
+message SubmitScreenshotRequest {
+  string live_room_id = 1;
+  bytes image_data = 2;
+  int64 timestamp = 3;
+}
+
+message ReportViolationRequest {
+  string live_room_id = 1;
+  string violation_type = 2;
+  string description = 3;
+  string evidence_url = 4;
+}
+
+message GetAuditLogRequest { string audit_log_id = 1; }
+
+message ListAuditLogsRequest {
+  string store_id = 1;
+  optional RiskLevel risk_level = 2;
+  common.v1.Pagination pagination = 3;
+}
+
+message ListAuditLogsResponse {
+  repeated AuditLog logs = 1;
+  common.v1.PageInfo page_info = 2;
+}
