@@ -19,7 +19,8 @@ from pathlib import Path
 # ── Monorepo path setup ──
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 _LIBS_PROTO = _REPO_ROOT / "libs" / "proto"
-for p in [str(_REPO_ROOT), str(_LIBS_PROTO)]:
+_SVC_ROOT = Path(__file__).resolve().parent.parent
+for p in [str(_REPO_ROOT), str(_LIBS_PROTO), str(_SVC_ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
@@ -34,11 +35,11 @@ from libs.common.grpc_utils import create_grpc_server
 from libs.common.logging import get_logger, setup_logging
 from libs.kafka import KafkaClient
 
-from .api.grpc_impl import InteractionServiceServicer
-from .config import config
-from .http import interact_router
-from .http.routes import init_routes
-from .services import InteractionService
+from src.api.grpc_impl import InteractionServiceServicer
+from src.config import config
+from src.http_routes import interact_router
+from src.http_routes.routes import init_routes
+from src.services import InteractionService
 
 logger = get_logger(__name__)
 

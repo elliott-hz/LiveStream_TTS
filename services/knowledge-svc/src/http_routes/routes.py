@@ -13,7 +13,7 @@ from libs.common.errors import AppError
 from libs.common.logging import get_logger
 
 from models.knowledge import KnowledgeBase, Document, FAQ
-from services.knowledge_service import KnowledgeService
+from src.services.knowledge_service import KnowledgeService
 
 logger = get_logger(__name__)
 

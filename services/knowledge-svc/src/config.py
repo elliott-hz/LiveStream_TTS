@@ -25,10 +25,6 @@ class KnowledgeConfig(ServiceConfig):
     def db_pool_size(self) -> int:
         return self.get_int("DB_POOL_SIZE", 10)
 
-    @property
-    def env(self) -> str:
-        return self.get("ENV", "dev")
-
     # ── Vector Store ──
 
     @property
@@ -73,4 +69,4 @@ GRPC_PORT: int = config.grpc_port
 HTTP_PORT: int = config.http_port
 HTTP_HOST: str = config.http_host
 DB_POOL_SIZE: int = config.db_pool_size
-ENV: str = config.env
+ENV: str = config.get("ENV", "dev")

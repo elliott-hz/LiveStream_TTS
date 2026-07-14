@@ -15,7 +15,6 @@ import base64
 import hashlib
 import hmac
 import json
-import logging
 import time
 import uuid
 from collections.abc import Callable
@@ -24,7 +23,9 @@ from dataclasses import dataclass
 import websockets
 from websockets.asyncio.client import ClientConnection
 
-logger = logging.getLogger(__name__)
+from libs.common.logging import get_logger
+
+logger = get_logger(__name__)
 
 # ── Constants ─────────────────────────────────────────────────
 NLS_DEFAULT_ENDPOINT = "wss://nls-gateway-cn-shanghai.aliyuncs.com/ws/v1"
@@ -132,27 +133,79 @@ class CloudTTSClient:
     # ── Token Management ──────────────────────────────────────
 
     async def _get_token(self) -> str:
-        """Get or refresh NLS access token."""
+        """Get or refresh NLS access token.
+
+        Priority:
+        1. Manual token from env (TTS_ALIYUN_TOKEN) — for testing
+        2. Auto-acquire via Alibaba Cloud CreateToken API
+        """
         now = time.time()
         if self._token and now < self._token_expires_at - 60:
             return self._token
 
-        # Generate HMAC-SHA1 token
-        # Token format: base64(payload + ":" + sha1(payload, secret))
-        expire_time = int(now) + NLS_TOKEN_EXPIRE_SECONDS
-        payload = json.dumps({"exp": expire_time, "iss": self.config.access_key_id})
-        payload_b64 = base64.b64encode(payload.encode()).decode()
+        import os
 
-        signature = hmac.new(
-            self.config.access_key_secret.encode(),
-            payload_b64.encode(),
-            hashlib.sha1,
-        ).digest()
-        signature_b64 = base64.b64encode(signature).decode()
+        # 1. Check for manual token (set by user)
+        manual_token = os.getenv("TTS_ALIYUN_TOKEN", "")
+        if manual_token:
+            self._token = manual_token
+            self._token_expires_at = now + NLS_TOKEN_EXPIRE_SECONDS
+            logger.info("nls.token_manual", token_prefix=manual_token[:8] + "...")
+            return self._token
 
-        self._token = f"{payload_b64}.{signature_b64}"
-        self._token_expires_at = expire_time
-        logger.debug("nls.token_refreshed", expires_at=expire_time)
+        # 2. Auto-acquire via CreateToken API
+        import httpx
+
+        timestamp_utc = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now))
+        params = {
+            "AccessKeyId": self.config.access_key_id,
+            "Action": "CreateToken",
+            "Version": "2019-02-28",
+            "Format": "JSON",
+            "RegionId": "cn-shanghai",
+            "SignatureMethod": "HMAC-SHA1",
+            "SignatureVersion": "1.0",
+            "SignatureNonce": str(uuid.uuid4()),
+            "Timestamp": timestamp_utc,
+        }
+
+        import urllib.parse
+        def _pct(s: str) -> str:
+            return urllib.parse.quote(str(s), safe="-_.~")
+
+        sorted_keys = sorted(params.keys())
+        canonical_qs = "&".join(
+            f"{_pct(k)}={_pct(str(params[k]))}" for k in sorted_keys
+        )
+        string_to_sign = "GET&" + _pct("/") + "&" + _pct(canonical_qs)
+
+        key = (self.config.access_key_secret + "&").encode("utf-8")
+        signature = base64.b64encode(
+            hmac.new(key, string_to_sign.encode("utf-8"), hashlib.sha1).digest()
+        ).decode("utf-8")
+
+        all_params = {**params, "Signature": signature}
+        query_string = "&".join(
+            f"{_pct(k)}={_pct(str(all_params[k]))}" for k in sorted(all_params.keys())
+        )
+        url = f"https://nls-meta.cn-shanghai.aliyuncs.com/?{query_string}"
+
+        logger.debug("nls.token_request")
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            data = resp.json()
+
+        token_info = data.get("Token", {})
+        self._token = token_info.get("Id", "")
+        expire_ts = token_info.get("ExpireTime", 0)
+        self._token_expires_at = expire_ts if expire_ts else (now + NLS_TOKEN_EXPIRE_SECONDS)
+
+        if not self._token:
+            raise ConnectionError(f"CreateToken returned empty token: {data}")
+
+        logger.info("nls.token_obtained", expires_at=self._token_expires_at)
         return self._token
 
     # ── Streaming Synthesis ───────────────────────────────────
@@ -174,7 +227,7 @@ class CloudTTSClient:
             return
 
         request_id = request_id or f"nls-{uuid.uuid4().hex[:12]}"
-        task_id = str(uuid.uuid4())
+        task_id = uuid.uuid4().hex
 
         logger.info(
             "nls.synthesize.start",
@@ -199,6 +252,7 @@ class CloudTTSClient:
                 if isinstance(message, bytes):
                     # Binary = PCM audio chunk
                     total_chunks += 1
+                    logger.debug("nls.binary_frame", seq=total_chunks, size=len(message))
                     on_chunk(request_id, total_chunks - 1, message)
 
                 elif isinstance(message, str):
@@ -277,7 +331,7 @@ class CloudTTSClient:
         """Build the StartSynthesis JSON command."""
         return {
             "header": {
-                "message_id": str(uuid.uuid4()),
+                "message_id": uuid.uuid4().hex,
                 "task_id": task_id,
                 "namespace": "SpeechSynthesizer",
                 "name": "StartSynthesis",
@@ -299,7 +353,7 @@ class CloudTTSClient:
         """Build the StopSynthesis JSON command."""
         return {
             "header": {
-                "message_id": str(uuid.uuid4()),
+                "message_id": uuid.uuid4().hex,
                 "task_id": task_id,
                 "namespace": "SpeechSynthesizer",
                 "name": "StopSynthesis",

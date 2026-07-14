@@ -27,7 +27,7 @@ from libs.common.logging import get_logger
 logger = get_logger(__name__)
 
 # ── Constants ─────────────────────────────────────────────────
-DEFAULT_MODEL = "deepseek-chat"
+DEFAULT_MODEL = "deepseek-v4-flash"
 DEFAULT_API_BASE = "https://api.deepseek.com"
 DEFAULT_MAX_TOKENS = 80       # Short replies for livestream
 DEFAULT_TEMPERATURE = 0.9     # Creative but coherent

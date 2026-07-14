@@ -10,11 +10,11 @@ of backend, so the gRPC service layer is completely unaffected.
 """
 
 import asyncio
-import logging
 import math
 import struct
 from collections.abc import Callable
 
+from libs.common.logging import get_logger
 from modules.emotion.emotion_engine import EmotionTag
 from modules.engine.cloud_tts_client import (
     CloudTTSClient,
@@ -23,7 +23,7 @@ from modules.engine.cloud_tts_client import (
 )
 from modules.linguistic.linguistic_engine import LinguisticFeatures
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 CHUNK_DURATION_SEC = 0.02   # 20ms per chunk
@@ -101,6 +101,7 @@ class TTSEngine:
         on_chunk: Callable,
         on_complete: Callable,
         on_error: Callable,
+        text: str = "",
     ):
         """流式合成。逐 chunk 回调。（兼容原接口）
 
@@ -109,7 +110,7 @@ class TTSEngine:
         if self.backend == "cloud":
             self._synthesize_cloud(
                 request_id, features, emotion, speed,
-                on_chunk, on_complete, on_error,
+                on_chunk, on_complete, on_error, text=text,
             )
         else:
             self._synthesize_mock(
@@ -185,6 +186,7 @@ class TTSEngine:
         on_chunk: Callable,
         on_complete: Callable,
         on_error: Callable,
+        text: str = "",
     ):
         """Cloud: 阿里云 NLS 流式 TTS API。
 
@@ -201,9 +203,9 @@ class TTSEngine:
         logger.info(f"║ VOICE: {self.cloud_config.voice}")
         logger.info(f"║ ENDPOINT: {self.cloud_config.endpoint}")
 
-        # Reconstruct original text from phonemes and linguistic features.
-        # The cloud TTS API needs plain text, not phonemes.
-        text = self._features_to_text(features)
+        # Use original Chinese text, not Bopomofo phonemes
+        if not text:
+            text = self._features_to_text(features)
 
         # Apply emotion-based speed adjustment
         emotion_speed_offset = EMOTION_SPEED_MAP.get(emotion.emotion, 0)

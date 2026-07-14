@@ -19,7 +19,7 @@ from knowledge.v1 import knowledge_pb2_grpc as pb_grpc
 from common.v1 import common_pb2 as common_pb
 
 from models.knowledge import KnowledgeBase, Document, FAQ
-from services.knowledge_service import KnowledgeService
+from src.services.knowledge_service import KnowledgeService
 
 logger = get_logger(__name__)
 

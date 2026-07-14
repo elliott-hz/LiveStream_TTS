@@ -35,11 +35,20 @@ class ServiceConfig:
                 self._overrides = yaml.safe_load(f) or {}
 
     def get(self, key: str, default: Any = None) -> Any:
-        """Resolve config value with priority: env > configmap > default."""
+        """Resolve config value with priority: env > configmap > default.
+
+        Checks both prefixed (TTS_SVC_TTS_BACKEND) and raw (TTS_BACKEND)
+        env var names — prefixed takes priority for K8s multi-service safety;
+        raw key works for local development simplicity.
+        """
         env_key = f"{self.service_name.upper().replace('-', '_')}_{key}"
         env_val = os.getenv(env_key)
         if env_val is not None:
             return self._cast(env_val, default)
+        # Fallback: try the raw key without service prefix
+        raw_val = os.getenv(key)
+        if raw_val is not None:
+            return self._cast(raw_val, default)
         if key in self._overrides:
             return self._overrides[key]
         return default

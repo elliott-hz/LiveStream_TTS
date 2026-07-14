@@ -20,10 +20,15 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-# Add service src directory for src. prefix imports
-_SRC_DIR = Path(__file__).resolve().parent
-if str(_SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(_SRC_DIR))
+_LIBS_PROTO = str(_REPO_ROOT / "libs" / "proto")
+if _LIBS_PROTO not in sys.path:
+    sys.path.insert(0, _LIBS_PROTO)
+
+# Add service root (not src/) so "from src.xxx" works without
+# shadowing stdlib modules like http
+_SVC_ROOT = Path(__file__).resolve().parent.parent
+if str(_SVC_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SVC_ROOT))
 
 from contextlib import asynccontextmanager
 
@@ -35,9 +40,9 @@ from grpc import aio as grpc_aio
 from libs.common.grpc_utils import create_grpc_server
 from libs.common.logging import get_logger, setup_logging
 
-from .api.grpc_impl import NLPServiceServicerImpl, add_NLPServiceServicer_to_server
-from .config import config
-from .http.routes import router as http_router
+from src.api.grpc_impl import NLPServiceServicerImpl, add_NLPServiceServicer_to_server
+from src.config import config
+from src.http_routes.routes import router as http_router
 
 logger = get_logger(__name__)
 

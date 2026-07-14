@@ -18,16 +18,18 @@ from pathlib import Path
 from typing import Any
 
 # Add repo root to path for monorepo imports (must be first)
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 RENDER_SVC_ROOT = REPO_ROOT / "services" / "render-svc"
+LIBS_PROTO = REPO_ROOT / "libs" / "proto"
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(RENDER_SVC_ROOT))
+sys.path.insert(0, str(LIBS_PROTO))
 
 from libs.common.config import ServiceConfig
 from libs.common.logging import setup_logging, get_logger
 from src.config import RenderConfig
 from src.api.grpc_impl import RenderGrpcService
-from src.http.routes import create_http_app
+from src.http_routes.routes import create_http_app
 
 
 async def main() -> None:

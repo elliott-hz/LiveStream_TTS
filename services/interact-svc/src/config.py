@@ -125,7 +125,7 @@ class InteractConfig(ServiceConfig):
     @property
     def llm_model(self) -> str:
         """Model name for the chat API."""
-        return self.get("LLM_MODEL", default="deepseek-chat")
+        return self.get("LLM_MODEL", default="deepseek-v4-flash")
 
     @property
     def llm_max_tokens(self) -> int:

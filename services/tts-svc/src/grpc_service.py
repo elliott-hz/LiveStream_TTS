@@ -260,6 +260,7 @@ def _run_synthesis_pipeline(
         engine.synthesize_stream(
             request_id, features, emotion_tag, speed,
             on_chunk, on_complete, on_error,
+            text=text,
         )
 
     except Exception as exc:
