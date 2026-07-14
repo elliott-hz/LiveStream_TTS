@@ -1,4 +1,7 @@
-// Voice Service — Voice/Timbre CRUD, Clone, Embedding Management
+// Voice Service — Voice/Timbre CRUD, Clone, Speaker Embedding Management
+//
+// Phase 2: CosyVoice2 Speaker Encoder, 15min → 24h full clone
+// Phase 3: Few-shot cloning (3-10s audio), GPT-SoVITS / Fish-Speech
 syntax = "proto3";
 
 package voice.v1;
@@ -17,6 +20,12 @@ service VoiceService {
   // Clone
   rpc StartClone(StartVoiceCloneRequest) returns (VoiceCloneTask);
   rpc GetCloneTask(GetVoiceCloneTaskRequest) returns (VoiceCloneTask);
+  rpc ListCloneTasks(ListVoiceCloneTasksRequest) returns (ListVoiceCloneTasksResponse);
+  rpc CancelClone(CancelVoiceCloneRequest) returns (VoiceCloneTask);
+
+  // Speaker Embedding (Phase 2/3)
+  rpc GetSpeakerEmbedding(GetSpeakerEmbeddingRequest) returns (SpeakerEmbedding);
+  rpc CompareVoices(CompareVoicesRequest) returns (CompareVoicesResponse);
 
   // Preview
   rpc PreviewVoice(PreviewVoiceRequest) returns (PreviewVoiceResponse);
@@ -32,8 +41,12 @@ message Voice {
   VoiceStyle style = 7;
   VoiceStatus status = 8;
   bool is_public = 9;
-  PaintingQualityMetrics quality = 10;
+  VoiceQualityMetrics quality = 10;
   common.v1.AuditInfo audit_info = 11;
+  // ── Clone-related (Phase 2/3) ──
+  CloneMethod clone_method = 12;          // Few-shot vs full training
+  string speaker_embedding_url = 13;      // MinIO URL of speaker embedding file
+  FewShotConfig few_shot_config = 14;     // Few-shot parameters (Phase 3)
 }
 
 enum Gender {
@@ -44,10 +57,11 @@ enum Gender {
 
 enum VoiceStyle {
   VOICE_STYLE_UNSPECIFIED = 0;
-  VOICE_STYLE_PASSIONATE = 1;
-  VOICE_STYLE_PROFESSIONAL = 2;
-  VOICE_STYLE_GENTLE = 3;
-  VOICE_STYLE_LIVELY = 4;
+  VOICE_STYLE_PASSIONATE = 1;             // 激情带货
+  VOICE_STYLE_PROFESSIONAL = 2;           // 专业讲解
+  VOICE_STYLE_GENTLE = 3;                 // 温柔亲切
+  VOICE_STYLE_LIVELY = 4;                 // 活泼活泼
+  VOICE_STYLE_AUTHORITATIVE = 5;          // 权威沉稳 (Phase 2)
 }
 
 enum VoiceStatus {
@@ -55,30 +69,71 @@ enum VoiceStatus {
   VOICE_STATUS_ACTIVE = 1;
   VOICE_STATUS_CLONING = 2;
   VOICE_STATUS_FAILED = 3;
+  VOICE_STATUS_PENDING_AUDIT = 4;         // Awaiting content review
 }
 
-message PaintingQualityMetrics {
-  float mos_score = 1;
-  float similarity_score = 2;
-  int64 evaluated_at = 3;
+enum CloneMethod {
+  CLONE_METHOD_UNSPECIFIED = 0;
+  CLONE_METHOD_FULL_TRAINING = 1;         // 15min audio, full CosyVoice2 fine-tune (Phase 2)
+  CLONE_METHOD_FEW_SHOT = 2;              // 3-10s audio, GPT-SoVITS / CosyVoice2 zero-shot (Phase 3)
+  CLONE_METHOD_SPEAKER_ENCODER = 3;       // Speaker encoder only, no fine-tuning
+}
+
+message VoiceQualityMetrics {
+  float mos_score = 1;                    // Mean Opinion Score (1-5)
+  float similarity_score = 2;             // Speaker similarity (0-1)
+  float pronunciation_accuracy = 3;       // Phoneme accuracy (0-1)
+  int64 evaluated_at = 4;
+}
+
+message FewShotConfig {
+  int32 reference_audio_duration_sec = 1; // Length of reference audio (3-10s)
+  string reference_audio_url = 2;         // MinIO URL of reference clip
+  string reference_transcript = 3;        // Transcript of reference audio
+  float similarity_threshold = 4;         // Minimum acceptable similarity (default 0.85)
+}
+
+message SpeakerEmbedding {
+  string voice_id = 1;
+  int32 embedding_dim = 2;                // e.g. 256 for CosyVoice2
+  bytes embedding_data = 3;               // Raw float32 embedding bytes
+  string model_version = 4;               // CosyVoice2 / GPT-SoVITS version
+  int64 created_at = 5;
 }
 
 message VoiceCloneTask {
   string task_id = 1;
   string voice_id = 2;
-  CloneStatus status = 3;
-  int32 progress_percent = 4;
-  string error_message = 5;
-  int64 created_at = 6;
-  int64 completed_at = 7;
+  string store_id = 3;                    // For tenant-scoped queries
+  CloneStatus status = 4;
+  CloneMethod clone_method = 5;           // Target clone technique
+  int32 progress_percent = 6;
+  string error_message = 7;
+  string source_audio_url = 8;            // MinIO URL of uploaded source audio
+  string source_transcript = 9;           // Optional: transcript for alignment
+  CloneConfig clone_config = 10;          // Clone-specific parameters
+  VoiceQualityMetrics quality = 11;       // Post-clone evaluation (on success)
+  int64 created_at = 12;
+  int64 completed_at = 13;
+}
+
+message CloneConfig {
+  bool enable_emotion_cloning = 1;        // Clone emotional expressiveness
+  bool enable_style_transfer = 2;         // Transfer speaking style
+  int32 target_sample_rate = 3;           // Default 24000
+  string emotion_presets = 4;             // Comma-separated: "happy,sad,angry,neutral"
 }
 
 enum CloneStatus {
   CLONE_STATUS_UNSPECIFIED = 0;
   CLONE_STATUS_UPLOADING = 1;
-  CLONE_STATUS_PROCESSING = 2;
-  CLONE_STATUS_SUCCESS = 3;
-  CLONE_STATUS_FAILED = 4;
+  CLONE_STATUS_PREPROCESSING = 2;         // Audio denoising, VAD, alignment
+  CLONE_STATUS_TRAINING = 3;
+  CLONE_STATUS_EVALUATING = 4;            // MOS + similarity scoring
+  CLONE_STATUS_PENDING_AUDIT = 5;
+  CLONE_STATUS_SUCCESS = 6;
+  CLONE_STATUS_FAILED = 7;
+  CLONE_STATUS_CANCELLED = 8;
 }
 
 message CreateVoiceRequest {
@@ -88,8 +143,9 @@ message CreateVoiceRequest {
   string age_range = 4;
   string language = 5;
   VoiceStyle style = 6;
-  bytes prompt_audio = 7;
+  string prompt_audio_url = 7;            // MinIO URL (not raw bytes)
   string prompt_transcript = 8;
+  CloneMethod clone_method = 9;           // Required if cloning
 }
 
 message GetVoiceRequest { string voice_id = 1; }
@@ -97,6 +153,7 @@ message GetVoiceRequest { string voice_id = 1; }
 message UpdateVoiceRequest {
   string voice_id = 1;
   optional string name = 2;
+  optional VoiceStyle style = 3;
 }
 
 message DeleteVoiceRequest { string voice_id = 1; }
@@ -105,7 +162,8 @@ message ListVoicesRequest {
   string store_id = 1;
   optional Gender gender = 2;
   optional VoiceStyle style = 3;
-  common.v1.Pagination pagination = 4;
+  optional CloneMethod clone_method = 4;  // Filter cloned voices by method
+  common.v1.Pagination pagination = 5;
 }
 
 message ListVoicesResponse {
@@ -115,15 +173,42 @@ message ListVoicesResponse {
 
 message StartVoiceCloneRequest {
   string voice_id = 1;
-  bytes prompt_audio = 2;
-  string prompt_transcript = 3;
+  string source_audio_url = 2;            // MinIO URL (not raw bytes)
+  string source_transcript = 3;           // Optional transcript for alignment
+  CloneMethod clone_method = 4;
+  CloneConfig clone_config = 5;
 }
 
 message GetVoiceCloneTaskRequest { string task_id = 1; }
 
+message ListVoiceCloneTasksRequest {
+  string store_id = 1;
+  optional CloneStatus status = 2;
+  common.v1.Pagination pagination = 3;
+}
+
+message ListVoiceCloneTasksResponse {
+  repeated VoiceCloneTask tasks = 1;
+  common.v1.PageInfo page_info = 2;
+}
+
+message CancelVoiceCloneRequest { string task_id = 1; }
+
+message GetSpeakerEmbeddingRequest { string voice_id = 1; }
+
+message CompareVoicesRequest {
+  string voice_id_1 = 1;
+  string voice_id_2 = 2;
+}
+
+message CompareVoicesResponse {
+  float similarity_score = 1;             // Cosine similarity of embeddings
+}
+
 message PreviewVoiceRequest {
   string voice_id = 1;
   string text = 2;
+  optional string emotion = 3;            // Override emotion for preview
 }
 
 message PreviewVoiceResponse {

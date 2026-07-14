@@ -1,4 +1,7 @@
-// Render Service — Visual Rendering, Lip Sync, Expression, FFmpeg Composition
+// Render Service — Visual Rendering, Lip Sync, Expression, Gesture, FFmpeg Composition
+//
+// Phase 2: Wav2Lip + BlendShape, 2D avatar rendering
+// Phase 3: 3DGS/NeRF real-time rendering, full-body gesture generation, emotion-driven expressions
 syntax = "proto3";
 
 package render.v1;
@@ -9,10 +12,14 @@ option go_package = "github.com/livestream-tts/proto/render/v1;renderv1";
 
 service RenderService {
   // ── Rendering Pipeline ──
-  rpc Render(RenderRequest) returns (RenderResponse);
+  rpc Render(RenderRequest) returns (stream RenderResponse);
 
   // ── Lip Sync ──
   rpc PredictLipSync(PredictLipSyncRequest) returns (PredictLipSyncResponse);
+
+  // ── Expression & Gesture (Phase 2/3) ──
+  rpc PredictExpression(PredictExpressionRequest) returns (PredictExpressionResponse);
+  rpc GenerateGestures(GenerateGesturesRequest) returns (GenerateGesturesResponse);
 
   // ── Health ──
   rpc GetGPUStatus(GetGPUStatusRequest) returns (GPUStatus);
@@ -21,11 +28,16 @@ service RenderService {
 message RenderRequest {
   string request_id = 1;
   string avatar_id = 2;
-  bytes audio_data = 3;
-  int32 sample_rate = 4;
-  string background_id = 5;
-  repeated Overlay overlays = 6;
-  VideoConfig video_config = 7;
+  string avatar_type = 3;               // "2d_real" | "3d_real" | "3d_cartoon" — selects render pipeline
+  bytes audio_data = 4;
+  int32 sample_rate = 5;
+  string background_id = 6;
+  repeated Overlay overlays = 7;
+  VideoConfig video_config = 8;
+  // ── Clone rendering (Phase 2/3) ──
+  ExpressionOverride expression = 9;    // Override emotion-driven expression
+  GestureConfig gesture_config = 10;    // Gesture generation settings
+  string render_engine = 11;            // "livetalking" | "wav2lip" | "3dgs" | "nerf" | "unity"
 }
 
 message RenderResponse {
@@ -33,13 +45,16 @@ message RenderResponse {
   bytes video_frame = 2;
   int32 frame_number = 3;
   bool is_final = 4;
+  // ── Debug info ──
+  float render_time_ms = 5;             // Time spent rendering this frame
 }
 
 message VideoConfig {
   int32 width = 1;
   int32 height = 2;
   int32 fps = 3;
-  string codec = 4;
+  string codec = 4;                     // "h264" | "h265" | "vp9"
+  int32 bitrate_kbps = 5;               // Target bitrate
 }
 
 message Overlay {
@@ -47,6 +62,7 @@ message Overlay {
   OverlayType type = 2;
   string content = 3;
   Position position = 4;
+  float duration_sec = 5;               // 0 = persistent until removed
 }
 
 enum OverlayType {
@@ -54,8 +70,10 @@ enum OverlayType {
   OVERLAY_TYPE_PRODUCT_CARD = 1;
   OVERLAY_TYPE_PRICE_TAG = 2;
   OVERLAY_TYPE_COUPON = 3;
-  OVERLAY_TYPE_WATERMARK = 4;
+  OVERLAY_TYPE_WATERMARK = 4;           // AI标识 (required by law)
   OVERLAY_TYPE_LOGO = 5;
+  OVERLAY_TYPE_DANMAKU = 6;             // 弹幕飘屏
+  OVERLAY_TYPE_AI_LABEL = 7;            // "AI生成" 合规标注
 }
 
 message Position {
@@ -64,18 +82,75 @@ message Position {
   int32 width = 3;
   int32 height = 4;
   float opacity = 5;
+  int32 z_index = 6;                    // Layer ordering
 }
+
+// ── Lip Sync ──
 
 message PredictLipSyncRequest {
   bytes audio_data = 1;
   int32 sample_rate = 2;
   string avatar_id = 3;
+  string avatar_type = 4;               // Affects which lip-sync model to use
 }
 
 message PredictLipSyncResponse {
-  repeated float blendshape_weights = 1;
+  repeated float blendshape_weights = 1;// 52 ARKit blend shapes for 3D, fewer for 2D
   int32 frame_count = 2;
+  float confidence = 3;                 // Model confidence (0-1)
 }
+
+// ── Expression (Phase 2/3) ──
+
+message PredictExpressionRequest {
+  string emotion_label = 1;             // "happy" | "sad" | "angry" | "surprised" | "neutral"
+  float emotion_intensity = 2;          // 0.0 - 1.0
+  string avatar_id = 3;
+  repeated float base_blendshapes = 4;  // Starting expression (e.g. from lip sync)
+}
+
+message PredictExpressionResponse {
+  repeated float blendshape_weights = 1;// 52 ARKit blend shapes with emotion overlay
+  string dominant_expression = 2;
+  float expression_confidence = 3;
+}
+
+message ExpressionOverride {
+  string emotion_label = 1;
+  float intensity = 2;
+  bool override_mouth = 3;              // If true, override lip-sync for strong emotions
+}
+
+// ── Gesture (Phase 3) ──
+
+message GenerateGesturesRequest {
+  string audio_text = 1;                // TTS transcript for keyword-triggered gestures
+  repeated float audio_amplitude = 2;   // Audio waveform for rhythm sync
+  string avatar_id = 3;
+  string gesture_style = 4;             // "gentle" | "energetic" | "professional"
+  repeated string blocked_gestures = 5; // Gesture IDs to avoid
+}
+
+message GenerateGesturesResponse {
+  repeated Gesture gestures = 1;
+}
+
+message Gesture {
+  string gesture_id = 1;                // e.g. "point_product", "wave_hello", "show_palm"
+  float start_time_sec = 2;
+  float duration_sec = 3;
+  float intensity = 4;                  // 0.0 - 1.0
+  repeated float joint_angles = 5;      // Arm/hand joint rotations (if full-body)
+}
+
+message GestureConfig {
+  bool enable_gestures = 1;             // Enable gesture generation
+  string gesture_style = 2;             // "gentle" | "energetic" | "professional"
+  float gesture_frequency = 3;          // Gestures per minute (default 6-10)
+  bool sync_to_keywords = 4;            // Trigger gestures on keywords
+}
+
+// ── GPU Status ──
 
 message GetGPUStatusRequest {}
 
@@ -85,4 +160,6 @@ message GPUStatus {
   int32 used_memory_mb = 3;
   int32 gpu_utilization_pct = 4;
   int32 active_streams = 5;
+  string render_engine = 6;             // Currently loaded render engine
+  int32 loaded_avatar_count = 7;        // Number of avatars in GPU memory
 }

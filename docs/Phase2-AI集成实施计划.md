@@ -463,6 +463,47 @@ metadata (JSON)
 
 ---
 
+---
+
+## 5-A. Phase 3 全人克隆 — Phase 2 必须做的准备
+
+Phase 2 的重点是让 AI 管线跑通。但为了 Phase 3 能无缝接入"全人克隆"，Phase 2 的代码必须做以下预留：
+
+### 5-A.1 Proto/API 预留（本次已完成 ✅）
+
+| 改动 | 说明 | 文件 |
+|---|---|---|
+| Avatar Proto 升级 | 新增 `AVATAR_TYPE_3D_REAL`、`CloneMethod`、`CloneQualityMetrics`、`CloneConfig`、`CancelClone` RPC | `libs/proto/avatar/v1/avatar.proto` |
+| Voice Proto 升级 | 新增 `CloneMethod`（full_training/few_shot/speaker_encoder）、`FewShotConfig`、`SpeakerEmbedding`、`CancelClone` RPC | `libs/proto/voice/v1/voice.proto` |
+| Render Proto 升级 | 新增 `ExpressionOverride`、`GestureConfig`、`PredictExpression` RPC、`GenerateGestures` RPC、`OVERLAY_TYPE_AI_LABEL` | `libs/proto/render/v1/render.proto` |
+
+### 5-A.2 数据模型预留（本次已完成 ✅）
+
+| 改动 | 说明 | 文件 |
+|---|---|---|
+| Avatar 模型升级 | 新增 `clone_method`、`source_person_id`、`source_video_url`、`clone_quality` 字段 | `services/avatar-svc/src/models/avatar.py` |
+| CloneTask 模型升级 | 新增 `store_id`、`clone_method`、`source_video_url`、`source_audio_url`、`clone_config`、`quality_metrics` 字段 | `services/avatar-svc/src/models/avatar.py` |
+| Voice 模型升级 | 新增 `clone_method`、`speaker_embedding_url`、`few_shot_config` 字段 | `services/voice-svc/src/models/voice.py` |
+| VoiceCloneTask 升级 | 新增 `store_id`、`clone_method`、`source_audio_url`、`source_transcript`、`clone_config`、`quality_metrics` 字段 | `services/voice-svc/src/models/voice.py` |
+
+### 5-A.3 Phase 2 代码中必须保持的扩展点
+
+| 扩展点 | 为什么 | Phase 2 怎么做 |
+|---|---|---|
+| `render-svc` 的 `render_engine` 参数 | Phase 3 要切换渲染引擎（LiveTalking→3DGS） | 用策略模式，`RenderRequest.render_engine` 选引擎，默认 `wav2lip` |
+| `avatar-svc` 的 `avatar_type` 枚举 | Phase 3 新增 `3d_real` | 代码用 `match/case` 不写死 if-else，方便加新类型 |
+| `voice-svc` 的 `clone_method` 枚举 | Phase 3 新增 `few_shot` 和 `speaker_encoder` | `start_clone()` 根据 `clone_method` 分发到不同策略 |
+| `render-svc` 的 `OVERLAY_TYPE_AI_LABEL` | Phase 3 合规要求强制 AI 标识 | compositor 阶段固定叠加，不可关闭 |
+| MinIO 模型存储路径规范 | 克隆模型文件需要统一管理 | 路径规范：`{tenant}/{entity}/{id}/{version}/` |
+
+### 5-A.4 Phase 3 需要新增的服务
+
+| 新服务 | 职责 | 关键依赖 |
+|---|---|---|
+| `clone-pipeline` | 克隆任务编排：视频预处理 → 并行训练 → 质量评估 → 入库 | avatar-svc, voice-svc, MinIO, GPU training infra |
+| `gesture-svc` (或集成到 render-svc) | 动作风格提取 + 推理时动作生成 | MediaPipe/MMPose, Motion VAE |
+| 升级 `render-svc` | 新增 3DGS 渲染引擎 | 3D Gaussian Splatting CUDA kernel, NVENC |
+
 ## 6. 简化策略：5 路可暂缓项
 
 以下是架构文档里设计好了但 **5 路并发不需要** 的东西——等用户量上去了再加：
