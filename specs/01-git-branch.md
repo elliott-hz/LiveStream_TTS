@@ -2,14 +2,14 @@
 
 ## 分支模型
 
-本项目采用 **Trunk-Based Development**：`main` 是唯一的长期分支，所有开发通过短生命周期功能分支 + PR 合并。
+本项目采用 **Trunk-Based Development**：`main` 是唯一的长期分支。Solo 开发模式，无需 PR。
 
 ```
-main ──────────────────────────────────────────────────────→
+main ────────────────────────────────────────────────────→
   │                                                          
-  ├── feature/qwen-llm-svc ── PR → merge → delete           
-  ├── fix/tts-oom-bug ────── PR → merge → delete            
-  └── docs/phase2-plan ───── PR → merge → delete            
+  ├── feature/qwen-llm-svc ── merge → delete           
+  ├── fix/tts-oom-bug ────── merge → delete            
+  └── docs/phase2-plan ───── merge → delete            
 ```
 
 ## 分支命名
@@ -40,7 +40,7 @@ main ─────────────────────────
 ## 分支生命周期
 
 ```
-创建 → 开发 → PR → Review → 合并 → 删除
+创建 → 开发 → 自检 → 合并到 main → 删除
 ```
 
 1. **创建：** 从 `main` 的最新 commit 切出
@@ -50,8 +50,16 @@ main ─────────────────────────
    git checkout -b feature/xxx
    ```
 2. **开发：** 在分支上提交，保持 commit 干净有意义
-3. **PR：** push 到 remote，创建 Draft PR → 开发完成转 Ready
-4. **合并：** Review 通过后，Squash Merge 到 `main`
+3. **自检：** 合并前必须通过
+   ```bash
+   ruff check . && black --check . && pytest
+   ```
+4. **合并：** 直接 merge 到 `main`（Solo 模式无需 PR）
+   ```bash
+   git checkout main
+   git merge feature/xxx --no-ff -m "feat: xxx"
+   git push origin main
+   ```
 5. **删除：** 合并后立即删除远程和本地分支
    ```bash
    git branch -d feature/xxx
@@ -62,10 +70,10 @@ main ─────────────────────────
 
 | 规则 | 说明 |
 |---|---|
-| **禁止直接 push** | 任何人（包括管理员）都不能 `git push origin main` |
 | **禁止 force push** | `main` 历史不可改写 |
-| **始终可部署** | `main` 上的 HEAD 应该随时可以上生产 |
-| **合并前必须 CI 通过** | lint → test → build 全绿才允许 merge |
+| **始终可部署** | `main` 上的 HEAD 应该随时可部署 |
+| **合并前必须通过自检** | lint → test 全绿才允许合并 |
+| **直接 merge 允许** | Solo 模式，无需 PR |
 
 ## worktree 分支（Claude Code 自动管理）
 
@@ -90,19 +98,17 @@ git worktree prune
 
 | 分支类型 | 合并方式 | 说明 |
 |---|---|---|
-| `feature/*` | **Squash Merge** | 一个 feature 压成 1 个 commit |
-| `fix/*` | **Squash Merge** | 一个 bug 压成 1 个 commit |
-| `docs/*` | **Squash Merge** | 文档更改压成 1 个 commit |
-| `refactor/*` | **Squash Merge** | 重构压成 1 个 commit |
-| `chore/*` | **Squash Merge** | 杂项压成 1 个 commit |
+| `feature/*` | **Squash Merge 或 --no-ff Merge** | 保持 main 历史干净 |
+| `fix/*` | **Squash Merge** | 一个 bug 一个 commit |
+| `docs/*` | **直接 Merge** | 文档不要求 squash |
 
-**为什么 Squash：** `main` 上只保留"完成了一个什么功能"，不保留开发过程中的 "wip"、"fix typo"、"try again" 等中间 commit。
+**推荐：** 开发分支上可以随意 commit（wip、fix typo 都行），合并时 squash 成一个干净 commit。
 
 ## 冲突解决
 
 1. 在功能分支上 `git rebase main`（不要 merge main 进 feature）
-2. 解决冲突后 `git push --force-with-lease`（只允许在自己的 feature 分支上 force push）
-3. 确保 CI 仍然通过
+2. 解决冲突后继续 rebase
+3. 确保自检仍然通过
 
 ```bash
 git checkout feature/xxx
@@ -111,5 +117,4 @@ git rebase origin/main
 # 解决冲突...
 git add .
 git rebase --continue
-git push --force-with-lease origin feature/xxx
 ```
