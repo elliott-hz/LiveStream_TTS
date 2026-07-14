@@ -1,4 +1,9 @@
 // Avatar Service — Digital Human Avatar CRUD, Clone, Audit
+//
+// Phase 3: Full human cloning (appearance + behavior) designed from the start.
+//   - 2D clone: GAN + FaceFormer, 3-5 min green-screen video → 3h
+//   - 3D clone: 3D Gaussian Splatting / NeRF, multi-angle photos → 3D model
+//   - Clone quality metrics track fidelity, lip-sync accuracy, expression naturalness
 syntax = "proto3";
 
 package avatar.v1;
@@ -14,9 +19,11 @@ service AvatarService {
   rpc DeleteAvatar(DeleteAvatarRequest) returns (common.v1.Error);
   rpc ListAvatars(ListAvatarsRequest) returns (ListAvatarsResponse);
 
-  // Clone
+  // Clone (Phase 2: 2D, Phase 3: 3D)
   rpc StartClone(StartCloneRequest) returns (CloneTask);
   rpc GetCloneTask(GetCloneTaskRequest) returns (CloneTask);
+  rpc ListCloneTasks(ListCloneTasksRequest) returns (ListCloneTasksResponse);
+  rpc CancelClone(CancelCloneRequest) returns (CloneTask);
 }
 
 message Avatar {
@@ -29,13 +36,26 @@ message Avatar {
   string model_path = 7;
   AvatarCustomParam custom_params = 8;
   common.v1.AuditInfo audit_info = 9;
+  // ── Clone-related (Phase 2/3) ──
+  string source_person_id = 10;          // Links cloned avatars to source human
+  CloneMethod clone_method = 11;         // Which cloning technique was used
+  CloneQualityMetrics clone_quality = 12;// Post-clone quality assessment
 }
 
 enum AvatarType {
   AVATAR_TYPE_UNSPECIFIED = 0;
-  AVATAR_TYPE_2D_REAL = 1;
-  AVATAR_TYPE_3D_CARTOON = 2;
-  AVATAR_TYPE_2D_CARTOON = 3;
+  AVATAR_TYPE_2D_REAL = 1;              // 2D realistic (LiveTalking / HeyGen-style)
+  AVATAR_TYPE_3D_CARTOON = 2;           // 3D cartoon (Unity/UE5)
+  AVATAR_TYPE_2D_CARTOON = 3;           // 2D cartoon / anime
+  AVATAR_TYPE_3D_REAL = 4;              // 3D photorealistic clone (Phase 3: 3DGS/NeRF)
+}
+
+enum CloneMethod {
+  CLONE_METHOD_UNSPECIFIED = 0;
+  CLONE_METHOD_GAN_FACEFORMER = 1;      // 2D: GAN + FaceFormer (Phase 2)
+  CLONE_METHOD_3DMM_RECON = 2;          // 3D: 3DMM reconstruction (Phase 3)
+  CLONE_METHOD_3D_GAUSSIAN_SPLAT = 3;   // 3D: 3D Gaussian Splatting (Phase 3)
+  CLONE_METHOD_NERF = 4;                // 3D: NeRF-based (Phase 3)
 }
 
 enum AvatarStatus {
@@ -44,38 +64,77 @@ enum AvatarStatus {
   AVATAR_STATUS_CLONING = 2;
   AVATAR_STATUS_PENDING_AUDIT = 3;
   AVATAR_STATUS_REJECTED = 4;
+  AVATAR_STATUS_TRAINING = 5;           // Model training in progress
 }
 
 message AvatarCustomParam {
+  // ── Basic (Phase 1) ──
   float skin_smooth = 1;
   float face_thin = 2;
   float eye_size = 3;
   float lip_thickness = 4;
+  // ── Extended (Phase 3: 200+ tunable params) ──
+  float nose_height = 5;
+  float jaw_width = 6;
+  float eyebrow_angle = 7;
+  float hair_style_id = 8;
+  float body_type = 9;
+  float height_cm = 10;
+  string outfit_id = 11;
+  string makeup_id = 12;
+  string extended_params_json = 20;      // Free-form for future 200+ params
+}
+
+message CloneQualityMetrics {
+  float fidelity_score = 1;             // Visual similarity to source (0-1)
+  float lip_sync_accuracy = 2;          // Lip-sync accuracy score (0-1)
+  float expression_naturalness = 3;     // Expression naturalness MOS (1-5)
+  float motion_smoothness = 4;          // Motion transition smoothness (1-5)
+  int64 evaluated_at = 5;               // Unix timestamp of evaluation
 }
 
 message CloneTask {
   string task_id = 1;
   string avatar_id = 2;
-  CloneStatus status = 3;
-  int32 progress_percent = 4;
-  string error_message = 5;
-  int64 created_at = 6;
-  int64 completed_at = 7;
+  string store_id = 3;                  // For tenant-scoped queries
+  CloneStatus status = 4;
+  CloneMethod clone_method = 5;         // Target clone technique
+  int32 progress_percent = 6;
+  string error_message = 7;
+  string source_video_url = 8;          // MinIO URL of uploaded source video
+  string source_audio_url = 9;          // Optional: separate audio for voice clone
+  CloneConfig clone_config = 10;        // Clone-specific parameters
+  CloneQualityMetrics quality = 11;     // Post-clone evaluation (on success)
+  int64 created_at = 12;
+  int64 completed_at = 13;
+}
+
+message CloneConfig {
+  int32 video_duration_seconds = 1;     // Source video length
+  bool enable_expression_cloning = 2;   // Clone facial expressions
+  bool enable_gesture_cloning = 3;      // Clone body gestures (Phase 3)
+  int32 output_fps = 4;                 // Target output FPS (default 30)
+  string background_removal = 5;        // "green_screen" | "ai_matting" | "none"
 }
 
 enum CloneStatus {
   CLONE_STATUS_UNSPECIFIED = 0;
   CLONE_STATUS_UPLOADING = 1;
-  CLONE_STATUS_PROCESSING = 2;
+  CLONE_STATUS_PREPROCESSING = 2;       // Face detection, landmark extraction, matting
   CLONE_STATUS_TRAINING = 3;
-  CLONE_STATUS_SUCCESS = 4;
-  CLONE_STATUS_FAILED = 5;
+  CLONE_STATUS_EVALUATING = 4;          // Quality assessment
+  CLONE_STATUS_PENDING_AUDIT = 5;       // Awaiting content review
+  CLONE_STATUS_SUCCESS = 6;
+  CLONE_STATUS_FAILED = 7;
+  CLONE_STATUS_CANCELLED = 8;
 }
 
 message CreateAvatarRequest {
   string store_id = 1;
   string name = 2;
   AvatarType type = 3;
+  CloneMethod clone_method = 4;         // Required if creating via clone
+  string source_video_url = 5;          // For clone-from-video flow
 }
 
 message GetAvatarRequest { string avatar_id = 1; }
@@ -88,7 +147,8 @@ message DeleteAvatarRequest { string avatar_id = 1; }
 message ListAvatarsRequest {
   string store_id = 1;
   optional AvatarType type = 2;
-  common.v1.Pagination pagination = 3;
+  optional CloneMethod clone_method = 3;  // Filter cloned avatars by technique
+  common.v1.Pagination pagination = 4;
 }
 message ListAvatarsResponse {
   repeated Avatar avatars = 1;
@@ -97,7 +157,18 @@ message ListAvatarsResponse {
 
 message StartCloneRequest {
   string avatar_id = 1;
-  bytes video_data = 2;
-  int32 duration_seconds = 3;
+  string source_video_url = 2;          // MinIO URL (not raw bytes — large files)
+  string source_audio_url = 3;          // Optional: separate audio for voice clone
+  CloneConfig clone_config = 4;
 }
 message GetCloneTaskRequest { string task_id = 1; }
+message ListCloneTasksRequest {
+  string store_id = 1;
+  optional CloneStatus status = 2;
+  common.v1.Pagination pagination = 3;
+}
+message ListCloneTasksResponse {
+  repeated CloneTask tasks = 1;
+  common.v1.PageInfo page_info = 2;
+}
+message CancelCloneRequest { string task_id = 1; }
