@@ -115,7 +115,7 @@ libs/                      # 5 个共享库
 | 阶段 | 状态 | 说明 |
 |---|---|---|
 | **Phase 1** | ✅ | 16 微服务骨架，gRPC+Kafka，CI/CD，~500 测试。**所有 AI 模块为 mock** |
-| **Phase 2** | 📋 进行中 | AI 集成：CosyVoice2 TTS, Wav2Lip 口型, Qwen-3-7B LLM, NLP, RAG |
+| **Phase 2** | 📋 进行中 | AI 集成（全云化）：阿里云 TTS API, DeepSeek API, 2D Viseme 口型, NLP CPU 模型, RAG |
 | **Phase 3** | 📋 计划 | 全人克隆：3DGS/NeRF 实时渲染，Few-shot 音色克隆，微表情/动作克隆 |
 
 详见 `docs/Phase2-AI集成实施计划.md`
