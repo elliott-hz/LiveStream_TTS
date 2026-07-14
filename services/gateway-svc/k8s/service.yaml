@@ -1,0 +1,47 @@
+---
+# External-facing service — the gateway is the single entry point for all traffic.
+# Use LoadBalancer for cloud environments; NodePort is available for on-prem.
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-svc
+  namespace: livestream-tts
+  labels:
+    app: gateway-svc
+    tier: frontend
+  annotations:
+    # AWS: network load balancer with sticky sessions for WebSocket
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    # GCP: preserve client IP for WebSocket
+    cloud.google.com/load-balancer-type: "External"
+spec:
+  type: LoadBalancer
+  selector:
+    app: gateway-svc
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+  # Preserve client IP for WebSocket connections
+  externalTrafficPolicy: Local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-svc-headless
+  namespace: livestream-tts
+  labels:
+    app: gateway-svc
+    tier: frontend
+spec:
+  type: ClusterIP
+  clusterIP: None  # Headless for pod-level discovery
+  selector:
+    app: gateway-svc
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

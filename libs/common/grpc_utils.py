@@ -11,7 +11,7 @@ from typing import Any
 import grpc
 from grpc import aio
 from grpc_health.v1 import health_pb2, health_pb2_grpc
-from grpc_reflection.v1 import reflection
+from grpc_reflection.v1alpha import reflection
 
 from libs.common.logging import get_logger
 

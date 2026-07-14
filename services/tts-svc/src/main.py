@@ -1,32 +1,106 @@
 """
 TTS Service Entry Point
 
-Refactored from POC src/main.py — now runs as an independent microservice
-within the monorepo. Provides gRPC + WebSocket interfaces for streaming TTS.
+Refactored from POC — now runs as an independent microservice
+within the monorepo. Starts a gRPC server (TTSService) and an
+HTTP server (FastAPI health / REST / WebSocket).
+
+Usage:
+    python -m services.tts_svc.src.main           # via repo-root module
+    python services/tts-svc/src/main.py           # direct
+    ENV=prod python services/tts-svc/src/main.py  # prod config
 """
+
+from __future__ import annotations
 
 import asyncio
 import sys
 from pathlib import Path
+from typing import Any
 
-# Add repo root to path for monorepo imports
+# Add repo root to path for monorepo imports (must be first)
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+TTS_SVC_ROOT = REPO_ROOT / "services" / "tts-svc"
 sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(TTS_SVC_ROOT))
 
 from libs.common.config import ServiceConfig
 from libs.common.logging import setup_logging, get_logger
+from src.config import TTSConfig
+from src.grpc_service import TTSGrpcService, VoiceStore
+from src.http_server import create_http_app
 
 
-async def main():
-    config = ServiceConfig("tts-svc")
+async def main() -> None:
+    """Start the TTS service (gRPC + HTTP)."""
+    config = TTSConfig()
     setup_logging("tts-svc", level=config.get("LOG_LEVEL", "INFO"))
 
     logger = get_logger(__name__)
-    logger.info("tts_svc.starting", version="0.1.0", env=config.env)
+    logger.info("tts_svc.starting", version="0.2.0", env=config.env)
 
-    # TODO: Start gRPC server + WebSocket server (Sprint 1-2)
-    logger.info("tts_svc.ready")
+    # ── Shared state ──
+    voice_store = VoiceStore()
 
+    # ── gRPC Service ──
+    from libs.common.grpc_utils import create_grpc_server
+    from libs.proto.tts.v1 import tts_pb2_grpc
+
+    grpc_service = TTSGrpcService(voice_store=voice_store)
+    grpc_server = create_grpc_server(
+        service_name="tts-svc",
+        port=config.grpc_port,
+        max_workers=config.max_concurrent_synthesis,
+    )
+    tts_pb2_grpc.add_TTSServiceServicer_to_server(grpc_service, grpc_server)
+    await grpc_server.start()
+    logger.info("grpc.server.started", port=config.grpc_port)
+
+    # ── HTTP Server (FastAPI) ──
+    import uvicorn
+
+    http_app = create_http_app(grpc_service, voice_store)
+    http_config = uvicorn.Config(
+        http_app,
+        host=config.get("HTTP_HOST", "0.0.0.0"),
+        port=config.http_port,
+        log_level=config.get("LOG_LEVEL", "info").lower(),
+    )
+    http_server = uvicorn.Server(http_config)
+
+    logger.info(
+        "tts_svc.ready",
+        grpc_port=config.grpc_port,
+        http_port=config.http_port,
+        max_concurrent=config.max_concurrent_synthesis,
+    )
+
+    try:
+        # Run both servers concurrently
+        await asyncio.gather(
+            http_server.serve(),
+            _grpc_serve_forever(grpc_server, logger),
+        )
+    except asyncio.CancelledError:
+        pass
+    finally:
+        logger.info("tts_svc.shutdown")
+        await grpc_server.stop(grace=5)
+
+
+async def _grpc_serve_forever(
+    server: Any,  # grpc.aio.Server
+    logger: Any,
+) -> None:
+    """Keep the gRPC server alive until cancelled."""
+    try:
+        await server.wait_for_termination()
+    except KeyboardInterrupt:
+        logger.info("grpc.server.interrupted")
+
+
+# Make importable alias for tests
+serve = main
 
 if __name__ == "__main__":
     asyncio.run(main())

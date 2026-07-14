@@ -8,8 +8,8 @@ import math
 import struct
 from typing import Callable, Optional
 
-from .linguistic_engine import LinguisticFeatures
-from .emotion_engine import EmotionTag
+from modules.linguistic.linguistic_engine import LinguisticFeatures
+from modules.emotion.emotion_engine import EmotionTag
 
 logger = logging.getLogger(__name__)
 

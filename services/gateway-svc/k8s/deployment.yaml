@@ -1,0 +1,131 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-svc
+  namespace: livestream-tts
+  labels:
+    app: gateway-svc
+    tier: frontend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: gateway-svc
+  template:
+    metadata:
+      labels:
+        app: gateway-svc
+        tier: frontend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: livestream-tts-sa
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: gateway-svc
+          image: ghcr.io/livestream-tts/gateway-svc:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: ENV
+              value: "production"
+            - name: GATEWAY_SVC_HTTP_HOST
+              value: "0.0.0.0"
+            - name: GATEWAY_SVC_HTTP_PORT
+              value: "8080"
+            - name: GATEWAY_SVC_LOG_LEVEL
+              value: "INFO"
+            - name: GATEWAY_SVC_LOG_JSON
+              value: "true"
+            - name: GATEWAY_SVC_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: gateway-secrets
+                  key: jwt-secret
+            - name: GATEWAY_SVC_JWT_ALGORITHM
+              value: "HS256"
+            - name: GATEWAY_SVC_JWT_ACCESS_EXPIRE_MINUTES
+              value: "30"
+            - name: GATEWAY_SVC_JWT_REFRESH_EXPIRE_DAYS
+              value: "7"
+            - name: GATEWAY_SVC_USER_SVC_GRPC_HOST
+              value: "user-svc.livestream-tts.svc.cluster.local"
+            - name: GATEWAY_SVC_USER_SVC_GRPC_PORT
+              value: "50051"
+            - name: GATEWAY_SVC_PRODUCT_SVC_GRPC_HOST
+              value: "product-svc.livestream-tts.svc.cluster.local"
+            - name: GATEWAY_SVC_PRODUCT_SVC_GRPC_PORT
+              value: "50051"
+            - name: GATEWAY_SVC_SCRIPT_SVC_GRPC_HOST
+              value: "script-svc.livestream-tts.svc.cluster.local"
+            - name: GATEWAY_SVC_SCRIPT_SVC_GRPC_PORT
+              value: "50051"
+            - name: GATEWAY_SVC_TTS_SVC_GRPC_HOST
+              value: "tts-svc.livestream-tts.svc.cluster.local"
+            - name: GATEWAY_SVC_TTS_SVC_GRPC_PORT
+              value: "50051"
+            - name: GATEWAY_SVC_RATE_LIMIT_ADMIN_RPS
+              value: "100"
+            - name: GATEWAY_SVC_RATE_LIMIT_TTS_RPS
+              value: "50"
+            - name: GATEWAY_SVC_RATE_LIMIT_DEFAULT_RPS
+              value: "20"
+            - name: GATEWAY_SVC_RATE_LIMIT_WS_PER_IP
+              value: "5"
+            - name: GATEWAY_SVC_RATE_LIMIT_BURST_MULTIPLIER
+              value: "2"
+            - name: GATEWAY_SVC_CORS_ORIGINS
+              value: '["*"]'
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - gateway-svc
+                topologyKey: kubernetes.io/hostname
