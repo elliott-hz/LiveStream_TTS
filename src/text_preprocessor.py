@@ -28,13 +28,18 @@ class TextPreprocessor:
             ("emoji_love", lambda t: t.replace("❤️", "爱心").replace("😍", "喜爱")),
             ("emoji_ok", lambda t: t.replace("👍", "赞").replace("👎", "踩")),
             ("emoji_surprise", lambda t: t.replace("😮", "惊讶").replace("😱", "震惊")),
-            # 3) URL → 可读形式
+            # 3) URL → 可读形式（用中文"点"替代"点"号）
             ("url",
              lambda t: re.sub(
                  r"https?://([\w.-]+)(/\S*)?",
-                 lambda m: m.group(1).replace(".", " dot "),
+                 lambda m: m.group(1).replace(".", "点"),
                  t,
              )),
+            ("url_bare", lambda t: re.sub(
+                r"(?<![@\w.-])([\w-]+\.)+(com|cn|net|org|edu|gov)(/\S*)?(?![@\w])",
+                lambda m: m.group(0).replace(".", "点"),
+                t,
+            )),
             # 4) 连续换行 → 段落停顿标记
             ("double_newline", lambda t: re.sub(r"\n\s*\n", "。 ", t)),
             ("single_newline", lambda t: re.sub(r"\n", "，", t)),
@@ -70,7 +75,7 @@ class TextPreprocessor:
                 lambda m: "百分之" + self._num_to_cn(m.group(1)),
                 t,
             )),
-            # 9) 连续数字（长数字分段）— 用于电话号等
+            # 9) 连续数字 — 用于电话号等场景
             ("long_digits", lambda t: re.sub(
                 r"(?<!\d)(\d{5,})(?!\d)",
                 lambda m: " ".join(m.group(1)),
@@ -82,8 +87,6 @@ class TextPreprocessor:
                 lambda m: self._num_to_cn(m.group(1)),
                 t,
             )),
-            # 11) 多余空白清理
-            ("whitespace", lambda t: re.sub(r"\s+", "", t)),
         ]
 
     _CN_NUMS = "零一二三四五六七八九"
