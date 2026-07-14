@@ -58,7 +58,7 @@ class UserServiceConfig(ServiceConfig):
 
     @property
     def grpc_port(self) -> int:
-        return self.get_int("GRPC_PORT", 50051)
+        return self.get_int("GRPC_PORT", 50052)
 
     @property
     def grpc_max_workers(self) -> int:
@@ -68,7 +68,7 @@ class UserServiceConfig(ServiceConfig):
 
     @property
     def http_port(self) -> int:
-        return self.get_int("HTTP_PORT", 8080)
+        return self.get_int("HTTP_PORT", 8001)
 
     @property
     def http_host(self) -> str:

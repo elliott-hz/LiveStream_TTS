@@ -2,8 +2,8 @@
 Render Service configuration with GPU-related defaults.
 
 Config keys:
-  RENDER_GRPC_PORT         — gRPC server port (default 50053)
-  RENDER_HTTP_PORT         — HTTP server port (default 8083)
+  RENDER_GRPC_PORT         — gRPC server port (default 50061)
+  RENDER_HTTP_PORT         — HTTP server port (default 8010)
   RENDER_GPU_DEVICE        — CUDA device index (default 0)
   RENDER_GPU_MEMORY_FRAC   — Fraction of GPU memory to reserve (default 0.8)
   RENDER_GPU_BATCH_SIZE    — Batch size for GPU operations (default 1)
@@ -23,11 +23,11 @@ class RenderConfig(ServiceConfig):
 
     @property
     def grpc_port(self) -> int:
-        return self.get_int(ConfigKeys.GRPC_PORT, 50053)
+        return self.get_int(ConfigKeys.GRPC_PORT, 50061)
 
     @property
     def http_port(self) -> int:
-        return self.get_int(ConfigKeys.HTTP_PORT, 8083)
+        return self.get_int(ConfigKeys.HTTP_PORT, 8010)
 
     @property
     def gpu_device(self) -> int:

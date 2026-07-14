@@ -21,7 +21,7 @@ class GatewayConfig(ServiceConfig):
 
     @property
     def http_port(self) -> int:
-        return self.get_int("HTTP_PORT", default=8080)
+        return self.get_int("HTTP_PORT", 8080)
 
     @property
     def log_level(self) -> str:
@@ -81,7 +81,7 @@ class GatewayConfig(ServiceConfig):
 
     @property
     def user_svc_grpc_port(self) -> int:
-        return self.get_int("USER_SVC_GRPC_PORT", default=50051)
+        return self.get_int("USER_SVC_GRPC_PORT", default=50052)
 
     @property
     def product_svc_grpc_host(self) -> str:
@@ -89,7 +89,7 @@ class GatewayConfig(ServiceConfig):
 
     @property
     def product_svc_grpc_port(self) -> int:
-        return self.get_int("PRODUCT_SVC_GRPC_PORT", default=50051)
+        return self.get_int("PRODUCT_SVC_GRPC_PORT", default=50053)
 
     @property
     def script_svc_grpc_host(self) -> str:
@@ -97,7 +97,7 @@ class GatewayConfig(ServiceConfig):
 
     @property
     def script_svc_grpc_port(self) -> int:
-        return self.get_int("SCRIPT_SVC_GRPC_PORT", default=50051)
+        return self.get_int("SCRIPT_SVC_GRPC_PORT", default=50054)
 
     @property
     def tts_svc_grpc_host(self) -> str:
@@ -105,7 +105,7 @@ class GatewayConfig(ServiceConfig):
 
     @property
     def tts_svc_grpc_port(self) -> int:
-        return self.get_int("TTS_SVC_GRPC_PORT", default=50051)
+        return self.get_int("TTS_SVC_GRPC_PORT", default=50059)
 
     # ── CORS ──
     @property

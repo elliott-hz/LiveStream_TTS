@@ -11,11 +11,11 @@ class TTSConfig(ServiceConfig):
 
     @property
     def grpc_port(self) -> int:
-        return self.get_int(ConfigKeys.GRPC_PORT, 50051)
+        return self.get_int(ConfigKeys.GRPC_PORT, 50059)
 
     @property
     def http_port(self) -> int:
-        return self.get_int(ConfigKeys.HTTP_PORT, 8080)
+        return self.get_int(ConfigKeys.HTTP_PORT, 8008)
 
     @property
     def model_path(self) -> str:

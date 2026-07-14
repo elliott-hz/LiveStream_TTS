@@ -20,11 +20,11 @@ class NLPConfig(ServiceConfig):
 
     @property
     def http_port(self) -> int:
-        return self.get_int("HTTP_PORT", default=8080)
+        return self.get_int("HTTP_PORT", 8009)
 
     @property
     def grpc_port(self) -> int:
-        return self.get_int("GRPC_PORT", default=50051)
+        return self.get_int("GRPC_PORT", 50060)
 
     @property
     def grpc_max_workers(self) -> int:

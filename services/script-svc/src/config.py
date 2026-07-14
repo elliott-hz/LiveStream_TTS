@@ -13,11 +13,11 @@ class ScriptConfig(ServiceConfig):
 
     @property
     def grpc_port(self) -> int:
-        return self.get_int(ConfigKeys.GRPC_PORT, 50051)
+        return self.get_int(ConfigKeys.GRPC_PORT, 50054)
 
     @property
     def http_port(self) -> int:
-        return self.get_int(ConfigKeys.HTTP_PORT, 8081)
+        return self.get_int(ConfigKeys.HTTP_PORT, 8003)
 
     @property
     def db_host(self) -> str:

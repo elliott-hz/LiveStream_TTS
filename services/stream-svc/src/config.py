@@ -2,8 +2,8 @@
 Stream Service configuration.
 
 Config keys:
-  STREAM_GRPC_PORT          — gRPC server port (default 50054)
-  STREAM_HTTP_PORT          — HTTP server port (default 8084)
+  STREAM_GRPC_PORT          — gRPC server port (default 50067)
+  STREAM_HTTP_PORT          — HTTP server port (default 8016)
   STREAM_RTMP_BASE_URL      — Base RTMP URL for push (default "rtmp://push.livestream-tts.com/live")
   STREAM_RECORDING_DIR      — Directory for HLS recording output (default "/data/recordings")
   STREAM_TRANSCODE_QUEUE    — Transcode job queue size (default 10)
@@ -20,11 +20,11 @@ class StreamConfig(ServiceConfig):
 
     @property
     def grpc_port(self) -> int:
-        return self.get_int(ConfigKeys.GRPC_PORT, 50054)
+        return self.get_int(ConfigKeys.GRPC_PORT, 50067)
 
     @property
     def http_port(self) -> int:
-        return self.get_int(ConfigKeys.HTTP_PORT, 8084)
+        return self.get_int(ConfigKeys.HTTP_PORT, 8016)
 
     @property
     def rtmp_base_url(self) -> str:
