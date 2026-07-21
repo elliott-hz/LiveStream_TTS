@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kuanlong (Elliott) Li - Resume</title>
+<style>
+  @page { size: A4; margin: 18mm 20mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #333;
+  }
+
+  /* Header */
+  .header { display: flex; align-items: center; gap: 20px; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 3px solid #2b5797; }
+  .header .photo { width: 85px; height: 85px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid #2b5797; }
+  .header .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .header .info { flex: 1; }
+  .header .name { font-size: 22pt; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+  .header .meta { font-size: 10pt; color: #666; }
+  .header .meta span { margin-right: 16px; }
+  .header .contact { font-size: 10pt; color: #2b5797; margin-top: 4px; }
+
+  /* Section */
+  .section { margin-bottom: 22px; }
+  .section-title {
+    font-size: 12.5pt; font-weight: 700; color: #2b5797;
+    padding-bottom: 6px; border-bottom: 2px solid #2b5797; margin-bottom: 12px;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    page-break-after: avoid;
+  }
+
+  .core-group, .skills-section, .section { page-break-inside: avoid; }
+  .exp-header { page-break-after: avoid; }
+  .highlight-item { page-break-inside: avoid; }
+
+  /* Summary highlights */
+  .highlights { list-style: none; padding: 0; }
+  .highlights li {
+    position: relative; padding-left: 18px; margin-bottom: 3px;
+    font-size: 10pt; line-height: 1.5;
+  }
+  .highlights li::before { content: "▸"; position: absolute; left: 0; color: #2b5797; font-weight: 700; }
+
+  /* Experience */
+  .exp-header { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 0 6px; padding-top: 4px; border-top: 1px solid #e0e0e0; }
+  .exp-company { font-size: 11.5pt; font-weight: 700; color: #1a1a1a; }
+  .exp-title { font-size: 10.5pt; font-weight: 600; color: #2b5797; }
+  .exp-date { font-size: 9.5pt; color: #888; white-space: nowrap; }
+
+  .exp-subtitle { font-size: 10pt; font-weight: 600; color: #2b5797; margin: 10px 0 4px; }
+  .exp-content { font-size: 9.5pt; color: #444; margin-bottom: 6px; }
+  .exp-content ul { list-style: none; padding-left: 14px; }
+  .exp-content li { position: relative; padding-left: 13px; margin-bottom: 2px; }
+  .exp-content li::before { content: "•"; position: absolute; left: 0; color: #2b5797; }
+
+  .highlight-item { font-size: 9.5pt; margin-bottom: 8px; }
+  .highlight-item .proj-name { font-weight: 700; color: #1a1a1a; }
+  .highlight-item .proj-desc { color: #444; }
+
+  .proj-result { font-size: 9.5pt; color: #2b5797; font-weight: 600; margin: 2px 0; }
+
+  /* Education table */
+  .edu-table { width: 100%; font-size: 9.5pt; border-collapse: collapse; }
+  .edu-table td { padding: 4px 6px; border-bottom: 1px solid #eee; }
+  .edu-table td:first-child { width: 22%; color: #666; }
+  .edu-table td:nth-child(2) { width: 30%; font-weight: 600; }
+  .edu-table td:nth-child(3) { width: 15%; color: #888; }
+  .edu-table td:nth-child(4) { width: 15%; }
+  .edu-table td:last-child { width: 18%; }
+
+  .lang-row td { border: none; }
+
+  /* Core achievements */
+  .core-achievements { margin-bottom: 16px; }
+  .core-group { margin-bottom: 16px; }
+  .core-group-title {
+    font-size: 10.5pt; font-weight: 700; color: #2b5797;
+    padding: 5px 12px; background: #f0f4fa; border-left: 3px solid #2b5797;
+    margin-bottom: 8px;
+  }
+  .core-group ul { list-style: none; padding: 0 0 0 14px; }
+  .core-group li {
+    position: relative; padding: 2px 0 2px 15px; font-size: 9.5pt; line-height: 1.5; color: #444;
+  }
+  .core-group li::before { content: "▸"; position: absolute; left: 0; color: #2b5797; font-weight: 700; }
+
+  /* Page break */
+  .page-break { page-break-before: always; }
+
+  .tech-tag { font-size: 8.5pt; color: #2b5797; font-weight: 600; }
+
+  /* Skills */
+  .skills-section { margin-bottom: 16px; }
+  .skills-group { margin-bottom: 6px; font-size: 9.5pt; line-height: 1.6; }
+  .skills-cat { font-weight: 700; color: #2b5797; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="photo"><img src="icon.jpeg" alt="photo"></div>
+  <div class="info">
+    <div class="name">Kuanlong (Elliott) Li</div>
+    <div class="meta">
+      <span>Male · 38</span>
+      <span>16+ Yrs Experience</span>
+      <span>Overseas Master's</span>
+    </div>
+    <div class="contact">
+      spdx4046@163.com &nbsp;|&nbsp; +86 18651665838 (China)<br>
+      elliott.cn.lee@gmail.com &nbsp;|&nbsp; +61 0425765367 (Overseas)
+    </div>
+  </div>
+</div>
+
+<!-- Highlights -->
+<div class="section">
+  <div class="section-title">Highlights</div>
+  <ul class="highlights">
+    <li><strong>8+ years</strong> in technical management</li>
+    <li><strong>7+ years</strong> in FinTech &amp; consumer finance, <strong>6+ years</strong> in AI &amp; AI+IoT technology development and engineering practice</li>
+    <li>System architecture management for <strong>hundreds-of-millions-scale consumer (2C)</strong> and <strong>enterprise (2B)</strong> platforms</li>
+    <li>Multi-product line architecture with <strong>multi-tenant / platform / commercialization</strong> experience</li>
+    <li><strong>2 years overseas study</strong> with solid foundation in AI theory &amp; LLM fine-tuning alignment (finance-focused)</li>
+    <li>Full-stack AI engineering capability spanning <strong>AI Agent system architecture and LLM fine-tuning</strong>: co-developed <strong>DataClaw</strong> with Zhongshu Jinzhi — an intelligent data analytics platform built on a multi-agent collaboration framework (LLM+RAG+Agent three-layer decoupled architecture), evolving from traditional ML to a fine-tuned Collection FinLM across two stages, with PoC validation completed in banking post-loan/collection scenarios</li>
+  </ul>
+</div>
+
+<!-- Key Achievements -->
+<div class="core-achievements">
+  <div class="section-title">Key Achievements</div>
+
+  <div class="core-group">
+    <div class="core-group-title">AI Engineering · DataClaw (V1 Traditional ML → V2 Fine-Tuned LLM Two-Stage Evolution)</div>
+    <ul>
+      <li>Co-developed DataClaw with Zhongshu Jinzhi (2025–2026) for banking post-loan/collection scenarios, built on a three-layer decoupled architecture (LLM + RAG + Agent), covering two technical tracks — V1 (traditional ML) and V2 (fine-tuned Collection FinLM) — spanning the full spectrum from data analysis to semantic understanding</li>
+      <li><strong>V1 (Traditional ML Route)</strong>: LLM as the unified orchestrator, with 4 collaborative Agents (DM/DA/MT/MP) covering the full pipeline — data cleaning → statistical analysis → traditional ML modeling (classification/regression) → inference/prediction → AI-generated reports; Context Engineering using deterministic SQL retrieval over vector search for precise structured data injection; Human-in-the-Loop confirmation at each step; PoC validated at 2 financial institutions for post-loan collection strategy evaluation and risk factor analysis</li>
+      <li><strong>V2 (Fine-Tuned LLM Enhanced Route)</strong>: LoRA + SFT parameter-efficient fine-tuning on <strong>Qwen2.5‑14B</strong> (NF4 4-bit QLoRA, rank=16, alpha=32), using Instruction datasets built from de-identified collection data at financial institutions, supporting multi-class NLP tasks including customer intent recognition and collection strategy recommendation, target accuracy ≥ 85%; RAG knowledge base (BGE-M3 embedding + Milvus Lite + BGE-reranker); the model integrates into DataClaw V2 as a dedicated inference tool, with LLM automatically routing between traditional ML and Collection FinLM based on data characteristics</li>
+    </ul>
+  </div>
+
+  <div class="core-group">
+    <div class="core-group-title">AI+IoT · Voice Interaction &amp; Smart Hardware at Billion-User Scale</div>
+    <ul>
+      <li>Built from scratch a billion-scale user and device management platform (User Center / Device Center), supporting <strong>1M+ QPS</strong></li>
+      <li>Led the definition of the in-vehicle voice cloud-terminal integrated connectivity protocol for BMW, Mercedes-Benz, Honda and other major automakers; authored 5 standard integration protocols and 20 modular integration protocols (recognized as one of the BU's technology innovation projects that year)</li>
+    </ul>
+  </div>
+
+  <div class="core-group">
+    <div class="core-group-title">Digital Supply Chain · Product Commercialization &amp; Intelligence</div>
+    <ul>
+      <li>Built Tmall Genie's digital supply chain platform from scratch (30 subsystems covering PLM, procurement, production, logistics, warehousing, sales, aftersales; 500+ business sub-processes); drove commercialization to 3 external clients</li>
+      <li>Led supply chain intelligence — multi-channel sales data analysis and demand forecasting to drive intelligent procurement and supply planning, achieving optimal inventory balance; inventory accuracy improved from 80% to 98%</li>
+    </ul>
+  </div>
+
+  <div class="core-group">
+    <div class="core-group-title">Finance · Consumer Finance &amp; Internet Finance</div>
+    <ul>
+      <li>Led Suning Consumer Finance's end-to-end system architecture — multi-platform/multi-terminal with full-process coverage from loan intake to accounting; 40+ subsystems supporting tens of billions in transaction volume</li>
+      <li>Architected a multi-tenant, platform-based consumer finance core system (8 business domains: Customer, Product, Credit, Transaction, Billing, Accounting, Asset, Funding) for rapid independent deployment by banks and financial institutions, supporting self-operated, assisted lending + guarantee, assisted lending + profit-sharing, and co-lending business models; designed to support tens-to-hundreds of millions of customers</li>
+      <li>Designed and delivered the industry's third mortgage-payment and credit-payment product (integrated with Suning.com, won Suning Finance Group's Outstanding Project award); defined the new payment interface specification later adopted as Suning Finance's third-party payment technical standard</li>
+    </ul>
+  </div>
+
+  <div class="core-group">
+    <div class="core-group-title">Marketing · Marketing SaaS Platform</div>
+    <ul>
+      <li>Built from scratch a marketing SaaS product solution (spin-to-win, sweepstakes, flash sales, limited-time offers, milestone rewards, etc. across Activity Domain + Coupon Domain + Mission Domain + Points Domain), deployed at multiple banks and financial service providers; multi-tenant activity integration cycle compressed from 1 week to 2 days</li>
+      <li>Led the multi-tenant e-commerce SaaS product solution covering 6 core domains — Order, Cart, Payment, Return, Product, Pricing — adapted for points malls, installment malls, benefit malls, internal purchase malls, and rewards malls; new tenant onboarding reduced from 1 month to 1 week</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- Experience -->
+<div class="section">
+  <div class="section-title">Experience</div>
+
+  <!-- Zhongshu Jinzhi — Technical Advisor -->
+  <div class="exp-header" style="margin-top:14px;">
+    <span class="exp-company">Zhongshu Jinzhi (Shanghai) Technology Co., Ltd.</span>
+    <span class="exp-title">Technical Advisor</span>
+    <span class="exp-date">Aug 2024 – Present</span>
+  </div>
+  <div class="exp-subtitle">【Key Projects】</div>
+  <div class="highlight-item">
+    <div class="proj-name">DataClaw — Intelligent Data Analytics Platform (V1: Traditional ML + Multi-Agent Collaboration)</div>
+    <div class="proj-desc">Aug–Dec 2025. Built on the self-developed DataClaw platform with a three-layer decoupled architecture (LLM + RAG + Agent), leveraging multi-agent collaboration for end-to-end data analytics in collection scenarios. Core design:</div>
+    <div class="exp-content">
+      <ul>
+        <li><strong>Multi-Agent Collaboration</strong>: Orchestrator + LLM routes tasks to DM Agent (data cleaning, 8 tools), DA Agent (statistical analysis, 3 tools), MT Agent (traditional ML training, 11 tools), and MP Agent (inference/prediction, 5 tools), covering classification/regression/clustering tasks; LLM analyzes data characteristics and handles parameter tuning and result interpretation</li>
+        <li><strong>Context Engineering</strong>: Deterministic SQL retrieval over vector search — dynamically injects column statistics (mean/quantiles/missing rate/distribution), sample rows, and transformation history into the prompt; more precise and explainable than vector search for structured data</li>
+        <li><strong>Human-in-the-Loop</strong>: Step-by-step user confirmation; no black-box decisions; full traceability, rollback, and reproducibility</li>
+        <li><strong>Lightweight Deployment</strong>: Application-layer only; LLM inference leverages the client's existing GPU infrastructure; data never leaves the server</li>
+      </ul>
+    </div>
+    <div class="proj-result">PoC Outcome: Validated at 2 financial institutions for post-loan collection strategy evaluation and risk factor analysis. The V2 route (integrating fine-tuned Collection FinLM, see next project) further extends semantic understanding and AI report generation capabilities</div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Collection FinLM — Collection LLM Fine-Tuning Project (V2: QLoRA+SFT+RAG Enhanced Route)</div>
+    <div class="proj-desc">Feb–May 2026. Building on the collection domain understanding accumulated in DataClaw V1, this project delivers a custom Collection FinLM (collection-domain LLM) as V2's dedicated inference tool. Core pipeline:</div>
+    <div class="exp-content">
+      <ul>
+        <li><strong>Base Model &amp; Fine-Tuning</strong>: LoRA + SFT on <strong>Qwen2.5‑14B</strong> (NF4 4-bit QLoRA via bitsandbytes, rank=16, alpha=32, 7 target modules), trainable on a single A100/4090; effective batch=32, cosine LR scheduler, early stopping</li>
+        <li><strong>Instruction Data</strong>: Built SFT training dataset from de-identified real collection records and customer profiles at financial institutions, using "customer profile + collection note → intent/strategy label" Instruction templates, covering 5 intent and 5 strategy classes</li>
+        <li><strong>NLP Capabilities</strong>: Customer intent recognition (5 classes: Temporary hardship / Willful default / Lost contact / Refusing contact / Proactive negotiation) + Collection strategy recommendation (5 classes: Negotiate installment / Legal pressure / Field visit investigation / Continuous follow-up / Discretionary reduction); target accuracy ≥ 85%</li>
+        <li><strong>RAG Knowledge Base</strong>: BGE-M3 embedding + Milvus Lite + BGE-reranker pipeline providing external knowledge support (collection policies, FAQ, best-practice cases) for model inference</li>
+      </ul>
+    </div>
+    <div class="proj-result">The model integrates into DataClaw V2 as a FinLM Tool, forming a parallel routing system alongside V1's traditional ML models</div>
+    <div class="proj-result">PoC Outcome: Validated on collection-scenario test datasets for intent classification and strategy recommendation; model accuracy met targets, demonstrating the feasibility and practical value of fine-tuned LLMs in financial vertical scenarios</div>
+  </div>
+
+  <!-- Zhongshu Jinzhi — Technical Director -->
+  <div class="exp-header" style="margin-top:14px;">
+    <span class="exp-company">Zhongshu Jinzhi (Shanghai) Technology Co., Ltd.</span>
+    <span class="exp-title">Technical Director</span>
+    <span class="exp-date">Apr 2023 – Aug 2024</span>
+  </div>
+  <div class="exp-subtitle">【Responsibilities】</div>
+  <div class="exp-content">
+    <ul>
+      <li><strong>System Architecture &amp; Stability</strong> — Responsible for architecture planning and management of consumer finance payment, core, risk control, assisted lending, and co-lending systems; defined unified technical framework (four-layer architecture: middleware, foundational services, application services, solution layer)</li>
+      <li><strong>Platformization &amp; Productization</strong> — Led marketing SaaS productization for rapid multi-tenant integration; managed architecture and technical direction for consumer finance core business platform products</li>
+      <li><strong>Quality &amp; Security Management</strong> — Established high-availability implementation plans including production stability and routine maintenance mechanisms</li>
+    </ul>
+  </div>
+  <div class="exp-subtitle">【Key Projects】</div>
+  <div class="highlight-item">
+    <div class="proj-name">Distributed, Platform-Based Consumer Finance Core System</div>
+    <div class="proj-desc">Built on Spring Cloud distributed microservices, with 8 business domains (Customer, Product, Credit, Transaction, Billing, Accounting, Asset, Funding) abstracted into a shared platform:</div>
+    <div class="exp-content">
+      <ul>
+        <li>Broad business support: self-operated, assisted lending + guarantee, assisted lending + profit-sharing, and co-lending models; asset routing and capital routing</li>
+        <li>High adaptability: full credit product lifecycle support; product/trade parameter changes configurable without code modification</li>
+        <li>High performance: Spring Cloud distributed architecture handling high concurrency and big data volumes; designed for tens-to-hundreds of millions of customers</li>
+        <li>High reliability: product, account and metering systems decoupled from core transaction engine to preserve existing transaction stability</li>
+        <li>Easy maintenance: visual configuration tools for product, account and metering enabling rapid iteration</li>
+      </ul>
+    </div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Marketing Product Suite</div>
+    <div class="proj-desc">Analyzed diverse financial client marketing activities (spin-to-win, sweepstakes, flash sales, limited-time offers, milestone rewards, etc.), abstracted into multi-tenant marketing SaaS solutions (Activity Domain + Coupon Domain + Mission Domain + Points Domain), deployed at multiple banks and financial service providers.</div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Payment Gateway</div>
+    <div class="proj-desc">Built a unified payment gateway for consumer finance scenarios with standard, productized APIs — dynamically configurable per scenario, product and credit tier with different channel and limit rules; supported auto-debit and manual repayment; connected to multiple banks and third-party payment providers underneath; management and business logic separated, configuration and runtime decoupled.</div>
+  </div>
+
+  <!-- Haiyawan -->
+  <div class="exp-header" style="margin-top:14px;">
+    <span class="exp-company">Shanghai G-Town International Trading Co., Ltd.</span>
+    <span class="exp-title">Technical Director</span>
+    <span class="exp-date">Sep 2021 – Mar 2023</span>
+  </div>
+  <div class="exp-subtitle">【Responsibilities】</div>
+  <div class="exp-content">
+    <ul>
+      <li><strong>Business Productization</strong> — Built the company's first-generation e-commerce SaaS platform (onboarding cycle: 1 month → 1 week), marketing SaaS platform (1 week → 2 days), and lifestyle SaaS platform (Phase 1: travel, deployed at select clients)</li>
+      <li><strong>Supply Chain Platform</strong> — Redefined supply chain domain models from both product and business perspectives; restructured master data, procurement, sales, inventory and logistics workflows; inventory accuracy improved from 80% to 98%</li>
+      <li><strong>Infrastructure &amp; Architecture</strong> — Built foundational capabilities from monitoring &amp; logging to data services, from permissions &amp; authentication to API gateway and workflow engine; evolved from foundational services through productization to platformization, intelligence and commercialization</li>
+      <li><strong>Data Productization</strong> — Defined data product views from executive, finance, procurement, operations and sales perspectives</li>
+      <li><strong>Test-Driven Quality</strong> — Built automated testing capabilities reducing marketing SaaS regression testing from 1 person-day to 2 hours</li>
+      <li><strong>Team Building &amp; Transformation</strong> — Built self-driven teams with OKR-based performance management and risk tracking systems</li>
+    </ul>
+  </div>
+  <div class="exp-subtitle">【Key Projects】</div>
+  <div class="highlight-item">
+    <div class="proj-name">Hongchuan Campaign (codenamed "Red Boat" — SaaS Platform Launch)</div>
+    <div class="proj-desc">Analyzed and distilled prior project experience to define 2+ foundational SaaS solutions (e-commerce SaaS and marketing SaaS) along with underlying infrastructure. 3 sub-projects, 4 months total.</div>
+    <div class="exp-content">
+      <ul>
+        <li><strong>E-commerce SaaS Productization</strong>: Consolidated experience from multiple banking clients (ICBC, BOC Fullerton, ABC HQ, PSBC HQ) into a standardized C-end e-commerce SaaS product; new tenant onboarding reduced from 1 month to 1 week</li>
+        <li><strong>Marketing SaaS Productization</strong>: Abstracted standardized marketing SaaS solutions (Activity/Coupon/Mission/Points domains); new activity integration reduced from 1 week to 2 days</li>
+        <li><strong>Foundation Base (Infrastructure)</strong>: Built unified gateway, user center, authentication center, organization center, monitoring center, log platform, approval engine, message center and configuration center</li>
+      </ul>
+    </div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Dujiang Campaign (codenamed "Crossing the River" — Ecosystem Expansion)</div>
+    <div class="proj-desc">Horizontal expansion into C-end lifestyle SaaS, B2B operations, supply chain platform, unified operations platform and data platform. 4 sub-projects, 4 months total.</div>
+    <div class="exp-content">
+      <ul>
+        <li><strong>Lifestyle SaaS Productization</strong>: Built 3 multi-tenant matching-platform SaaS solutions (train ticketing, flight ticketing, event ticketing)</li>
+        <li><strong>Supply Chain SaaS Productization</strong>: Redefined standard SaaS domain models for supply chain (SCP)</li>
+        <li><strong>Unified Operations Platform</strong>: Standardized B2B multi-tenant, multi-platform, multi-role operations management services</li>
+        <li><strong>Observatory Data Platform</strong>: Built big data infrastructure from scratch, delivering 200+ core data reports; data access latency reduced from 1–2 days to 5 minutes</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Alibaba -->
+  <div class="exp-header" style="margin-top:14px;">
+    <span class="exp-company">Alibaba (China) Co., Ltd.</span>
+    <span class="exp-title">Technical Expert</span>
+    <span class="exp-date">Nov 2017 – Aug 2021</span>
+  </div>
+  <div class="exp-subtitle">【Responsibilities】</div>
+  <div class="exp-content">
+    <ul>
+      <li>Backend platform development for a consumer AI product (Tmall Genie smart speaker) — user platform and device gateway protocols</li>
+      <li>Cloud interface design and development for voice AI solutions in automotive, telecom, and IoT verticals</li>
+      <li>Design and development of Tmall Genie voice capability commercialization solutions</li>
+      <li>Built Tmall Genie's digital supply chain platform from scratch, creating a multi-tenant commercial open platform</li>
+    </ul>
+  </div>
+  <div class="exp-subtitle">【Key Projects】</div>
+  <div class="highlight-item">
+    <div class="proj-name">Tmall Genie — Luobupo Project (codenamed "Lop Nur" — Supply Chain 0→1)</div>
+    <div class="proj-desc">Technical lead for building Tmall Genie's supply chain platform from scratch. 8 months, delivered in 2 phases:</div>
+    <div class="exp-content">
+      <ul>
+        <li><strong>Phase 1 — Yugong Yishan</strong> (5 months): 1 month consulting/research, 4 months platform design &amp; development; full-process supply chain platform built from scratch</li>
+        <li><strong>Phase 2 — Nüwa Butian</strong> (3 months): Adopted industry best practices; strengthened PLM, supply chain planning, and digital factory platforms</li>
+      </ul>
+    </div>
+    <div class="proj-result">Results: 30 subsystems, 200+ pages, 500+ business sub-processes; a complete supply chain platform covering planning, procurement, production, logistics, warehousing, sales, and aftersales</div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Tmall Genie — Rainbow Bridge Project (codenamed — Supply Chain 1→10)</div>
+    <div class="proj-desc">Built a plan-driven, commercially scalable supply chain platform. 3 sub-projects, 6 months total.</div>
+    <div class="exp-content">
+      <ul>
+        <li><strong>Intelligent Procurement</strong>: Self-developed planning algorithm engine driving procurement automation; procurement plan analysis reduced from 2–3 days to 2 minutes</li>
+        <li><strong>C2M Project</strong>: Built Tmall Genie customization capabilities — as fast as 5-day C2M delivery</li>
+        <li><strong>Supply Chain Commercialization</strong>: Evolved from single-tenant to multi-tenant; launched commercial platform products externally</li>
+      </ul>
+    </div>
+    <div class="proj-result">Results: Intelligent procurement reduced weekly planning analysis from 2–3 days to 2 minutes; supply chain commercialization phase 1 onboarded 3 external clients</div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">AI+IoT Industry Solutions &amp; Ecosystem Platform</div>
+    <div class="exp-content">
+      <ul>
+        <li><strong>Automotive</strong>: Integrated with BMW, Mercedes-Benz, Honda — enabling "home-to-car" and "car-to-home" voice control</li>
+        <li><strong>Telecom</strong>: Partnered with China Mobile, China Unicom, China Telecom — defining new voice calling models for smart speakers</li>
+        <li><strong>IoT</strong>: Integrated with Bosch, Tuya, TAL Education — positioning Tmall Genie as a smart home hub</li>
+        <li><strong>Open Platform</strong>: Commercialized Tmall Genie's software customization capabilities for the AIoT market</li>
+      </ul>
+    </div>
+    <div class="proj-result">Results: Defined the in-vehicle voice cloud-terminal integrated connectivity protocol (recognized as one of the BU's technology innovation projects that year); authored 5 standard integration protocols and 20 modular integration protocols</div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Core Platform Infrastructure</div>
+    <div class="exp-content">
+      <ul>
+        <li><strong>User Center</strong>: Built from scratch — biometric ID center, voice address book, OAuth authorization center; supporting 1M+ QPS</li>
+        <li><strong>Points Center</strong>: User growth system including points &amp; rewards, activities &amp; rules, and other core capabilities</li>
+        <li><strong>Device Center</strong>: Managed hundreds-of-millions of online connections with 1M+ QPS device state management over HTTP/2 secure channels</li>
+        <li><strong>Family Sharing Center</strong>: Multi-person, multi-device voiceprint, faceprint and fingerprint relationship management</li>
+      </ul>
+    </div>
+    <div class="proj-result">Results: Built a billion-scale user and device management platform with 1M+ QPS capacity</div>
+  </div>
+
+  <!-- Suning -->
+  <div class="exp-header" style="margin-top:14px;">
+    <span class="exp-company">Suning Finance &amp; Suning Consumer Finance</span>
+    <span class="exp-title">Tech Lead / Architect</span>
+    <span class="exp-date">May 2012 – Oct 2017</span>
+  </div>
+  <div class="exp-subtitle">【Key Achievements】</div>
+  <div class="exp-content">
+    <ul>
+      <li>Built and managed a team from 0 to 40</li>
+      <li>Built the system from 0 to 40+ subsystems across 5 layers (frontend platform, business platform, risk control, core, middleware)</li>
+      <li>Defined new payment interface specifications later adopted as Suning Finance's third-party payment technical standard</li>
+      <li>As technical lead, designed and delivered the industry's third mortgage-payment and credit-payment product after Huabei (Ant Group) and Baitiao (JD) — launched in 2 months, integrated with Suning.com, won Suning Finance Group's Outstanding Project award</li>
+      <li>As technical lead, designed and delivered the first-generation assisted lending and co-lending systems</li>
+    </ul>
+  </div>
+  <div class="exp-subtitle">【Responsibilities】</div>
+  <div class="exp-content">
+    <ul>
+      <li>Led core technology research, set technical direction, and drove major technical decisions</li>
+      <li>Technical planning, design and delivery of consumer finance frontend products (mobile APP, PC, Suning.com integration)</li>
+      <li>Consumer finance transaction platform (loan intake, credit, payment, refund, repayment, settlement), member system, and marketing system</li>
+      <li>First-generation assisted lending and co-lending platform design and development</li>
+      <li>Project planning, cross-functional resource coordination, and overall schedule management</li>
+    </ul>
+  </div>
+  <div class="exp-subtitle">【Key Projects】</div>
+  <div class="highlight-item">
+    <div class="proj-name">Mortgage-Payment &amp; Credit-Payment Product</div>
+    <div class="proj-desc">Nov 2014 – Mar 2015: Suning's first mortgage-payment and credit-payment products ("Lingqian Dai" and "Credit Pay") — technical framework, system architecture, core component design and development.</div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Zero-Interest Installment &amp; Revolving Credit</div>
+    <div class="proj-desc">Sep 2015 – Jan 2016: Promotional campaigns with designated Suning.com merchants and personalized consumer finance scenarios.</div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Consumer Finance APP Revamp</div>
+    <div class="proj-desc">Feb – May 2016: New APP with high-concurrency support, multi-product launch, channel platform 2.0, marketing platform 2.0.</div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Consumer Finance Shared Platform</div>
+    <div class="proj-desc">Jun 2016 – Feb 2017: Business domain refactoring — decoupled user center, transaction center, document center, marketing center, approval center, and accounting core as independent services.</div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Consumer Finance Frontend Platform Standardization</div>
+    <div class="proj-desc">Dec 2016 – Aug 2017: Standardized frontend technical architecture, security architecture and product experience across all consumer finance products.</div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Third-Party Quick Payment</div>
+    <div class="proj-desc">Online banking payment (v2–v5), quick payment (v1–v8) — new payment channels, system expansion, and architecture refactoring; full direct-connection support for all major banks.</div>
+  </div>
+
+  <!-- VanceInfo -->
+  <div class="exp-header" style="margin-top:14px;">
+    <span class="exp-company">VanceInfo Technologies Inc. (Seconded to Huawei Nanjing Research Institute)</span>
+    <span class="exp-title">Software Development Engineer</span>
+    <span class="exp-date">Oct 2009 – May 2012</span>
+  </div>
+  <div class="exp-subtitle">【Key Projects】</div>
+  <div class="highlight-item">
+    <div class="proj-name">Operator Cloud Storage System (Client: Guangdong Telecom)</div>
+    <div class="proj-desc">As a Software Development Engineer, responsible for the development of a telecom operator's cloud storage/network drive system serving Guangdong Telecom's end users.</div>
+  </div>
+  <div class="highlight-item">
+    <div class="proj-name">Business Message Middleware — EAD Driver + SOA Architecture (Client: Henan Mobile)</div>
+    <div class="proj-desc">As a Software Development Engineer, responsible for developing a business message middleware based on EAD (Event-Driven Architecture) driver and SOA architecture for Henan Mobile's business systems.</div>
+  </div>
+</div>
+
+<!-- Education -->
+<div class="section">
+  <div class="section-title">Education</div>
+  <table class="edu-table">
+    <tr><td>Aug 2024 – Aug 2026</td><td>University of Technology Sydney (UTS)</td><td>Data Analytics</td><td>Master's (Full-time)</td><td>Deep Learning / RL / LLM Fine-Tuning Alignment</td></tr>
+    <tr><td>Sep 2015 – Feb 2018</td><td>Nanjing University</td><td>Accounting</td><td>Bachelor's (Part-time)</td><td></td></tr>
+    <tr><td>Sep 2007 – Jul 2009</td><td>Anhui Vocational College of Electronics &amp; Information Technology</td><td>Software Technology</td><td>Associate (Full-time)</td><td></td></tr>
+  </table>
+</div>
+
+<!-- Languages -->
+<div class="section">
+  <div class="section-title">Languages</div>
+  <table class="edu-table">
+    <tr class="lang-row"><td style="width:22%;">English</td><td style="width:28%;">IELTS</td><td style="width:50%;">2 years overseas study, proficient in listening, speaking, reading and writing; capable in international projects and foreign enterprises</td><td></td><td></td></tr>
+  </table>
+</div>
+
+<!-- Skills -->
+<div class="section skills-section">
+  <div class="section-title">Skills</div>
+  <div class="skills-group"><span class="skills-cat">Technical Management:</span>8+ years managing teams (0→40), OKR performance &amp; risk tracking, cross-functional coordination, technical decision-making, self-driven team building</div>
+  <div class="skills-group"><span class="skills-cat">AI / LLM:</span>LLM Fine-tuning &amp; Alignment (LoRA / SFT / QLoRA / NF4 Quantization / RLHF / DPO), Multi-Agent frameworks (LangGraph / AutoGen / CrewAI), RAG (BGE-M3 / Milvus / Reranker), Prompt Engineering, Traditional ML (Classification / Regression / Clustering, Scikit-learn / XGBoost), Deep Learning (CNN / RNN / Transformer / ViT, Object Detection), End-to-End Data Analytics Pipeline</div>
+  <div class="skills-group"><span class="skills-cat">System Architecture:</span>Distributed Systems (Spring Cloud), Microservices, High-Concurrency High-Availability (1M+ QPS), Multi-Tenant SaaS / Platform Architecture / Platformization / Commercialization, API Gateway &amp; Workflow Engine</div>
+  <div class="skills-group"><span class="skills-cat">Development &amp; Engineering:</span>Full-Stack Development (Java / Spring Boot/Cloud, Python, Mini Programs), Frontend (HTML/CSS/JavaScript), Scripting (Shell, MATLAB), DevOps / CI/CD, Automated Testing, Git Workflow, Agile Development</div>
+  <div class="skills-group"><span class="skills-cat">Cloud &amp; Infrastructure:</span>Alibaba Cloud (ECS / OSS / RDS / SLB / Message Queue, etc.), AWS (EC2 / S3 / Lambda, etc.), Lightweight Deployment &amp; Containerization</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>技术方案与Roadmap</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">技术方案与Roadmap</h1>
+</header>
+<h1 id="数字人直播带货-自研技术方案与实施路线图">数字人直播带货 —
+自研技术方案与实施路线图</h1>
+<blockquote>
+<p><strong>文档版本：</strong> v1.0<br />
+<strong>日期：</strong> 2026-07-19<br />
+<strong>保密级别：</strong> 商业机密<br />
+<strong>用途：</strong> 尽调完成后，基于真实数据调整后给章总</p>
+</blockquote>
+<hr />
+<h2 id="目录">目录</h2>
+<ol type="1">
+<li><a
+href="#1-自研总体策略渐进式替代业务不中断">自研总体策略：渐进式替代，业务不中断</a></li>
+<li><a href="#2-phase-1poc-验证13-个月1-3-路">Phase 1：POC 验证（1-3
+个月，1-3 路）</a></li>
+<li><a href="#3-phase-2功能对齐36-个月10-路新客户先行">Phase
+2：功能对齐（3-6 个月，10 路，新客户先行）</a></li>
+<li><a href="#4-phase-3规模化612-个月100-路存量迁移">Phase
+3：规模化（6-12 个月，100 路，存量迁移）</a></li>
+<li><a href="#5-phase-4全量1218-个月1000-路">Phase 4：全量（12-18
+个月，1000+ 路）</a></li>
+<li><a href="#6-数据迁移与客户迁移策略">数据迁移与客户迁移策略</a></li>
+<li><a href="#7-成本估算对比商汤方案-vs-自研方案">成本估算对比：商汤方案
+vs 自研方案</a></li>
+<li><a href="#8-团队规划">团队规划</a></li>
+<li><a href="#9-风险与应对矩阵">风险与应对矩阵</a></li>
+<li><a href="#10-合作模式建议">合作模式建议</a></li>
+</ol>
+<hr />
+<h2 id="自研总体策略渐进式替代业务不中断">1.
+自研总体策略：渐进式替代，业务不中断</h2>
+<h3 id="四条核心原则">1.1 四条核心原则</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────────┐
+│                    ★ 四条铁律 ★                                  │
+│                                                                  │
+│  1. 业务永远不中断                                                │
+│     → 商汤继续跑存量，自研先跑增量，验证后逐步切存量               │
+│                                                                  │
+│  2. 每个 Phase 都要交付可用的东西                                  │
+│     → 不做&quot;大爆炸&quot;式开发，3 个月要看到东西在跑                     │
+│                                                                  │
+│  3. 成本从低到高，先验证再投入                                     │
+│     → POC 阶段 ¥3,000-5,000/月，零硬件投入                       │
+│     → 确认跑通后才采购 GPU                                        │
+│                                                                  │
+│  4. 功能不低于商汤，体验超越商汤                                   │
+│     → 形象克隆先复用第三方 API                                    │
+│     → 互动体验从一开始就要比商汤好（这是我们最大的差异化）         │
+└─────────────────────────────────────────────────────────────────┘</code></pre>
+<h3 id="四阶段总览">1.2 四阶段总览</h3>
+<pre><code>Phase 1: POC 验证（1-3 个月）
+  │  全云化 API · 零 GPU · 1-3 路试点
+  │  月成本 ¥3,000-5,000  |  1 人
+  │
+  ▼
+Phase 2: 功能对齐（3-6 个月）
+  │  部分 GPU 自建 · 10 路 · 新客户先行
+  │  月成本 ¥1-2 万  |  2-3 人
+  │
+  ▼
+Phase 3: 规模化（6-12 个月）
+  │  大部分 GPU 自建 · 100 路 · 存量迁移启动
+  │  月成本 ¥5-12 万  |  4-6 人
+  │
+  ▼
+Phase 4: 全量（12-18 个月）
+  │  完全自建 · 1000+ 路 · 完全替换商汤
+  │  月成本 ¥25-55 万（含团队）  |  8-15 人</code></pre>
+<h3 id="过渡期双轨运行策略">1.3 过渡期双轨运行策略</h3>
+<pre><code>                    Phase 1         Phase 2         Phase 3         Phase 4
+                   (1-3月)         (3-6月)         (6-12月)        (12-18月)
+
+商汤存量客户     ████████████████ ████████████████ ████████░░░░░░░ ░░░░░░░░░░░░░░
+（~1000 个）      100% 商汤         100% 商汤       逐步迁移        全部迁移完成
+
+自研新客户       ░░░░░░░░░░░░░░ ████████████████ ████████████████ ████████████████
+（增量）          1-3 路验证      全部新客走自研   全部新客走自研   全部新客走自研
+
+商汤费用         100%              100%              ~60%            0%
+自研费用         极低              低               中              正常</code></pre>
+<hr />
+<h2 id="phase-1poc-验证1-3-个月1-3-路">2. Phase 1：POC 验证（1-3
+个月，1-3 路）</h2>
+<h3 id="目标">2.1 目标</h3>
+<blockquote>
+<p><strong>证明自研方案在技术上是可行的，体验上比商汤好。</strong><br />
+跑通完整链路：弹幕 → AI 理解 → 生成回复 → TTS 语音 → 口型渲染 → RTMP
+推流<br />
+选择 1-3 个新客户（或内部测试直播间）试点，不走存量客户。</p>
+</blockquote>
+<h3 id="技术方案">2.2 技术方案</h3>
+<p><strong>策略：全云化，零 GPU，零硬件投入</strong></p>
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│                   POC 架构（全云化）                       │
+│                                                          │
+│  阿里云 ECS 24C 48G（一台）                               │
+│  ├── interact-svc   ──→ DeepSeek API（LLM 对话）          │
+│  │                   ──→ nlp-svc（0.5B 分类，CPU）        │
+│  │                   ──→ knowledge-svc ──→ DashVector     │
+│  ├── tts-svc        ──→ 阿里云 CosyVoice API（TTS 流式）  │
+│  ├── render-svc     2D Viseme（音素→口型，CPU）            │
+│  ├── stream-svc     FFmpeg RTMP 推流（CPU）               │
+│  └── 管理微服务      user/product/script/live-mgr（CPU）   │
+│                                                          │
+│  阿里云（全托管中间件）                                     │
+│  ├── RDS PostgreSQL  ── 核心数据                          │
+│  ├── Redis           ── 缓存 + Session                   │
+│  ├── Kafka           ── 异步事件                          │
+│  ├── OSS             ── 素材存储                          │
+│  └── DashVector      ── 知识库向量检索                    │
+│                                                          │
+│  外部 API                                                │
+│  ├── DeepSeek API    ── LLM 对话生成                      │
+│  └── 阿里云 TTS API   ── 语音合成（流式）                  │
+└─────────────────────────────────────────────────────────┘</code></pre>
+<h3 id="交付范围">2.3 交付范围</h3>
+<table>
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 35%" />
+<col style="width: 29%" />
+</colgroup>
+<thead>
+<tr>
+<th>模块</th>
+<th>功能</th>
+<th style="text-align: center;">对标商汤</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>TTS 引擎</strong></td>
+<td>阿里云 CosyVoice API，5 种情感，流式输出，首包 &lt;300ms</td>
+<td style="text-align: center;">✅ 持平</td>
+</tr>
+<tr>
+<td><strong>NLP 服务</strong></td>
+<td>12 类意图识别 + 5 类情感 + 敏感词双模检测</td>
+<td style="text-align: center;">⬆️ 超越</td>
+</tr>
+<tr>
+<td><strong>LLM 对话</strong></td>
+<td>DeepSeek API + 带货场景 Prompt 模板</td>
+<td style="text-align: center;">⬆️ 超越</td>
+</tr>
+<tr>
+<td><strong>RAG 知识库</strong></td>
+<td>商品信息向量化 + DashVector 检索</td>
+<td style="text-align: center;">⬆️ 超越</td>
+</tr>
+<tr>
+<td><strong>用户画像</strong></td>
+<td>Redis 存储用户标签/购买历史/行为轨迹</td>
+<td style="text-align: center;">⬆️ 新增</td>
+</tr>
+<tr>
+<td><strong>文字场控</strong></td>
+<td>AI 自动发评论/弹券/氛围管理/简单问题文字回复</td>
+<td style="text-align: center;">⬆️ 新增</td>
+</tr>
+<tr>
+<td><strong>播单引擎</strong></td>
+<td>脚本片段编排 + 互动插入 + 循环规则</td>
+<td style="text-align: center;">✅ 持平</td>
+</tr>
+<tr>
+<td><strong>2D Viseme 渲染</strong></td>
+<td>音素→BlendShape 口型同步（虚拟形象，CPU）</td>
+<td style="text-align: center;">⚠️ 略低</td>
+</tr>
+<tr>
+<td><strong>RTMP 推流</strong></td>
+<td>FFmpeg 多路 RTMP 推流</td>
+<td style="text-align: center;">✅ 持平</td>
+</tr>
+<tr>
+<td><strong>管理后台</strong></td>
+<td>商家自助：脚本编排、商品管理、开播控制</td>
+<td style="text-align: center;">✅ 持平</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>POC 不包含</strong>（Phase 2 补）：真人级形象克隆、Wav2Lip
+口型渲染（需 GPU）、自部署 LLM</p>
+</blockquote>
+<h3 id="时间线12-周">2.4 时间线（12 周）</h3>
+<pre><code>Week 1-2   TTS 引擎接入
+           ├── 阿里云 CosyVoice API 流式集成
+           ├── 情感标签映射（excited/warm/enthusiastic/calm/urgent）
+           └── 音频缓存（高频话术预缓存，降 API 成本 60%+）
+
+Week 3-4   AI 互动引擎
+           ├── DeepSeek API 集成 + 带货场景 System Prompt 模板
+           ├── NLP 意图/情感/敏感词（0.5B CPU 模型）
+           └── RAG 知识库（商品信息向量化 + DashVector）
+
+Week 5-6   用户画像 + 文字场控
+           ├── 用户画像（标签/历史/行为 → Redis）
+           ├── 文字场控引擎（评论发送/弹券/氛围/负面管控）
+           └── 声道路由决策（语音 vs 文字双通道）
+
+Week 7-8   渲染 + 推流
+           ├── 2D Viseme 口型渲染（音素→BlendShape，CPU）
+           ├── 播单引擎（脚本编排 + 互动插入 + 循环）
+           └── FFmpeg RTMP 多路推流
+
+Week 9-10  管理后台 + 全链路打通
+           ├── 商家自助后台（脚本/商品/开播管理）
+           └── 端到端集成：弹幕→AI→TTS→渲染→推流
+
+Week 11-12 试点验证
+           ├── 1-3 个真实直播间试点（新客户或内部测试）
+           ├── 对比指标：延迟/稳定性/客户反馈
+           └── POC 总结报告 + Phase 2 详细计划调整</code></pre>
+<h3 id="成本">2.5 成本</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>月费</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ECS 24C 48G</td>
+<td>¥350-700</td>
+<td>包年更优惠</td>
+</tr>
+<tr>
+<td>RDS PostgreSQL 2C4G</td>
+<td>¥300-500</td>
+<td>入门规格</td>
+</tr>
+<tr>
+<td>Redis 1GB</td>
+<td>¥150-250</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Kafka 基础规格</td>
+<td>¥500-800</td>
+<td>—</td>
+</tr>
+<tr>
+<td>OSS 100GB</td>
+<td>¥20-50</td>
+<td>—</td>
+</tr>
+<tr>
+<td>DashVector 10万向量</td>
+<td>¥200-400</td>
+<td>—</td>
+</tr>
+<tr>
+<td>DeepSeek API</td>
+<td>¥75-150</td>
+<td>5000条弹幕/天 × 500 tokens</td>
+</tr>
+<tr>
+<td>阿里云 TTS API</td>
+<td>¥180-300</td>
+<td>1000次回复/天 × 30字</td>
+</tr>
+<tr>
+<td><strong>POC 月费合计</strong></td>
+<td><strong>¥3,000-5,000</strong></td>
+<td><strong>零硬件投入</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="验收标准">2.6 验收标准</h3>
+<pre><code>□ 弹幕到语音回复端到端延迟 &lt; 3s
+□ 弹幕到文字回复延迟 &lt; 1.5s
+□ TTS 首包 &lt; 300ms
+□ 1-3 路并发稳定运行 72 小时不中断
+□ 文字场控自动弹券/弹袋正常工作
+□ 用户画像驱动的个性化回复明显优于商汤 FAQ 模式
+□ 商家后台可自助完成：创建脚本 → 配置商品 → 开播</code></pre>
+<hr />
+<h2 id="phase-2功能对齐3-6-个月10-路新客户先行">3. Phase
+2：功能对齐（3-6 个月，10 路，新客户先行）</h2>
+<h3 id="目标-1">3.1 目标</h3>
+<blockquote>
+<p><strong>功能不低于商汤，互动体验显著超越商汤。</strong><br />
+所有新客户走自研平台。支持 10
+路并发。补齐形象克隆能力，升级渲染管线。</p>
+</blockquote>
+<h3 id="技术方案-1">3.2 技术方案</h3>
+<p><strong>策略：核心模块 GPU 自建（TTS），渲染升级</strong></p>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│                 Phase 2 架构                                  │
+│                                                               │
+│  GPU 服务器（新增 2×L40S 48GB）                                │
+│  ├── TTS 引擎（CosyVoice2 + TensorRT，本地推理）               │
+│  │   - 替换阿里云 TTS API                                    │
+│  │   - 首包 &lt; 200ms，单卡 30+ 路                              │
+│  │   - 5 情感 + 3 风格                                       │
+│  ├── 音频 DSP（降噪 + EQ + 压缩 + 响度归一）                   │
+│  └── 3 轨混音（人声 + BGM + 音效）                            │
+│                                                               │
+│  CPU 服务器（ECS 24C 48G × 1-2）                              │
+│  ├── LLM（DeepSeek API 为主，高频简单问题本地 0.5B）           │
+│  ├── NLP + RAG（同 POC，优化性能）                            │
+│  ├── render-svc（2D Viseme 为主，可选 Wav2Lip POC）           │
+│  ├── stream-svc（FFmpeg 10 路推流）                           │
+│  └── 管理微服务                                                │
+│                                                               │
+│  形象克隆（第三方 API 过渡方案）                                │
+│  ├── 选项 1：继续短期复用商汤克隆 API（如合同允许）             │
+│  ├── 选项 2：接入第三方克隆服务                                │
+│  └── Phase 3：自研克隆管线                                    │
+└─────────────────────────────────────────────────────────────┘</code></pre>
+<h3 id="关键补齐能力">3.3 关键补齐能力</h3>
+<table>
+<thead>
+<tr>
+<th>新增/升级</th>
+<th>说明</th>
+<th style="text-align: center;">对标商汤</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CosyVoice2 自建 TTS</strong></td>
+<td>本地 GPU 推理，替换阿里云 API</td>
+<td style="text-align: center;">⬆️ 超越</td>
+</tr>
+<tr>
+<td><strong>形象克隆（过渡）</strong></td>
+<td>第三方 API / 短期复用商汤克隆 API</td>
+<td style="text-align: center;">✅ 持平</td>
+</tr>
+<tr>
+<td><strong>音色克隆</strong></td>
+<td>CosyVoice2 Speaker Encoder</td>
+<td style="text-align: center;">✅ 持平</td>
+</tr>
+<tr>
+<td><strong>Wav2Lip 口型（可选）</strong></td>
+<td>GPU 实时口型同步（真人级）</td>
+<td style="text-align: center;">✅ 持平</td>
+</tr>
+<tr>
+<td><strong>方言 TTS</strong></td>
+<td>四川话/东北话（对标特看科技）</td>
+<td style="text-align: center;">⬆️ 新增</td>
+</tr>
+<tr>
+<td><strong>播单+互动深度整合</strong></td>
+<td>互动插入播单，播完恢复播单</td>
+<td style="text-align: center;">⬆️ 超越</td>
+</tr>
+<tr>
+<td><strong>商家自助克隆</strong></td>
+<td>商家上传视频 → 自动克隆 → 审核 → 上线</td>
+<td style="text-align: center;">✅ 持平</td>
+</tr>
+<tr>
+<td><strong>数据看板</strong></td>
+<td>直播数据实时大屏（GMV/互动/转化漏斗）</td>
+<td style="text-align: center;">⬆️ 新增</td>
+</tr>
+</tbody>
+</table>
+<h3 id="时间线12-周-1">3.4 时间线（12 周）</h3>
+<pre><code>Week 1-3   GPU 环境搭建 + TTS 引擎
+           ├── 采购 GPU 服务器（2×L40S），上架部署
+           ├── CosyVoice2 + TensorRT 部署
+           ├── 音频 DSP 管线（降噪/EQ/压缩/限幅）
+           └── 3 轨混音器
+
+Week 4-6   形象克隆（过渡方案）
+           ├── 评估第三方克隆 API
+           ├── 集成克隆流程：上传视频 → 调用 → 审核 → 入库
+           └── 如商汤合同允许 → 短期复用其克隆 API + 自研渲染
+
+Week 7-9   功能补齐
+           ├── 音色克隆（CosyVoice2 Speaker Encoder）
+           ├── 方言 TTS（四川话/东北话）
+           ├── 智能弹袋/弹券系统
+           └── 直播数据看板
+
+Week 10-12 联调 + 10 路验证
+           ├── 10 路并发压力测试
+           ├── 新客户全量接入自研平台
+           └── 7×24 稳定性监控</code></pre>
+<h3 id="成本-1">3.5 成本</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>月费</th>
+<th style="text-align: center;">一次性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPU 服务器 2×L40S</td>
+<td>—</td>
+<td style="text-align: center;">¥15-20 万</td>
+</tr>
+<tr>
+<td>CPU 服务器</td>
+<td>¥700-1,400</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>中间件（PG/Redis/Kafka等）</td>
+<td>¥2,000-3,000</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>DeepSeek API</td>
+<td>¥300-500</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>第三方克隆 API（过渡）</td>
+<td>¥2,000-5,000</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td><strong>Phase 2 月费合计</strong></td>
+<td><strong>¥1-2 万</strong></td>
+<td style="text-align: center;"><strong>¥15-20 万</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-3规模化6-12-个月100-路存量迁移">4. Phase 3：规模化（6-12
+个月，100 路，存量迁移）</h2>
+<h3 id="目标-2">4.1 目标</h3>
+<blockquote>
+<p><strong>稳定支撑 100
+路并发。启动存量客户迁移。自研克隆管线上线。</strong></p>
+</blockquote>
+<h3 id="技术方案-2">4.2 技术方案</h3>
+<pre><code>┌────────────────────────────────────────────────────────────────┐
+│                     Phase 3 架构（规模化）                        │
+│                                                                 │
+│  GPU 集群（4-6×L40S）                                           │
+│  ├── TTS：2-3 卡（单卡 30+ 路，100 路约需 3 卡）                  │
+│  ├── 渲染（Wav2Lip/3DGS）：2-3 卡                                │
+│  └── LLM（Qwen-3-7B LoRA 微调）：1 卡（可选）                    │
+│                                                                 │
+│  CPU 集群（3-5 台 16C32G）                                       │
+│  ├── 微服务 × 10+                                               │
+│  ├── Kafka + Redis Cluster                                      │
+│  └── 监控（Prometheus + Grafana + Jaeger）                      │
+│                                                                 │
+│  容器编排                                                        │
+│  └── K8s 集群（多节点）                                          │
+│                                                                 │
+│  自研克隆管线                                                    │
+│  ├── GAN + FaceFormer（2D 克隆）                                 │
+│  ├── 3DGS Gaussian Splatting（可选）                             │
+│  └── 训练硬件：A100 云端按需                                     │
+└────────────────────────────────────────────────────────────────┘</code></pre>
+<h3 id="关键新增能力">4.3 关键新增能力</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>新增</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>自研形象克隆</strong></td>
+<td>GAN + FaceFormer，上传 3-5min 视频 → 24h 出数字分身</td>
+</tr>
+<tr>
+<td><strong>Wav2Lip 口型</strong></td>
+<td>替换 2D Viseme，真人级唇形同步，误差 &lt; 80ms</td>
+</tr>
+<tr>
+<td><strong>自研 LLM（可选）</strong></td>
+<td>Qwen-3-7B LoRA 微调，vLLM 部署，替代 DeepSeek API</td>
+</tr>
+<tr>
+<td><strong>多平台商品同步</strong></td>
+<td>Canonical Product Model + 淘宝/抖音/京东 Adapter</td>
+</tr>
+<tr>
+<td><strong>K8s 编排</strong></td>
+<td>自动扩缩容、滚动更新、灰度发布</td>
+</tr>
+<tr>
+<td><strong>全链路监控</strong></td>
+<td>Prometheus + Grafana + Jaeger + ELK</td>
+</tr>
+</tbody>
+</table>
+<h3 id="时间线24-周">4.4 时间线（24 周）</h3>
+<pre><code>Week 1-4   基础设施升级
+           ├── K8s 集群搭建（3-5 节点）
+           ├── GPU 集群扩容（4-6×L40S）
+           ├── CI/CD 流水线（GitHub Actions + ArgoCD）
+           └── 监控体系部署
+
+Week 5-8   自研克隆管线
+           ├── 形象克隆（GAN + FaceFormer）训练 + 部署
+           ├── 克隆审核流程
+           └── 形象资产管理
+
+Week 9-12  渲染升级
+           ├── Wav2Lip 实时口型渲染（GPU）
+           ├── 3D 渲染引擎集成
+           └── 画面合成（背景 + 商品卡 + 特效 + AI 标识）
+
+Week 13-16 LLM 自建（可选）
+           ├── Qwen-3-7B LoRA 微调（带货语料）
+           ├── vLLM 推理部署
+           └── 模型路由（简单→本地，复杂→DeepSeek API fallback）
+
+Week 17-20 多平台商品同步
+           ├── Canonical Product Model
+           ├── 淘宝/抖音 Adapter
+           └── 库存/价格实时同步
+
+Week 21-24 存量迁移试点
+           ├── 选择 10-20 个存量客户试点迁移
+           ├── 商汤 + 自研并行 2 周
+           ├── 数据对比 + 效果评估
+           └── 迁移 SOP 文档</code></pre>
+<h3 id="成本-2">4.5 成本</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>月费</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPU 集群（4-6×L40S）</td>
+<td>¥3-6 万（自建）/ ¥5-10 万（云 GPU）</td>
+</tr>
+<tr>
+<td>CPU 集群（3-5 台）</td>
+<td>¥5,000-10,000</td>
+</tr>
+<tr>
+<td>中间件集群</td>
+<td>¥5,000-8,000</td>
+</tr>
+<tr>
+<td>带宽（200Mbps+）</td>
+<td>¥1-2 万</td>
+</tr>
+<tr>
+<td>DeepSeek API（过渡）</td>
+<td>¥1,000-3,000</td>
+</tr>
+<tr>
+<td><strong>Phase 3 月费合计</strong></td>
+<td><strong>¥5-12 万</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-4全量12-18-个月1000-路">5. Phase 4：全量（12-18
+个月，1000+ 路）</h2>
+<h3 id="目标-3">5.1 目标</h3>
+<blockquote>
+<p><strong>1000+
+路并发。完全替换商汤。技术成为公司的核心竞争壁垒。</strong></p>
+</blockquote>
+<h3 id="技术架构">5.2 技术架构</h3>
+<p>完整架构详见《数字人直播平台工业级架构设计》文档。核心能力：</p>
+<pre><code>- 16 个微服务全面投产
+- GPU 集群（8-15×L40S/A100）
+- 自研全链路：克隆→TTS→渲染→推流→互动→数据
+- K8s 多 AZ 部署，自动扩缩容
+- 多平台适配器（淘宝/抖音/京东/快手/拼多多/TikTok）
+- 数据飞轮：直播数据 → 自动标注 → LoRA 增量微调 → 灰度上线
+- 7×24 运维 + P0 告警 5 分钟响应</code></pre>
+<h3 id="成本估算">5.3 成本估算</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>月费</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPU 集群（8-15 卡）</td>
+<td>¥8-15 万（自建）/ ¥15-30 万（云）</td>
+</tr>
+<tr>
+<td>CPU 集群（10-15 台）</td>
+<td>¥2-4 万</td>
+</tr>
+<tr>
+<td>中间件 + 带宽</td>
+<td>¥3-6 万</td>
+</tr>
+<tr>
+<td>团队薪资</td>
+<td>¥15-30 万</td>
+</tr>
+<tr>
+<td><strong>Phase 4 月费合计</strong></td>
+<td><strong>¥25-55 万</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="数据迁移与客户迁移策略">6. 数据迁移与客户迁移策略</h2>
+<h3 id="关键前置问题需与商汤章总确认">6.1
+关键前置问题（需与商汤/章总确认）</h3>
+<pre><code>□ 数字人形象数据：源视频谁上传的？训练好的模型能导出吗？
+□ 音色数据：音色 Embedding 能导出吗？还是需要重新录音？
+□ 商品 &amp; 脚本：存在哪？能导出吗？什么格式？
+□ 历史直播数据：弹幕/回复/GMV 能导出吗？
+□ 推流配置：各平台推流地址/推流码在谁手里？</code></pre>
+<h3 id="三阶段迁移策略">6.2 三阶段迁移策略</h3>
+<p><strong>原则：不强迫迁移，用更好的体验吸引迁移。</strong></p>
+<pre><code>Stage A：被动等待 + 体验引流（Phase 2-3）
+  ┌────────────────────────────────────────────────────┐
+  │  • 新客户强制走自研平台                              │
+  │  • 存量客户不变（商汤继续跑）                        │
+  │  • 给存量客户看自研的效果 demo                       │
+  │  • &quot;用我们的新 AI，回复更智能，免费试用两周&quot;          │
+  │  • 对商汤不满的客户优先迁移                          │
+  │  • 预计 10-20% 存量主动迁移                          │
+  └────────────────────────────────────────────────────┘
+
+Stage B：主动迁移 + 双轨并行（Phase 3-4）
+  ┌────────────────────────────────────────────────────┐
+  │  • 对每批待迁移客户：                                │
+  │    1. 重新克隆数字人（用原始视频；如没有则用商汤    │
+  │       API 截取一段重新录）                           │
+  │    2. 导出商汤的商品/脚本数据 → 导入自研平台          │
+  │    3. 配置推流地址                                   │
+  │    4. 商汤 + 自研 并行 1-2 周                        │
+  │    5. 数据对比无异常 → 切换                           │
+  │                                                     │
+  │  • 每批 10-20 个客户，逐步推进                       │
+  │  • 保留回滚能力：商汤账号至少保留 1 个月缓冲期        │
+  └────────────────────────────────────────────────────┘
+
+Stage C：收尾（Phase 4 后期）
+  ┌────────────────────────────────────────────────────┐
+  │  • 所有客户完成迁移                                 │
+  │  • 商汤合同到期/提前终止                             │
+  │  • 历史数据归档                                     │
+  └────────────────────────────────────────────────────┘</code></pre>
+<h3 id="迁移风险预案">6.3 迁移风险预案</h3>
+<table>
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 29%" />
+<col style="width: 35%" />
+</colgroup>
+<thead>
+<tr>
+<th>风险</th>
+<th style="text-align: center;">概率</th>
+<th>应对</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>商汤拒绝数据导出</td>
+<td style="text-align: center;">🔴 高</td>
+<td>保留商家原始素材（视频/商品表），重新克隆+导入。历史弹幕可放弃</td>
+</tr>
+<tr>
+<td>客户拒绝迁移</td>
+<td style="text-align: center;">🟡 中</td>
+<td>不强推，商汤继续跑直到合同到期。用体验差距吸引</td>
+</tr>
+<tr>
+<td>迁移期间出故障</td>
+<td style="text-align: center;">🟡 中</td>
+<td>双轨并行 2 周，问题秒切回商汤</td>
+</tr>
+<tr>
+<td>形象克隆效果不如商汤</td>
+<td style="text-align: center;">🟡 中</td>
+<td>Phase 2 评估第三方 API 兜底，Phase 3 自研追赶</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="成本估算对比商汤方案-vs-自研方案">7. 成本估算对比：商汤方案 vs
+自研方案</h2>
+<h3 id="月成本对比">7.1 月成本对比</h3>
+<table>
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 23%" />
+<col style="width: 23%" />
+<col style="width: 23%" />
+</colgroup>
+<thead>
+<tr>
+<th>规模</th>
+<th style="text-align: center;">商汤方案（推测）</th>
+<th style="text-align: center;">自研方案</th>
+<th style="text-align: center;">自研节省</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3 路（POC）</td>
+<td style="text-align: center;">¥5,000-15,000</td>
+<td style="text-align: center;"><strong>¥3,000-5,000</strong></td>
+<td style="text-align: center;">30-70%</td>
+</tr>
+<tr>
+<td>10 路（Phase 2）</td>
+<td style="text-align: center;">¥15,000-40,000</td>
+<td style="text-align: center;"><strong>¥10,000-20,000</strong></td>
+<td style="text-align: center;">20-50%</td>
+</tr>
+<tr>
+<td>100 路（Phase 3）</td>
+<td style="text-align: center;">¥80,000-200,000</td>
+<td style="text-align: center;"><strong>¥50,000-120,000</strong></td>
+<td style="text-align: center;">30-50%</td>
+</tr>
+<tr>
+<td>1000 路（Phase 4）</td>
+<td style="text-align: center;">¥500,000-1,500,000</td>
+<td
+style="text-align: center;"><strong>¥250,000-550,000</strong>（含团队）</td>
+<td style="text-align: center;">40-65%</td>
+</tr>
+</tbody>
+</table>
+<h3 id="个月总投入估算">7.2 18 个月总投入估算</h3>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 10%" />
+<col style="width: 20%" />
+<col style="width: 18%" />
+<col style="width: 20%" />
+<col style="width: 18%" />
+</colgroup>
+<thead>
+<tr>
+<th>阶段</th>
+<th style="text-align: center;">月份</th>
+<th>月技术成本</th>
+<th>团队薪资</th>
+<th>硬件一次性</th>
+<th style="text-align: right;">阶段小计</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Phase 1（POC）</td>
+<td style="text-align: center;">1-3</td>
+<td>¥3-5K</td>
+<td>¥0</td>
+<td>¥0</td>
+<td style="text-align: right;"><strong>¥1-2 万</strong></td>
+</tr>
+<tr>
+<td>Phase 2（对齐）</td>
+<td style="text-align: center;">4-6</td>
+<td>¥1-2 万</td>
+<td>¥3-6 万</td>
+<td>¥15-20 万</td>
+<td style="text-align: right;"><strong>¥30-50 万</strong></td>
+</tr>
+<tr>
+<td>Phase 3（规模）</td>
+<td style="text-align: center;">7-12</td>
+<td>¥5-12 万</td>
+<td>¥8-15 万</td>
+<td>¥10-20 万</td>
+<td style="text-align: right;"><strong>¥100-200 万</strong></td>
+</tr>
+<tr>
+<td>Phase 4（全量）</td>
+<td style="text-align: center;">13-18</td>
+<td>¥15-30 万</td>
+<td>¥15-30 万</td>
+<td>¥20-30 万</td>
+<td style="text-align: right;"><strong>¥200-400 万</strong></td>
+</tr>
+<tr>
+<td><strong>18 个月合计</strong></td>
+<td style="text-align: center;"></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="text-align: right;"><strong>¥330-670 万</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>对比：若商汤 1000 路月费 ¥50-150 万，18 个月商汤总成本 =
+<strong>¥900-2700 万</strong>。<br />
+自研从第 12 个月起开始产生正向 ROI。</p>
+</blockquote>
+<h3 id="盈亏平衡分析">7.3 盈亏平衡分析</h3>
+<pre><code>累计投入
+ ↑
+ │                              ★ 商汤（线性增长）
+ │                           ／
+ │                        ／
+ │                     ／
+ │                  ／  ★ 自研（固定 + 阶梯）
+ │               ／  ／
+ │            ／  ／
+ │         ／  ／                ← 盈亏平衡点：约 8-12 个月
+ │      ／  ／
+ │   ／  ／
+ │  ／  ／
+ │／  ／
+ └──────────────────────────────────────────→ 时间
+    3月  6月   12月  18月
+
+规模维度成本交叉点：
+- 50 路以下：商汤可能更便宜
+- 50-80 路：成本交叉点，自研开始有优势
+- 100 路以上：自研成本优势明显
+- 500 路以上：自研成本可能仅为商汤的 30-50%</code></pre>
+<hr />
+<h2 id="团队规划">8. 团队规划</h2>
+<h3 id="分阶段招聘">8.1 分阶段招聘</h3>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 15%" />
+<col style="width: 18%" />
+<col style="width: 18%" />
+<col style="width: 28%" />
+</colgroup>
+<thead>
+<tr>
+<th>阶段</th>
+<th style="text-align: center;">时间</th>
+<th>团队</th>
+<th>角色</th>
+<th style="text-align: right;">月薪预算</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Phase 1</strong></td>
+<td style="text-align: center;">1-3 月</td>
+<td><strong>1 人</strong></td>
+<td>CTO/架构师（我，全栈）</td>
+<td style="text-align: right;">¥0（股权）</td>
+</tr>
+<tr>
+<td><strong>Phase 2</strong></td>
+<td style="text-align: center;">4-6 月</td>
+<td><strong>2-3 人</strong></td>
+<td>+1 Python 后端 + 1 前端</td>
+<td style="text-align: right;">¥3-6 万</td>
+</tr>
+<tr>
+<td><strong>Phase 3</strong></td>
+<td style="text-align: center;">7-12 月</td>
+<td><strong>4-6 人</strong></td>
+<td>+2 后端 + 1 前端 + 1 算法 + 1 运维</td>
+<td style="text-align: right;">¥8-15 万</td>
+</tr>
+<tr>
+<td><strong>Phase 4</strong></td>
+<td style="text-align: center;">13-18 月</td>
+<td><strong>8-15 人</strong></td>
+<td>完整研发团队 + 产品经理 + 测试</td>
+<td style="text-align: right;">¥15-30 万</td>
+</tr>
+</tbody>
+</table>
+<h3 id="核心角色">8.2 核心角色</h3>
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>技能要求</th>
+<th style="text-align: center;">Phase</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CTO/架构师</td>
+<td>全栈 + AI + 架构 + 团队管理</td>
+<td style="text-align: center;">P1</td>
+</tr>
+<tr>
+<td>Python 后端</td>
+<td>FastAPI + gRPC + PostgreSQL + Kafka</td>
+<td style="text-align: center;">P2</td>
+</tr>
+<tr>
+<td>前端工程师</td>
+<td>React/Vue + WebSocket + 直播相关</td>
+<td style="text-align: center;">P2（可选）→ P3</td>
+</tr>
+<tr>
+<td>AI/算法工程师</td>
+<td>PyTorch + TTS/LLM 模型部署优化</td>
+<td style="text-align: center;">P3</td>
+</tr>
+<tr>
+<td>DevOps/运维</td>
+<td>K8s + Docker + GPU 集群管理 + CI/CD</td>
+<td style="text-align: center;">P3</td>
+</tr>
+<tr>
+<td>产品经理</td>
+<td>直播电商行业 + 商家需求洞察</td>
+<td style="text-align: center;">P3-4</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="风险与应对矩阵">9. 风险与应对矩阵</h2>
+<table>
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 21%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 32%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>风险</th>
+<th style="text-align: center;">概率</th>
+<th style="text-align: center;">影响</th>
+<th>应对措施</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>商汤合同有排他条款</td>
+<td style="text-align: center;">🔴 高</td>
+<td style="text-align: center;">严重</td>
+<td>尽调第一时间确认。如有，评估违约成本，新公司实体规避</td>
+</tr>
+<tr>
+<td>2</td>
+<td>数字人资产无法导出</td>
+<td style="text-align: center;">🔴 高</td>
+<td style="text-align: center;">严重</td>
+<td>留原始视频素材，需要时重新克隆。确保商家上传素材我方持有一份</td>
+</tr>
+<tr>
+<td>3</td>
+<td>形象克隆效果不如商汤</td>
+<td style="text-align: center;">🟡 中</td>
+<td style="text-align: center;">中</td>
+<td>P2 用第三方 API 兜底，P3 自研。商汤在这块积累深，需时间追赶</td>
+</tr>
+<tr>
+<td>4</td>
+<td>预算预期不匹配</td>
+<td style="text-align: center;">🟡 中</td>
+<td style="text-align: center;">严重</td>
+<td>本文档对齐预期。如 ¥300-600
+万总投入被认为太多，说明合作前提不成立</td>
+</tr>
+<tr>
+<td>5</td>
+<td>迁移期间业务中断</td>
+<td style="text-align: center;">🟡 中</td>
+<td style="text-align: center;">严重</td>
+<td>双轨并行 + 灰度迁移 + 回滚机制</td>
+</tr>
+<tr>
+<td>6</td>
+<td>团队招聘困难</td>
+<td style="text-align: center;">🟡 中</td>
+<td style="text-align: center;">中</td>
+<td>我有人脉 + 远程 + 高薪 + 股权</td>
+</tr>
+<tr>
+<td>7</td>
+<td>时间线超预期</td>
+<td style="text-align: center;">🟡 中</td>
+<td style="text-align: center;">中</td>
+<td>每 Phase 20% buffer。Phase 2 非核心功能砍掉</td>
+</tr>
+<tr>
+<td>8</td>
+<td>GPU 硬件供应延迟</td>
+<td style="text-align: center;">🟢 低</td>
+<td style="text-align: center;">中</td>
+<td>提前 2-3 周下单。云 GPU 短期替代</td>
+</tr>
+<tr>
+<td>9</td>
+<td>1000 客户数据量大</td>
+<td style="text-align: center;">🟢 低</td>
+<td style="text-align: center;">中</td>
+<td>迁移非一次性行为，分 6-12 个月渐进完成</td>
+</tr>
+<tr>
+<td>10</td>
+<td>合作模式分歧</td>
+<td style="text-align: center;">🟡 中</td>
+<td style="text-align: center;">严重</td>
+<td>必须签订书面协议（股权 + 薪资 + 决策权 + 退出条款）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="合作模式建议">10. 合作模式建议</h2>
+<h3 id="几种可能模式">10.1 几种可能模式</h3>
+<table>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 26%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 26%" />
+</colgroup>
+<thead>
+<tr>
+<th>模式</th>
+<th>我的角色</th>
+<th style="text-align: center;">薪资</th>
+<th style="text-align: center;">股权</th>
+<th>适合场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A: 全职 CTO</strong></td>
+<td>加入公司，带技术团队</td>
+<td style="text-align: center;">市场价</td>
+<td style="text-align: center;">3-8%</td>
+<td>深度绑定，有融资/上市计划</td>
+</tr>
+<tr>
+<td><strong>B: 技术合伙人</strong></td>
+<td>联合创始人，持股运营</td>
+<td style="text-align: center;">生活费 + 后期补薪</td>
+<td style="text-align: center;">10-25%</td>
+<td>公司早期，技术入股为主</td>
+</tr>
+<tr>
+<td><strong>C: 顾问 + 交付</strong></td>
+<td>外部身份，按项目交付</td>
+<td style="text-align: center;">顾问费 / 项目款</td>
+<td style="text-align: center;">0-2%</td>
+<td>过渡期，建立信任后再决定</td>
+</tr>
+<tr>
+<td><strong>D: 技术公司独立</strong></td>
+<td>我成立技术公司，章总出业务</td>
+<td style="text-align: center;">按服务收费</td>
+<td style="text-align: center;">各自持公司</td>
+<td>松散耦合，风险隔离</td>
+</tr>
+</tbody>
+</table>
+<h3 id="建议路径">10.2 建议路径</h3>
+<pre><code>建议：C → A/B
+
+第一阶段（3-6 个月）：模式 C
+  - 我以外部技术顾问身份完成 POC + Phase 2
+  - 交付费：协商（如 ¥3-5 万/月 或 固定项目费）
+  - 双方评估：技术落地能力 vs 业务能力
+  - 6 个月后双方都有充分信息决定是否深度绑定
+
+第二阶段（6 个月后）：模式 A 或 B
+  - 基于 6 个月的信任 + 实际结果
+  - 谈股权 + 薪资更客观，不是画饼
+  - 此时已有跑起来的系统，技术估值有依据</code></pre>
+<hr />
+<blockquote>
+<p><strong>文档作者：</strong> 李宽龙（Elliott）<br />
+<strong>文档版本：</strong> v1.0（待尽调后更新）<br />
+<strong>下一步：</strong> 尽调 → 用真实数据更新本文档 →
+与章总进行方案沟通</p>
+</blockquote>
+</body>
+</html>

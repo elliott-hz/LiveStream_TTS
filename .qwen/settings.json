@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pandoc *)"
+    ]
+  },
+  "$version": 4
+}
