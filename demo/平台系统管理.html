@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>平台系统管理</title>
+<style>
+/* ========== Reset & Variables ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary: #0ea5e9;
+  --primary-light: #38bdf8;
+  --primary-dark: #0284c7;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --bg: #f0f4f8;
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #94a3b8;
+  --sidebar-active: #0ea5e9;
+  --card-bg: #ffffff;
+  --border: #e2e8f0;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden;
+}
+
+/* ========== Sidebar ========== */
+.sidebar {
+  width: 220px; background: var(--sidebar-bg); color: var(--sidebar-text);
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.sidebar-logo {
+  padding: 18px 20px 8px; font-size: 16px; font-weight: 700; color: #fff;
+  letter-spacing: .5px;
+}
+.sidebar-logo span { color: var(--primary-light); }
+.sidebar-subtitle { padding: 0 20px 16px; font-size: 11px; color: var(--text-light); }
+
+.sidebar-nav { flex: 1; padding: 4px 10px; }
+.nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-light); padding: 16px 10px 8px; }
+.nav-item {
+  display: flex; align-items: center; gap: 8px; padding: 9px 10px;
+  border-radius: 6px; cursor: pointer; transition: all .15s; font-size: 13px;
+  margin-bottom: 1px;
+}
+.nav-item:hover { background: rgba(255,255,255,.06); color: #e2e8f0; }
+.nav-item.active { background: var(--sidebar-active); color: #fff; font-weight: 500; }
+
+.sidebar-footer { padding: 10px; border-top: 1px solid rgba(255,255,255,.06); }
+.sidebar-user { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 6px; font-size: 12px; }
+.sidebar-user .avatar { width: 28px; height: 28px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; font-weight: 600; }
+
+/* ========== Main ========== */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  height: 52px; background: var(--card-bg); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px; flex-shrink: 0;
+}
+.topbar h2 { font-size: 16px; font-weight: 600; }
+.topbar .badge { margin-left: 10px; font-size: 10px; background: #1e293b; color: #fff; padding: 2px 8px; border-radius: 10px; letter-spacing: 1px; }
+.content { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* ========== Cards ========== */
+.card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 16px; }
+.card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.card-header h3 { font-size: 14px; font-weight: 600; }
+.card-body { padding: 18px; }
+
+/* ========== Table ========== */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 9px 12px; background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:hover td { background: #f8fafc; }
+
+/* ========== Tags & Badges ========== */
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;
+}
+.tag-success { background: #d1fae5; color: #065f46; }
+.tag-warning { background: #fef3c7; color: #92400e; }
+.tag-danger { background: #fee2e2; color: #991b1b; }
+.tag-primary { background: #e0f2fe; color: #075985; }
+.tag-neutral { background: #f1f5f9; color: #64748b; }
+
+.cap-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; margin: 0 1px; }
+.cap-on  { background: #d1fae5; color: #065f46; }
+.cap-off { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
+
+.cap-count { font-size: 11px; font-weight: 700; margin-left: 6px; }
+.cap-count.good { color: var(--success); }
+.cap-count.mid  { color: var(--warning); }
+
+/* ========== Switches & Selects ========== */
+.switch { position: relative; width: 36px; height: 20px; display: inline-block; }
+.switch input { display: none; }
+.switch .slider { position: absolute; inset: 0; background: #cbd5e1; border-radius: 20px; cursor: pointer; transition: .2s; }
+.switch .slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 2px; bottom: 2px; background: #fff; border-radius: 50%; transition: .2s; }
+.switch input:checked + .slider { background: var(--primary); }
+.switch input:checked + .slider::before { transform: translateX(16px); }
+
+select {
+  padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px;
+  font-size: 11px; font-family: inherit; background: #fff; color: var(--text);
+  min-width: 110px;
+}
+select:focus { outline: none; border-color: var(--primary); }
+select:disabled { background: #f8fafc; color: #94a3b8; }
+
+/* ========== Buttons ========== */
+.btn {
+  padding: 6px 14px; border-radius: 5px; font-size: 12px; font-weight: 500;
+  border: none; cursor: pointer; transition: all .15s;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+.btn-xs { padding: 2px 8px; font-size: 10px; border-radius: 3px; }
+
+/* ========== Page ========== */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ========== Toast ========== */
+#toast {
+  position: fixed; top: 16px; right: 16px; z-index: 200;
+  display: none; padding: 10px 18px; color: #fff; border-radius: 6px;
+  font-size: 12px; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== Sidebar ==================== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">⚙️ <span>平台</span>管理系统</div>
+  <div class="sidebar-subtitle">SaaS 系统后台配置</div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">核心配置</div>
+    <div class="nav-item active" data-page="platform">
+      🔌 平台接入配置
+    </div>
+    <div class="nav-item" data-page="featureFlags">
+      🎛️ 功能开关配置
+    </div>
+    <div class="nav-item" data-page="tiers">
+      📦 套餐档位配置
+    </div>
+    <div class="nav-section">监控运维</div>
+    <div class="nav-item" data-page="opsDashboard">
+      📊 运营监控大屏
+    </div>
+    <div class="nav-item" data-page="alerts">
+      🚨 告警与处置
+    </div>
+    <div class="nav-section">管理</div>
+    <div class="nav-item" data-page="merchants">
+      📋 商户管理
+    </div>
+    <div class="nav-item" data-page="settings">
+      ⚙️ 系统设置
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="avatar">S</div>
+      <div>系统管理员</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ==================== Main ==================== -->
+<div class="main">
+  <div class="topbar">
+    <h2 id="pageTitle">🔌 平台接入配置</h2>
+    <span class="badge">ADMIN</span>
+  </div>
+  <div class="content">
+
+    <!-- ==================== 平台接入配置 ==================== -->
+    <div class="page active" id="page-platform">
+      <div class="card">
+        <div class="card-body" style="font-size:13px;color:var(--text-muted);padding:14px 18px;">
+          💡 <strong>总控开关：</strong>① 左侧"启用"开关控制该平台是否对商户开放。② 四项能力开关（推流/弹幕/弹品/回复）为<strong>平台级主开关</strong>——关闭后，所有商户在该平台上将无法使用该功能，无论其套餐档位。推流为基础能力，默认开启且不可关闭。
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>第一梯队 — 核心平台</h3>
+          <button class="btn btn-outline btn-sm" onclick="saveAllConfig()">💾 保存全部</button>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:60px;">启用</th>
+                  <th>平台</th>
+                  <th>份额</th>
+                  <th style="width:80px;">推流</th>
+                  <th style="width:80px;">弹幕采集</th>
+                  <th style="width:80px;">商品弹窗</th>
+                  <th style="width:80px;">文字回复</th>
+                  <th>能力</th>
+                  <th style="width:200px;">技术方案（系统内部）</th>
+                </tr>
+              </thead>
+              <tbody id="tier1Body">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>第二梯队 — 扩展平台</h3></div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:60px;">启用</th>
+                  <th>平台</th>
+                  <th>份额</th>
+                  <th style="width:80px;">推流</th>
+                  <th style="width:80px;">弹幕采集</th>
+                  <th style="width:80px;">商品弹窗</th>
+                  <th style="width:80px;">文字回复</th>
+                  <th>能力</th>
+                  <th style="width:200px;">技术方案（系统内部）</th>
+                </tr>
+              </thead>
+              <tbody id="tier2Body">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>第三梯队 — 仅推流 / 暂缓</h3></div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:60px;">启用</th>
+                  <th>平台</th>
+                  <th>份额</th>
+                  <th style="width:80px;">推流</th>
+                  <th style="width:80px;">弹幕采集</th>
+                  <th style="width:80px;">商品弹窗</th>
+                  <th style="width:80px;">文字回复</th>
+                  <th>能力</th>
+                  <th style="width:200px;">说明</th>
+                </tr>
+              </thead>
+              <tbody id="tier3Body">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 套餐档位配置 ==================== -->
+    <div class="page" id="page-tiers">
+      <div class="card">
+        <div class="card-body" style="font-size:13px;color:var(--text-muted);padding:14px 18px;">
+          💡 每个档位包含<strong>两个独立配额</strong>：① 最大直播间数（跨平台累计可创建的总数）② 最大并发推流路数（跨平台同时开播的上限）。商户购买某档位后，受这两个配额约束。
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>📦 套餐档位列表</h3>
+          <button class="btn btn-primary btn-sm" onclick="alert('➕ 模拟：新增自定义档位')">+ 新增档位</button>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>档位名称</th>
+                  <th>最大直播间数</th>
+                  <th>最大并发推流路数</th>
+                  <th>月费</th>
+                  <th>目标客群</th>
+                  <th>当前商户数</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr id="tierRowBasic">
+                  <td><span class="tag tag-neutral">基础版</span></td>
+                  <td id="tierRoomsBasic"><strong>3</strong> 个</td>
+                  <td id="tierStreamsBasic"><strong>1</strong> 路</td>
+                  <td id="tierPriceBasic">¥299/月</td>
+                  <td style="font-size:12px;color:var(--text-muted);">个人/小微商家</td>
+                  <td>128 家</td>
+                  <td><button class="btn btn-outline btn-xs" onclick="openTierEditModal('基础版', 3, 1, 299)">编辑</button></td>
+                </tr>
+                <tr id="tierRowPro">
+                  <td><span class="tag tag-primary">专业版</span></td>
+                  <td id="tierRoomsPro"><strong>10</strong> 个</td>
+                  <td id="tierStreamsPro"><strong>5</strong> 路</td>
+                  <td id="tierPricePro">¥999/月</td>
+                  <td style="font-size:12px;color:var(--text-muted);">中小商家</td>
+                  <td>47 家</td>
+                  <td><button class="btn btn-outline btn-xs" onclick="openTierEditModal('专业版', 10, 5, 999)">编辑</button></td>
+                </tr>
+                <tr id="tierRowBiz">
+                  <td><span class="tag tag-warning">企业版</span></td>
+                  <td id="tierRoomsBiz"><strong>50</strong> 个</td>
+                  <td id="tierStreamsBiz"><strong>20</strong> 路</td>
+                  <td id="tierPriceBiz">¥2,999/月</td>
+                  <td style="font-size:12px;color:var(--text-muted);">品牌/多店</td>
+                  <td>8 家</td>
+                  <td><button class="btn btn-outline btn-xs" onclick="openTierEditModal('企业版', 50, 20, 2999)">编辑</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:16px;padding:10px 14px;background:#f8fafc;border-radius:6px;font-size:12px;color:var(--text-muted);line-height:1.8;">
+            <strong>📐 设计原则：</strong><br>
+            • <strong>最大直播间数</strong> = 商户跨所有平台可创建的直播间总数（不管是否在推流）<br>
+            • <strong>最大并发推流路数</strong> = 跨所有平台同时正在推流的直播间数量上限<br>
+            • 举例：专业版可创建 10 个直播间，但同一时刻最多 5 个在推流。另外 5 个可以配置好待命，等某个推流停了再切上去
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 商户管理 ==================== -->
+    <div class="page" id="page-merchants">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+        <div class="stat-card" style="border-left:3px solid var(--primary);"><div class="label">🏪 商户总数</div><div class="value">183</div><div class="change">专业版 47 · 企业版 8 · 基础版 128</div></div>
+        <div class="stat-card" style="border-left:3px solid #10b981;"><div class="label">📡 今日活跃</div><div class="value" style="color:#10b981;">12</div><div class="change">正在推流 7 户</div></div>
+        <div class="stat-card" style="border-left:3px solid #f59e0b;"><div class="label">⏰ 即将到期</div><div class="value" style="color:#f59e0b;">3</div><div class="change">30天内到期</div></div>
+        <div class="stat-card" style="border-left:3px solid #ef4444;"><div class="label">⛔ 已冻结</div><div class="value">0</div><div class="change">欠费/违规冻结</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>📋 商户列表</h3>
+          <div style="display:flex;gap:8px;"><input type="text" placeholder="搜索商户..." style="padding:4px 10px;border:1px solid var(--border);border-radius:4px;font-size:12px;width:180px;"><button class="btn btn-outline btn-sm">🔍</button></div>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>商户</th><th>套餐</th><th>已接入平台</th><th>直播间</th><th>本月时长</th><th>到期</th><th>状态</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>张老板的店铺</strong><div style="font-size:10px;color:var(--text-muted);">M00001 · 2026-01-24 注册</div></td>
+                  <td><span class="tag tag-primary">专业版</span></td>
+                  <td><span class="tag tag-success" style="font-size:10px;">淘宝</span> <span class="tag tag-success" style="font-size:10px;">抖音</span></td>
+                  <td>2 / 10</td><td>124h</td><td>2027-01-24</td>
+                  <td><span class="tag tag-success">正常</span></td>
+                  <td><button class="btn btn-outline btn-xs">详情</button></td>
+                </tr>
+                <tr>
+                  <td><strong>美妆品牌旗舰店</strong><div style="font-size:10px;color:var(--text-muted);">M00015 · 2025-06-15 注册</div></td>
+                  <td><span class="tag tag-warning">企业版</span></td>
+                  <td><span class="tag tag-success" style="font-size:10px;">淘宝</span> <span class="tag tag-success" style="font-size:10px;">抖音</span> <span class="tag tag-success" style="font-size:10px;">快手</span></td>
+                  <td>5 / 50</td><td>312h</td><td>2027-06-15</td>
+                  <td><span class="tag tag-success">正常</span></td>
+                  <td><button class="btn btn-outline btn-xs">详情</button></td>
+                </tr>
+                <tr>
+                  <td><strong>小陈的百货店</strong><div style="font-size:10px;color:var(--text-muted);">M00098 · 2026-06-01 注册</div></td>
+                  <td><span class="tag tag-neutral">基础版</span></td>
+                  <td><span class="tag tag-success" style="font-size:10px;">淘宝</span></td>
+                  <td>1 / 3</td><td>48h</td><td><span style="color:#f59e0b;">2026-12-31</span></td>
+                  <td><span class="tag tag-warning">即将到期</span></td>
+                  <td><button class="btn btn-outline btn-xs">详情</button> <button class="btn btn-outline btn-xs" style="color:var(--danger);">冻结</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 功能开关配置 ==================== -->
+    <div class="page" id="page-featureFlags">
+      <div class="card" style="margin-bottom:16px;border-left:3px solid var(--primary);">
+        <div class="card-body" style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-weight:600;font-size:14px;">🎛️ 全局功能开关</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">关闭后<strong>所有商户</strong>对应功能立即隐藏。新功能灰度发布：先关闭 → 白名单测试 → 全量开放</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="showToast('✅ 功能开关配置已保存，商户端立即生效')">💾 保存全部</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;" id="featureFlagsGrid"></div>
+    </div>
+
+    <!-- ==================== 运营监控大屏 ==================== -->
+    <div class="page" id="page-opsDashboard">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+        <div class="stat-card" style="border-left:3px solid var(--primary);"><div class="label">🏪 商户总数</div><div class="value">183</div><div class="change up">▲ 本月 +12</div></div>
+        <div class="stat-card" style="border-left:3px solid #10b981;"><div class="label">📡 当前直播中</div><div class="value" style="color:#10b981;">7</div><div class="change">12 路推流 · 5 路排班待播</div></div>
+        <div class="stat-card" style="border-left:3px solid #f59e0b;"><div class="label">⚠️ 健康告警</div><div class="value" style="color:#f59e0b;">2</div><div class="change">🔴 断流 1 · 🟡 码率异常 1</div></div>
+        <div class="stat-card" style="border-left:3px solid #ef4444;"><div class="label">🛑 今日处置</div><div class="value">1</div><div class="change">紧急关停 1 次</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>📡 实时直播监控</h3>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-size:11px;color:var(--text-muted);">7 路在线</span>
+            <button class="btn btn-outline btn-sm" onclick="renderOpsMonitor()">🔄 刷新</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0;"><div class="table-wrap"><table>
+          <thead><tr><th>商户</th><th>直播间</th><th>平台</th><th>已播</th><th>👁️</th><th>💬</th><th>📶 码率</th><th>健康</th><th style="width:80px;">操作</th></tr></thead>
+          <tbody id="opsMonitorBody"></tbody>
+        </table></div></div>
+      </div>
+    </div>
+
+    <!-- ==================== 告警与处置 ==================== -->
+    <div class="page" id="page-alerts">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
+        <div class="stat-card" style="border-left:3px solid #ef4444;"><div class="label">🔴 严重告警</div><div class="value" style="color:#ef4444;">0</div><div class="change">断流 · 违规内容</div></div>
+        <div class="stat-card" style="border-left:3px solid #f59e0b;"><div class="label">🟡 一般警告</div><div class="value" style="color:#f59e0b;">2</div><div class="change">码率异常 · 延迟过高</div></div>
+        <div class="stat-card" style="border-left:3px solid var(--primary);"><div class="label">✅ 今日已处置</div><div class="value">8</div><div class="change">自动恢复 6 · 人工处置 2</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>🚨 告警事件列表</h3></div>
+        <div class="card-body" style="padding:0;"><div class="table-wrap"><table>
+          <thead><tr><th style="width:70px;">级别</th><th style="width:130px;">时间</th><th>商户</th><th>直播间</th><th>告警内容</th><th style="width:180px;">处置</th></tr></thead>
+          <tbody id="alertsBody"></tbody>
+        </table></div></div>
+      </div>
+    </div>
+
+    <!-- ==================== 系统设置 ==================== -->
+    <div class="page" id="page-settings">
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><h3>📡 直播与推流</h3></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:2px;padding:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #f1f5f9;">
+            <div><div style="font-weight:600;font-size:13px;">全局推流画质上限</div><div style="font-size:11px;color:var(--text-muted);">限制所有商户的最高推流画质</div></div>
+            <select><option>1080p</option><option>720p</option><option>480p</option></select>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #f1f5f9;">
+            <div><div style="font-weight:600;font-size:13px;">自动关停无流量直播间</div><div style="font-size:11px;color:var(--text-muted);">观看人数为0持续超过指定时间后自动停播</div></div>
+            <select><option>30分钟</option><option selected>1小时</option><option>2小时</option><option>关闭</option></select>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;">
+            <div><div style="font-weight:600;font-size:13px;">断流自动重连</div><div style="font-size:11px;color:var(--text-muted);">检测到RTMP断流后自动尝试重连推流</div></div>
+            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><h3>🤖 AI 与互动</h3></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:2px;padding:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #f1f5f9;">
+            <div><div style="font-weight:600;font-size:13px;">AI 回复全局开关</div><div style="font-size:11px;color:var(--text-muted);">关闭后所有商户的AI智能回复功能停用</div></div>
+            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #f1f5f9;">
+            <div><div style="font-weight:600;font-size:13px;">AI 回复延迟阈值告警</div><div style="font-size:11px;color:var(--text-muted);">回复延迟超过阈值时触发告警通知</div></div>
+            <select><option>3秒</option><option selected>5秒</option><option>8秒</option></select>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;">
+            <div><div style="font-weight:600;font-size:13px;">敏感词过滤等级</div><div style="font-size:11px;color:var(--text-muted);">AI回复和弹幕的敏感词过滤严格程度</div></div>
+            <select><option>宽松</option><option selected>标准</option><option>严格</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>🏪 商户默认配置</h3></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:2px;padding:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #f1f5f9;">
+            <div><div style="font-weight:600;font-size:13px;">新商户默认平台</div><div style="font-size:11px;color:var(--text-muted);">新注册商户默认启用的直播平台</div></div>
+            <select><option>淘宝</option><option>抖音</option><option>全部可用平台</option></select>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;">
+            <div><div style="font-weight:600;font-size:13px;">新商户试用时长</div><div style="font-size:11px;color:var(--text-muted);">新注册商户的免费试用推流时长</div></div>
+            <select><option>10小时</option><option selected>30小时</option><option>50小时</option><option>无试用</option></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.content -->
+</div><!-- /.main -->
+
+<!-- ==================== Toast ==================== -->
+<div id="toast"></div>
+
+<!-- ==================== Modal: 编辑套餐档位 ==================== -->
+<div class="modal-overlay" id="tierEditModal" style="display:none;">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="tierEditTitle">✏️ 编辑套餐档位</h3>
+      <button class="btn btn-outline btn-xs" onclick="closeTierEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>档位名称</label>
+        <input type="text" id="tierEditName" disabled style="background:#f8fafc;">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>最大直播间数</label>
+          <input type="number" id="tierEditRooms" min="1" max="999">
+        </div>
+        <div class="form-group">
+          <label>最大并发推流路数</label>
+          <input type="number" id="tierEditStreams" min="1" max="999">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>月费（元）</label>
+        <input type="number" id="tierEditPrice" min="0" step="1">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeTierEditModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveTierEdit()">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== Platform Config Data ==========
+// Each platform: { id, name, share, tier, enabled, caps: { push, danmaku, product, reply }, techDetails }
+const platformConfig = [
+  // Tier 1 — 核心平台
+  { id: 'douyin', name: '抖音 🥇', share: '31% · 第一', tier: 1, enabled: true,
+    caps: { push: true, danmaku: true, product: true, reply: true },
+    tech: { push: '直播伴侣 / OBS RTMP（需1000粉）', danmaku: '抖音云内网专线 + OpenAPI WebSocket', product: '巨量百应中控台自动化', reply: '中控台模拟输入（非官方API）' } },
+  { id: 'taobao', name: '淘宝', share: '17% · 第二', tier: 1, enabled: true,
+    caps: { push: true, danmaku: true, product: true, reply: true },
+    tech: { push: '淘宝中控台 + 云端推流', danmaku: '开放平台 taobao.item_video_barrage WebSocket', product: '淘宝数字人弹品 + 中控台快捷键', reply: '中控台模拟输入（非官方API）' } },
+  // Tier 2 — 扩展平台
+  { id: 'kuaishou', name: '快手 🥉', share: '14% · 第三', tier: 2, enabled: false,
+    caps: { push: true, danmaku: true, product: false, reply: true },
+    tech: { push: '快手云开播 / PC伴侣', danmaku: '开放平台弹幕玩法接口（600 QPS）', product: '暂无可用方案', reply: '中控台模拟（非官方API）' } },
+  { id: 'jd', name: '京东', share: '8% · 第四', tier: 2, enabled: false,
+    caps: { push: true, danmaku: true, product: false, reply: false },
+    tech: { push: '京东OBS专版 / jlive.jd.com', danmaku: '第三方wss直连抓包（非官方，有封禁风险）', product: '暂无可用方案', reply: '暂无可用方案' } },
+  { id: 'pdd', name: '拼多多', share: '增速最快', tier: 2, enabled: false,
+    caps: { push: true, danmaku: true, product: false, reply: false },
+    tech: { push: '多多直播电脑版 / OBS RTMP', danmaku: '第三方wss直连抓包（非官方，有封禁风险）', product: '暂无可用方案', reply: '暂无可用方案' } },
+  // Tier 3 — 仅推流
+  { id: 'sph', name: '视频号', share: '~3000亿', tier: 3, enabled: false,
+    caps: { push: true, danmaku: false, product: false, reply: false },
+    tech: { push: 'OBS RTMP（需认证+500粉）', danmaku: '—', product: '—', reply: '—' } },
+  { id: 'xhs', name: '小红书', share: '成长期', tier: 3, enabled: false,
+    caps: { push: true, danmaku: false, product: false, reply: false },
+    tech: { push: 'RTMP推流', danmaku: '—', product: '—', reply: '—' } },
+  { id: 'vip', name: '唯品会', share: '千万级', tier: 3, enabled: false,
+    caps: { push: true, danmaku: false, product: false, reply: false },
+    tech: { push: 'OBS RTMP（vis.vip.com）', danmaku: '—', product: '—', reply: '—' } },
+];
+
+const capLabels = { push: '推流', danmaku: '弹幕采集', product: '商品弹窗', reply: '文字回复' };
+
+function renderPlatformTable() {
+  ['tier1Body', 'tier2Body', 'tier3Body'].forEach(tid => {
+    const tbody = document.getElementById(tid);
+    if (!tbody) return;
+    const tier = tid === 'tier1Body' ? 1 : tid === 'tier2Body' ? 2 : 3;
+    const platforms = platformConfig.filter(p => p.tier === tier);
+
+    tbody.innerHTML = platforms.map(p => {
+      const capKeys = ['push', 'danmaku', 'product', 'reply'];
+
+      // Capability toggle switches
+      const capSwitches = capKeys.map(key => {
+        const val = p.caps[key];
+        const disabled = key === 'push' ? 'disabled' : ''; // 推流默认必须开启，不可关闭
+        const checked = val ? 'checked' : '';
+        return `<td style="text-align:center;">
+          <label class="switch">
+            <input type="checkbox" ${checked} ${disabled} onchange="toggleCap('${p.id}', '${key}', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </td>`;
+      }).join('');
+
+      // Cap count
+      const onCount = capKeys.filter(k => p.caps[k]).length;
+      const countCls = onCount >= 4 ? 'good' : onCount >= 2 ? 'mid' : '';
+      const countCell = `<td><span class="cap-count ${countCls}">${onCount}/4</span></td>`;
+
+      // Tech details
+      let techCell;
+      if (p.tier === 3) {
+        techCell = '<td style="font-size:11px;color:var(--text-muted);">不支持互动能力</td>';
+      } else {
+        techCell = '<td style="font-size:11px;line-height:1.6;">' +
+          '<div>📡 ' + p.tech.push + '</div>' +
+          (p.caps.danmaku ? '<div>💬 ' + p.tech.danmaku + '</div>' : '') +
+          (p.caps.product ? '<div>🛒 ' + p.tech.product + '</div>' : '') +
+          (p.caps.reply   ? '<div>✏️ ' + p.tech.reply + '</div>' : '') +
+          '</td>';
+      }
+
+      const toggleCell = `<td style="text-align:center;">
+        <label class="switch"><input type="checkbox" ${p.enabled ? 'checked' : ''} onchange="togglePlatform('${p.id}', this.checked)"><span class="slider"></span></label>
+      </td>`;
+
+      return `<tr>
+        ${toggleCell}
+        <td><strong>${p.name}</strong></td>
+        <td style="font-size:12px;color:var(--text-muted);">${p.share}</td>
+        ${capSwitches}
+        ${countCell}
+        ${techCell}
+      </tr>`;
+    }).join('');
+  });
+}
+
+function toggleCap(platformId, capKey, value) {
+  const p = platformConfig.find(pl => pl.id === platformId);
+  if (p) {
+    p.caps[capKey] = value;
+    // Re-render to update count and tech details visibility
+    renderPlatformTable();
+    showToast('✅ ' + p.name + ' 的「' + capLabels[capKey] + '」已' + (value ? '开启' : '关闭'));
+  }
+}
+
+function togglePlatform(id, enabled) {
+  const p = platformConfig.find(pl => pl.id === id);
+  if (p) p.enabled = enabled;
+}
+
+function updateCapCount() {
+  // Re-render capability badges after changes if needed
+  renderPlatformTable();
+}
+
+function saveAllConfig() {
+  const btn = event.target;
+  btn.textContent = '⏳ 保存中...';
+  btn.disabled = true;
+  setTimeout(() => {
+    showToast('✅ 平台接入配置已保存');
+    btn.textContent = '💾 保存全部';
+    btn.disabled = false;
+  }, 600);
+}
+
+// ========== Navigation ==========
+const titles = {
+  platform: '🔌 平台接入配置',
+  featureFlags: '🎛️ 功能开关配置',
+  tiers: '📦 套餐档位配置',
+  opsDashboard: '📊 运营监控大屏',
+  alerts: '🚨 告警与处置',
+  merchants: '📋 商户管理',
+  settings: '⚙️ 系统设置'
+};
+
+// ========== Feature Flags Config ==========
+const featureFlagsData = [
+  { module: '商品知识库', name: 'AI单品导入', desc: '粘贴商品链接AI解析详情', enabled: true, opts: '—' },
+  { module: '商品知识库', name: 'AI整店导入', desc: '粘贴店铺链接批量扫描商品', enabled: true, opts: '—' },
+  { module: '商品知识库', name: '知识库详情查看', desc: '右侧抽屉查看平台商品富文本详情', enabled: true, opts: '—' },
+  { module: '直播间管理', name: '挂载直播视频', desc: '直播间关联直播视频库中的视频', enabled: true, opts: '—' },
+  { module: '直播间管理', name: '定时排班', desc: '设置每天自动开播/关播时间', enabled: true, opts: '—' },
+  { module: '直播视频库', name: '切片后停顿', desc: '商品视频播放完毕后画面停留', enabled: true, opts: '0s / 3s / 5s' },
+  { module: '直播视频库', name: '特写镜头', desc: '数字裁切放大聚焦商品细节', enabled: true, opts: '关闭 / 开始3s后 / 价格播报时 / 全程' },
+  { module: '直播视频库', name: '入场转场', desc: '商品切换过渡动画', enabled: true, opts: '无 / Logo / 关注引导' },
+  { module: '直播中控台', name: '实时监控', desc: '直播画面+弹幕+数据实时监控', enabled: true, opts: '—' },
+  { module: '直播中控台', name: '手动弹品', desc: '运营人员手动弹出商品卡片', enabled: true, opts: '—' },
+  { module: '直播中控台', name: '人工回复', desc: '运营人员手动介入弹幕回复', enabled: true, opts: '—' },
+  { module: '互动设置', name: '智能文字回复', desc: 'LLM+RAG自动文字回复弹幕', enabled: true, opts: '—' },
+  { module: '互动设置', name: '智能语音回复', desc: 'TTS合成语音回复（基础功能）', enabled: true, opts: '—' },
+  { module: '互动设置', name: '话术模板', desc: '单品互动话术批量导入/导出', enabled: true, opts: '—' },
+  { module: '互动设置', name: '主动互动', desc: '进场欢迎/关注引导/催单促单', enabled: false, opts: '—' },
+  { module: '数据大盘', name: '直播数据看板', desc: '查看单场直播的完整运营数据', enabled: true, opts: '—' },
+  { module: '数据大盘', name: '商品素材数据', desc: '商品与素材交叉统计', enabled: true, opts: '—' },
+  { module: '数据大盘', name: '商品直播数据', desc: '商品与直播交叉统计', enabled: true, opts: '—' },
+];
+
+function renderFeatureFlags() {
+  const grid = document.getElementById('featureFlagsGrid');
+  if (!grid) return;
+
+  // Group by module
+  const groups = {};
+  featureFlagsData.forEach(f => {
+    if (!groups[f.module]) groups[f.module] = [];
+    groups[f.module].push(f);
+  });
+
+  const icons = { '商品知识库': '🛒', '直播间管理': '🏠', '直播视频库': '🎬', '直播中控台': '📡', '互动设置': '💬', '数据大盘': '📊' };
+  const colors = { '商品知识库': '#6366f1', '直播间管理': '#10b981', '直播视频库': '#f59e0b', '直播中控台': '#ef4444', '互动设置': '#8b5cf6', '数据大盘': '#0ea5e9' };
+
+  grid.innerHTML = Object.entries(groups).map(([module, flags]) => `
+    <div class="card" style="border-top:3px solid ${colors[module] || '#cbd5e1'};">
+      <div class="card-header" style="padding:10px 14px;background:#f8fafc;">
+        <h3 style="font-size:13px;">${icons[module] || ''} ${module} <span style="font-weight:400;color:var(--text-muted);font-size:11px;">${flags.length}项</span></h3>
+      </div>
+      <div class="card-body" style="padding:8px 12px;">
+        ${flags.map(f => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;gap:8px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:500;">${f.name}</div>
+              <div style="font-size:10px;color:var(--text-muted);">${f.desc}</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" ${f.enabled ? 'checked' : ''} onchange="toggleFeatureFlag('${f.name}', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleFeatureFlag(name, enabled) {
+  const f = featureFlagsData.find(f => f.name === name);
+  if (f) { f.enabled = enabled; showToast((enabled ? '✅ ' : '⚠️ ') + '「' + name + '」已' + (enabled ? '开启' : '关闭') + '，商户端立即生效'); }
+}
+
+// ========== Ops Monitor ==========
+const opsMonitorData = [
+  { merchant: '张老板的店铺', room: '夏季女装专场', platform: '淘宝', status: 'live', duration: '12h34m', viewers: 327, danmaku: 486, bitrate: '4.2 Mbps', health: 'good' },
+  { merchant: '张老板的店铺', room: '家居好物推荐', platform: '抖音', status: 'live', duration: '3h12m', viewers: 156, danmaku: 203, bitrate: '3.8 Mbps', health: 'good' },
+  { merchant: '美妆品牌旗舰店', room: '美妆护肤专场', platform: '淘宝', status: 'live', duration: '8h05m', viewers: 245, danmaku: 312, bitrate: '4.0 Mbps', health: 'good' },
+  { merchant: '美妆品牌旗舰店', room: '品牌特卖-B组', platform: '快手', status: 'live', duration: '5h48m', viewers: 189, danmaku: 156, bitrate: '2.1 Mbps', health: 'warn' },
+  { merchant: '小陈的百货店', room: '日用好物', platform: '拼多多', status: 'live', duration: '2h20m', viewers: 89, danmaku: 45, bitrate: '3.5 Mbps', health: 'good' },
+  { merchant: '潮牌服饰店', room: '潮牌男装', platform: '抖音', status: 'live', duration: '6h15m', viewers: 412, danmaku: 678, bitrate: '4.5 Mbps', health: 'good' },
+  { merchant: '生鲜旗舰店', room: '水果专场', platform: '京东', status: 'live', duration: '1h50m', viewers: 67, danmaku: 23, bitrate: '0 Mbps', health: 'error' },
+];
+
+function renderOpsMonitor() {
+  const tbody = document.getElementById('opsMonitorBody');
+  if (!tbody) return;
+  const healthMap = {
+    good:  '<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:#10b981;">🟢 正常</span>',
+    warn:  '<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:#f59e0b;">🟡 码率低</span>',
+    error: '<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:#ef4444;">🔴 断流</span>'
+  };
+  tbody.innerHTML = opsMonitorData.map(o => {
+    const rowBg = o.health === 'error' ? 'background:#fef2f2;' : o.health === 'warn' ? 'background:#fffbeb;' : '';
+    return `<tr style="${rowBg}">
+      <td><strong>${o.merchant}</strong></td>
+      <td>${o.room}</td>
+      <td><span class="tag tag-primary" style="font-size:10px;">${o.platform}</span></td>
+      <td style="font-size:12px;">${o.duration}</td>
+      <td style="font-weight:600;">${o.viewers}</td>
+      <td>${o.danmaku}</td>
+      <td style="font-size:12px;">${o.bitrate}</td>
+      <td>${healthMap[o.health]}</td>
+      <td>${o.health === 'error'
+        ? '<button class="btn btn-danger btn-xs" onclick="alert(\'🛑 模拟：已紧急关停「'+o.room+'」\')">🛑 关停</button>'
+        : '<button class="btn btn-outline btn-xs" onclick="alert(\'📊 模拟：查看「'+o.room+'」实时详情\')">详情</button>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ========== Alerts ==========
+const alertsData = [
+  { level: 'warn', time: '2026-07-22 14:32', merchant: '生鲜旗舰店', room: '水果专场', content: '推流码率降至 0 Mbps，疑似断流', action: '已通知商户 · <a href="#" onclick="alert(\'🛑 模拟：已关停\')" style="color:var(--danger);">强制关停</a>' },
+  { level: 'warn', time: '2026-07-22 13:15', merchant: '美妆品牌旗舰店', room: '品牌特卖-B组', content: '推流码率持续低于 2.5 Mbps，画质下降', action: '已通知商户 · <a href="#" onclick="alert(\'📊 模拟：已标记\')" style="color:var(--primary);">标记观察</a>' },
+  { level: 'info', time: '2026-07-22 10:08', merchant: '张老板的店铺', room: '夏季女装专场', content: '弹幕量突增至 200条/分钟，AI回复延迟升至 4.2s', action: '自动扩容已触发 · 已恢复' },
+  { level: 'info', time: '2026-07-22 08:00', merchant: '小陈的百货店', room: '日用好物', content: '直播间排班自动开播成功', action: '—' },
+];
+
+function renderAlerts() {
+  const tbody = document.getElementById('alertsBody');
+  if (!tbody) return;
+  const levelConf = {
+    error: { icon: '🔴', label: '严重', cls: 'tag-danger', rowBg: 'background:#fef2f2;' },
+    warn:  { icon: '🟡', label: '警告', cls: 'tag-warning', rowBg: 'background:#fffbeb;' },
+    info:  { icon: '🔵', label: '信息', cls: 'tag-primary', rowBg: '' },
+  };
+  tbody.innerHTML = alertsData.map(a => {
+    const c = levelConf[a.level];
+    return `<tr style="${c.rowBg}">
+      <td><span class="tag ${c.cls}" style="font-size:10px;">${c.icon} ${c.label}</span></td>
+      <td style="font-size:11px;white-space:nowrap;">${a.time}</td>
+      <td style="font-size:12px;">${a.merchant}</td>
+      <td style="font-size:12px;">${a.room}</td>
+      <td style="font-size:12px;">${a.content}</td>
+      <td style="font-size:11px;">${a.action}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ========== Tier Edit Modal ==========
+let editingTierKey = '';
+
+function openTierEditModal(name, rooms, streams, price) {
+  // Map name to key
+  const keyMap = { '基础版': 'Basic', '专业版': 'Pro', '企业版': 'Biz' };
+  editingTierKey = keyMap[name] || name;
+  document.getElementById('tierEditTitle').textContent = '✏️ 编辑 — ' + name;
+  document.getElementById('tierEditName').value = name;
+  document.getElementById('tierEditRooms').value = rooms;
+  document.getElementById('tierEditStreams').value = streams;
+  document.getElementById('tierEditPrice').value = price;
+  document.getElementById('tierEditModal').style.display = 'flex';
+}
+
+function closeTierEditModal() {
+  document.getElementById('tierEditModal').style.display = 'none';
+}
+
+function saveTierEdit() {
+  const rooms = document.getElementById('tierEditRooms').value;
+  const streams = document.getElementById('tierEditStreams').value;
+  const price = document.getElementById('tierEditPrice').value;
+
+  if (rooms < 1 || streams < 1 || price < 0) {
+    showToast('⚠️ 请填写合法的数值');
+    return;
+  }
+
+  // Update the table row
+  document.getElementById('tierRooms' + editingTierKey).innerHTML = '<strong>' + rooms + '</strong> 个';
+  document.getElementById('tierStreams' + editingTierKey).innerHTML = '<strong>' + streams + '</strong> 路';
+  document.getElementById('tierPrice' + editingTierKey).textContent = '¥' + price + '/月';
+
+  // Also update the onclick to reflect new values
+  const row = document.getElementById('tierRow' + editingTierKey);
+  if (row) {
+    const btn = row.querySelector('button');
+    btn.setAttribute('onclick', "openTierEditModal('" + document.getElementById('tierEditName').value + "', " + rooms + ", " + streams + ", " + price + ")");
+  }
+
+  closeTierEditModal();
+  showToast('✅ 套餐档位「' + document.getElementById('tierEditName').value + '」已更新');
+}
+
+document.getElementById('tierEditModal').addEventListener('click', function(e) {
+  if (e.target === this) closeTierEditModal();
+});
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    const page = item.dataset.page;
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById('page-' + page);
+    if (target) target.classList.add('active');
+    document.getElementById('pageTitle').textContent = titles[page] || page;
+  });
+});
+
+// ========== Toast ==========
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  t.style.background = '#10b981';
+  setTimeout(() => { t.style.display = 'none'; }, 2500);
+}
+
+// ========== Init ==========
+renderPlatformTable();
+renderFeatureFlags();
+renderOpsMonitor();
+renderAlerts();
+</script>
+</body>
+</html>

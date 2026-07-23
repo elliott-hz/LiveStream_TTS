@@ -1,0 +1,3179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>商户运营管理平台</title>
+<style>
+/* ========== Reset & Variables ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary: #6366f1;
+  --primary-light: #818cf8;
+  --primary-dark: #4f46e5;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --bg: #f1f5f9;
+  --sidebar-bg: #1e1b4b;
+  --sidebar-text: #c7d2fe;
+  --sidebar-active: #6366f1;
+  --card-bg: #ffffff;
+  --border: #e2e8f0;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,.08);
+}
+
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+/* ========== Sidebar ========== */
+.sidebar {
+  width: 240px; background: var(--sidebar-bg); color: var(--sidebar-text);
+  display: flex; flex-direction: column; flex-shrink: 0;
+  user-select: none;
+}
+.sidebar-logo {
+  padding: 20px 24px 12px; font-size: 18px; font-weight: 700; color: #fff;
+  letter-spacing: .5px;
+}
+.sidebar-logo span { color: var(--primary-light); }
+.sidebar-subtitle { padding: 0 24px 20px; font-size: 12px; color: var(--text-light); }
+
+.sidebar-nav { flex: 1; padding: 4px 12px; }
+.nav-section { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); padding: 16px 12px 8px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: 8px; cursor: pointer; transition: all .15s;
+  font-size: 14px; margin-bottom: 2px;
+}
+.nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+.nav-item.active { background: var(--sidebar-active); color: #fff; font-weight: 500; }
+.nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+.nav-badge { margin-left: auto; background: var(--danger); color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+
+.sidebar-footer { padding: 12px; border-top: 1px solid rgba(255,255,255,.08); }
+.sidebar-user { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; cursor: pointer; }
+.sidebar-user:hover { background: rgba(255,255,255,.08); }
+.sidebar-user .avatar { width: 32px; height: 32px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; font-weight: 600; }
+.sidebar-user .info { font-size: 13px; }
+.sidebar-user .info .name { color: #fff; font-weight: 500; }
+.sidebar-user .info .role { font-size: 11px; color: var(--text-light); }
+
+/* ========== Main ========== */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  height: 56px; background: var(--card-bg); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 24px; gap: 16px; flex-shrink: 0;
+}
+.topbar h2 { font-size: 17px; font-weight: 600; }
+.topbar .breadcrumb { font-size: 13px; color: var(--text-muted); }
+.topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.topbar-actions .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.topbar-actions .status-text { font-size: 12px; color: var(--success); font-weight: 500; }
+
+.btn {
+  padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500;
+  border: none; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.btn-danger { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+.btn-danger:hover { background: #fecaca; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-xs { padding: 3px 8px; font-size: 11px; border-radius: 4px; }
+
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ========== Cards & Grid ========== */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--card-bg); border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow);
+}
+.stat-card .label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+.stat-card .value { font-size: 28px; font-weight: 700; }
+.stat-card .change { font-size: 12px; margin-top: 4px; }
+.stat-card .change.up { color: var(--success); }
+.stat-card .change.down { color: var(--danger); }
+
+.card {
+  background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.card-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-header h3 { font-size: 15px; font-weight: 600; }
+.card-body { padding: 20px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+/* ========== Table ========== */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 14px; background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size: 12px; border-bottom: 1px solid var(--border); }
+td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+tr:hover td { background: #f8fafc; }
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;
+}
+.tag-success { background: #d1fae5; color: #065f46; }
+.tag-warning { background: #fef3c7; color: #92400e; }
+.tag-primary { background: #e0e7ff; color: #3730a3; }
+.tag-danger { background: #fee2e2; color: #991b1b; }
+.tag-neutral { background: #f1f5f9; color: #475569; }
+
+/* ========== Form Elements ========== */
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text); }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+  font-size: 13px; font-family: inherit; transition: border .15s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+}
+.form-row { display: flex; gap: 12px; }
+.form-row .form-group { flex: 1; }
+
+/* ========== Modal ========== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,.5); z-index: 100;
+  display: flex; align-items: center; justify-content: center; animation: fadeIn .2s ease;
+}
+.modal {
+  background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  width: 90%; max-width: 520px; max-height: 80vh; overflow-y: auto;
+}
+.modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-header h3 { font-size: 16px; }
+.modal-body { padding: 20px; }
+.modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ========== Tabs ========== */
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+.tab {
+  padding: 10px 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s;
+  color: var(--text-muted);
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* ========== Progress / Meter ========== */
+.progress-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-top: 8px; }
+.progress-bar .fill { height: 100%; border-radius: 3px; transition: width .3s; }
+.fill-primary { background: var(--primary); }
+.fill-success { background: var(--success); }
+.fill-warning { background: var(--warning); }
+
+/* ========== Misc ========== */
+.text-muted { color: var(--text-muted); font-size: 13px; }
+.empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.switch { position: relative; width: 40px; height: 22px; display: inline-block; }
+.switch input { display: none; }
+.switch .slider { position: absolute; inset: 0; background: #cbd5e1; border-radius: 22px; cursor: pointer; transition: .2s; }
+.switch .slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 2px; bottom: 2px; background: #fff; border-radius: 50%; transition: .2s; }
+.switch input:checked + .slider { background: var(--primary); }
+.switch input:checked + .slider::before { transform: translateX(18px); }
+
+/* ========== Timeline ========== */
+.timeline { padding-left: 16px; border-left: 2px solid var(--border); }
+.timeline-item { margin-bottom: 16px; position: relative; padding-left: 12px; }
+.timeline-item::before { content: ''; position: absolute; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; left: -21px; top: 4px; }
+.timeline-item .time { font-size: 11px; color: var(--text-light); }
+.timeline-item .desc { font-size: 13px; }
+
+/* ========== Schedule ========== */
+.schedule-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.schedule-day { padding: 8px; text-align: center; border-radius: 6px; font-size: 12px; }
+.schedule-day.header { font-weight: 600; color: var(--text-muted); }
+.schedule-day .slot { background: #e0e7ff; color: var(--primary-dark); padding: 4px 6px; border-radius: 4px; font-size: 11px; margin: 2px 0; font-weight: 500; }
+
+/* ========== Wizard Steps ========== */
+.wizard-steps { display: flex; gap: 0; margin-bottom: 24px; }
+.wizard-step {
+  flex: 1; text-align: center; padding: 10px; font-size: 12px; color: var(--text-muted);
+  border-bottom: 3px solid var(--border); transition: all .3s;
+}
+.wizard-step.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.wizard-step.done { color: var(--success); border-bottom-color: var(--success); }
+.wizard-step .step-num { display: inline-block; width: 22px; height: 22px; line-height: 22px; border-radius: 50%; background: var(--border); color: var(--text-muted); font-size: 12px; font-weight: 700; margin-right: 6px; }
+.wizard-step.active .step-num { background: var(--primary); color: #fff; }
+.wizard-step.done .step-num { background: var(--success); color: #fff; }
+.wizard-body { min-height: 200px; }
+.wizard-footer { display: flex; justify-content: space-between; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.wizard-footer .right { display: flex; gap: 8px; }
+.wizard-pane { display: none; }
+.wizard-pane.active { display: block; animation: fadeIn .3s ease; }
+.verify-spinner {
+  display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 40px;
+}
+.spinner { width: 48px; height: 48px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.verify-success { text-align: center; padding: 30px; }
+.verify-success .icon { font-size: 56px; margin-bottom: 12px; }
+
+/* ========== Segment Cards ========== */
+.segment-card {
+  display: flex; gap: 16px; padding: 16px; border-radius: 10px;
+  border: 1px solid var(--border); background: #fff; align-items: flex-start;
+  transition: box-shadow .15s;
+}
+.segment-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.segment-card.processing { background: #fffbeb; border-color: #fde68a; }
+.segment-card.published { background: #f8fafc; }
+.segment-card .seg-thumb {
+  width: 160px; height: 90px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; position: relative; overflow: hidden; cursor: pointer;
+}
+.segment-card .seg-thumb .time-badge {
+  position: absolute; bottom: 4px; right: 4px;
+  background: rgba(0,0,0,.7); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px;
+}
+.segment-card .seg-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.segment-card .seg-header { display: flex; align-items: center; gap: 8px; }
+.segment-card .seg-sku { font-size: 14px; font-weight: 600; }
+.segment-card .seg-time { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.segment-card .seg-script {
+  font-size: 12px; color: var(--text-muted); line-height: 1.6;
+  background: #f8fafc; padding: 8px 10px; border-radius: 6px;
+  max-height: 52px; overflow: hidden; cursor: pointer;
+}
+.segment-card .seg-script.expanded { max-height: none; }
+.segment-card .seg-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex-shrink: 0; }
+.segment-card .seg-actions .btn { white-space: nowrap; }
+.segment-card .seg-actions .time-adjust { display: flex; gap: 4px; align-items: center; }
+.segment-card .seg-actions .time-adjust .btn { padding: 2px 7px; font-size: 11px; }
+
+/* ========== Preview Modal ========== */
+.preview-container { display: flex; gap: 16px; }
+.preview-video {
+  flex: 1; background: #0f172a; border-radius: 8px; aspect-ratio: 16/9;
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 48px;
+}
+.preview-controls { width: 240px; flex-shrink: 0; }
+.preview-controls .section { margin-bottom: 16px; }
+.preview-controls .section h4 { font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.time-range-display { text-align: center; font-size: 14px; font-weight: 700; padding: 8px; background: #f8fafc; border-radius: 6px; margin-bottom: 8px; }
+.time-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.time-btns .btn { width: 100%; justify-content: center; }
+
+/* ========== Responsive ========== */
+@media (max-width: 1400px) {
+  #page-live .live-3col { grid-template-columns: minmax(240px,300px) minmax(340px,1fr) minmax(240px,300px) !important; gap: 10px !important; }
+}
+@media (max-width: 1100px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
+  #page-live .live-3col { grid-template-columns: 1fr !important; }
+  #page-live .live-3col > *:nth-child(1) { order: 2; }
+  #page-live .live-3col > *:nth-child(2) { order: 1; }
+  #page-live .live-3col > *:nth-child(3) { order: 3; }
+}
+
+/* ========== Knowledge Base Tags ========== */
+.kb-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.kb-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.kb-tag.green { background: #d1fae5; color: #065f46; }
+.kb-tag.green:hover { background: #a7f3d0; }
+.kb-tag.gray  { background: #f1f5f9; color: #94a3b8; }
+.kb-tag.gray:hover  { background: #e2e8f0; color: #64748b; }
+
+/* ========== Import Mode Toggle ========== */
+.import-mode-toggle { display: inline-flex; background: #f1f5f9; border-radius: 6px; padding: 2px; }
+.import-mode-toggle .mode-btn {
+  padding: 5px 14px; border-radius: 5px; font-size: 12px; font-weight: 500;
+  cursor: pointer; border: none; background: transparent; color: var(--text-muted);
+  transition: all .15s;
+}
+.import-mode-toggle .mode-btn.active { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+/* ========== Slide Drawer (right) ========== */
+.drawer-overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,.4); z-index: 200;
+  display: none; animation: fadeIn .2s ease;
+}
+.drawer-overlay.show { display: block; }
+.slide-drawer {
+  position: fixed; top: 0; right: -520px; width: 520px; height: 100vh;
+  background: #fff; z-index: 201; box-shadow: -4px 0 24px rgba(0,0,0,.1);
+  transition: right .3s ease; display: flex; flex-direction: column;
+}
+.slide-drawer.open { right: 0; }
+.drawer-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.drawer-header h3 { font-size: 15px; font-weight: 600; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 20px; }
+.drawer-footer {
+  padding: 12px 20px; border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--text-muted); text-align: center;
+  flex-shrink: 0;
+}
+
+/* ========== Platform Tabs in Drawer ========== */
+.kb-platform-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 16px; }
+.kb-platform-tab {
+  padding: 10px 16px; font-size: 13px; font-weight: 500; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: all .15s; color: var(--text-muted);
+  display: flex; align-items: center; gap: 6px;
+}
+.kb-platform-tab:hover { color: var(--text); }
+.kb-platform-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* ========== Rich Content Area ========== */
+.kb-rich-content {
+  font-size: 13px; line-height: 1.8; color: var(--text);
+  max-height: 420px; overflow-y: auto;
+  padding: 16px; background: #f8fafc; border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.kb-rich-content img { max-width: 100%; border-radius: 6px; margin: 8px 0; }
+.kb-rich-content h3,.kb-rich-content h4 { margin: 12px 0 6px; }
+.kb-rich-content p { margin: 6px 0; }
+.kb-rich-content table { font-size: 12px; }
+.kb-rich-content ul,.kb-rich-content ol { padding-left: 18px; }
+
+/* ========== Store Scan Modal ========== */
+.scan-result-list { max-height: 300px; overflow-y: auto; }
+.scan-result-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.scan-result-item:hover { background: #f8fafc; }
+.scan-result-item .check { width: 18px; height: 18px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- ==================== Sidebar ==================== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">🎬 <span>AI</span> 直播工具</div>
+  <div class="sidebar-subtitle">轻量级电商直播 SaaS</div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">数据大盘</div>
+    <div class="nav-item" data-page="liveBoard">
+      <span class="icon">📡</span> 直播数据看板
+    </div>
+    <div class="nav-item" data-page="productMaterial">
+      <span class="icon">🎞️</span> 商品素材数据
+    </div>
+    <div class="nav-item" data-page="productLive">
+      <span class="icon">📡</span> 商品直播数据
+    </div>
+    <div class="nav-section">内容管理</div>
+    <div class="nav-item" data-page="products">
+      <span class="icon">🛒</span> 商品知识库
+    </div>
+    <div class="nav-item" data-page="split">
+      <span class="icon">🎞️</span> 视频素材库
+    </div>
+    <div class="nav-item" data-page="videos">
+      <span class="icon">🎬</span> 直播视频库
+    </div>
+    <div class="nav-section">直播运营</div>
+    <div class="nav-item" data-page="rooms">
+      <span class="icon">🏠</span> 直播间管理
+    </div>
+    <div class="nav-item active" data-page="live">
+      <span class="icon">📡</span> 直播中控台
+      <span class="nav-badge">LIVE</span>
+    </div>
+    <div class="nav-item" data-page="interact">
+      <span class="icon">💬</span> 互动设置
+    </div>
+    <div class="nav-section">平台设置</div>
+    <div class="nav-item" data-page="account">
+      <span class="icon">👥</span> 账号管理
+    </div>
+    <div class="nav-item" data-page="platform">
+      <span class="icon">🔗</span> 平台接入
+    </div>
+    <div class="nav-item" data-page="settings">
+      <span class="icon">⚙️</span> 系统设置
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user" onclick="navigateTo('merchant')" style="cursor:pointer;" title="点击查看商户信息">
+      <div class="avatar">张</div>
+      <div class="info">
+        <div class="name">张老板的店铺</div>
+        <div class="role">专业版 · 剩余 187 天</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ==================== Main ==================== -->
+<div class="main">
+  <div class="topbar">
+    <h2 id="pageTitle">📊 数据统计</h2>
+    <div class="topbar-actions">
+      <span class="status-dot"></span>
+      <span class="status-text">系统运行中</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ==================== 2. 直播间管理 ==================== -->
+    <div class="page" id="page-rooms">
+      <!-- 配额条 -->
+      <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="label">🏠 直播间数（跨平台累计）</div>
+          <div class="value"><span id="quotaRoomsUsed">2</span> <span style="font-size:14px;color:var(--text-muted);">/ 10</span></div>
+          <div class="progress-bar" style="margin-top:6px;"><div class="fill fill-primary" style="width:20%;"></div></div>
+          <div class="change"><span id="quotaRoomsBreakdown" style="font-weight:500;">淘宝 2间</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="label">📡 并发推流路数（跨平台同时开播）</div>
+          <div class="value"><span id="quotaStreamsUsed">1</span> <span style="font-size:14px;color:var(--text-muted);">/ 5</span></div>
+          <div class="progress-bar" style="margin-top:6px;"><div class="fill fill-success" style="width:20%;"></div></div>
+          <div class="change"><span id="quotaStreamsBreakdown" style="font-weight:500;">淘宝 1路</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div class="text-muted">先在平台直播后台创建直播间获取 RTMP 推流地址，再在此处创建并挂载直播视频。<span style="color:#f59e0b;">⚠️ 注意：淘宝/抖音等平台同一店铺同时只能开 1 个直播间</span></div>
+        <button class="btn btn-primary" onclick="openCreateRoomModal()">+ 创建直播间</button>
+      </div>
+
+      <!-- 直播间卡片列表 -->
+      <div id="roomCards" style="display:flex;flex-direction:column;gap:16px;"></div>
+
+      <!-- 空状态 -->
+      <div id="roomEmptyState" style="display:none;" class="card">
+        <div class="card-body" style="text-align:center;padding:60px 20px;">
+          <div style="font-size:48px;margin-bottom:12px;">🏠</div>
+          <div style="font-weight:600;font-size:15px;margin-bottom:4px;">还没有直播间</div>
+          <div class="text-muted" style="font-size:13px;">点击上方「+ 创建直播间」开始</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: 编辑排班时间 -->
+    <div class="modal-overlay" id="scheduleEditModal" style="display:none;">
+      <div class="modal" style="max-width:440px;">
+        <div class="modal-header">
+          <h3 id="scheduleEditTitle">⏰ 设置排班时间</h3>
+          <button class="btn btn-outline btn-xs" onclick="closeScheduleEdit()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom:12px;font-size:13px;font-weight:600;" id="scheduleEditRoomName"></div>
+          <div class="form-group">
+            <label>定时开关播</label>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <label class="switch"><input type="checkbox" id="scheduleEditEnabled" checked onchange="document.getElementById('scheduleTimeRow').style.display=this.checked?'flex':'none'"><span class="slider"></span></label>
+              <span style="font-size:12px;color:var(--text-muted);">关闭后该直播间不再自动开播</span>
+            </div>
+          </div>
+          <div class="form-row" id="scheduleTimeRow">
+            <div class="form-group"><label>每天开播</label><input type="time" id="scheduleStartTime" value="08:00"></div>
+            <div class="form-group"><label>每天关播</label><input type="time" id="scheduleEndTime" value="23:59"></div>
+          </div>
+          <div style="padding:10px 14px;background:#f8fafc;border-radius:6px;font-size:12px;color:var(--text-muted);line-height:1.7;">
+            💡 系统将在设定时间自动推流/停播。关播后播单继续循环，次日从上次中断处继续。
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeScheduleEdit()">取消</button>
+          <button class="btn btn-primary" onclick="saveScheduleEdit()">💾 保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 5. 商品库 ==================== -->
+    <div class="page" id="page-products">
+
+      <!-- ===== 区域1: AI 智能导入 ===== -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><h3>🤖 AI 商品导入</h3><span class="text-muted" style="font-size:12px;">导入的商品详情将作为 AI 直播互动的知识库</span></div>
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13px;font-weight:500;">导入平台：</span>
+              <select id="importPlatform" style="padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;">
+                <option value="taobao">淘宝</option>
+                <option value="douyin">抖音</option>
+                <option value="kuaishou">快手</option>
+                <option value="jd">京东</option>
+                <option value="pdd">拼多多</option>
+              </select>
+            </div>
+            <div class="import-mode-toggle" id="importModeToggle">
+              <button class="mode-btn active" onclick="switchImportMode('single', this)">📦 单品导入</button>
+              <button class="mode-btn" onclick="switchImportMode('store', this)">🏪 整店导入</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-end;">
+            <div class="form-group" style="flex:1;margin-bottom:0;">
+              <label id="importUrlLabel">粘贴商品链接，AI 自动解析详情页作为知识库</label>
+              <input type="text" id="importUrlInput" placeholder="https://item.taobao.com/item.htm?id=xxxxx" style="font-size:13px;">
+            </div>
+            <button class="btn btn-primary" id="importBtn" onclick="triggerImport()">🔍 智能识别并导入</button>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;" id="importHint">支持淘宝/天猫/抖音/快手/京东/拼多多商品链接，AI 自动提取名称、价格、规格、详情图片、卖点描述，存入知识库</div>
+        </div>
+      </div>
+
+      <!-- ===== 整店扫描结果展示 ===== -->
+      <div id="storeScanResult" style="display:none;margin-bottom:20px;">
+        <div class="card">
+          <div class="card-header">
+            <h3>📋 扫描结果 — <span id="storeScanTitle"></span></h3>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="text-muted" style="font-size:12px;" id="storeScanCount"></span>
+              <button class="btn btn-outline btn-xs" onclick="selectAllScanItems()">全选</button>
+              <button class="btn btn-primary btn-sm" onclick="batchImportProducts()">📥 批量导入选中商品</button>
+              <button class="btn btn-outline btn-xs" onclick="document.getElementById('storeScanResult').style.display='none'">取消</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="scan-result-list" id="scanResultList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 单品解析结果 ===== -->
+      <div id="singleParseResult" style="display:none;margin-bottom:20px;">
+        <div class="card">
+          <div class="card-header">
+            <h3>📋 AI 解析结果 — <span id="parsePlatformName"></span></h3>
+            <span class="text-muted" style="font-size:12px;">解析后的内容将作为该平台的知识库</span>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:20px;">
+              <div style="width:160px;height:160px;background:#f1f5f9;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:64px;flex-shrink:0;" id="parsePreviewImg">🛍️</div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+                <div class="form-row">
+                  <div class="form-group"><label>平台商品名</label><input type="text" id="parsedPlatformName" value="夏季新款法式碎花连衣裙"></div>
+                  <div class="form-group"><label>平台SKU ID</label><input type="text" id="parsedPlatformSku" value="TB736201" style="width:130px;"></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>平台售价</label><input type="text" id="parsedPrice" value="¥169" style="width:100px;"></div>
+                  <div class="form-group"><label>关联我们的商品</label>
+                    <select id="parsedLinkProduct" style="padding:6px 10px;font-size:12px;border:1px solid var(--border);border-radius:6px;width:180px;">
+                      <option value="new">+ 创建新商品</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group"><label>AI 提取的卖点描述</label><textarea rows="2" style="font-size:12px;" id="parsedSellingPoints">100%纯棉面料 · V领收腰显瘦 · 碎花蓝/碎花粉两色 · S-XL全尺码 · 夏季新款</textarea></div>
+                <div class="form-group"><label>AI 提取的规格参数</label><div style="font-size:12px;color:var(--text-muted);" id="parsedSpecs">面料:纯棉 | 领型:V领 | 袖长:短袖 | 裙长:中长款 | 适用季节:夏季 | 风格:法式</div></div>
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px;">
+              <button class="btn btn-primary btn-sm" onclick="confirmSingleImport()">💾 确认导入知识库</button>
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('singleParseResult').style.display='none'">取消</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 区域2: 商品列表 ===== -->
+      <div class="card">
+        <div class="card-header">
+          <h3>🛒 商品知识库 · 共 <span id="productCount">6</span> 个商品</h3>
+          <button class="btn btn-primary btn-sm" onclick="alert('➕ 模拟：手动添加标准商品')">+ 手动添加</button>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:50px;"></th>
+                  <th>标准名称</th>
+                  <th style="width:70px;">分类</th>
+                  <th>知识库（已接入平台）</th>
+                  <th style="width:130px;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="productTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 区域3: 商品知识库详情抽屉 ===== -->
+      <div class="drawer-overlay" id="kbDrawerOverlay" onclick="closeKBDrawer()"></div>
+      <div class="slide-drawer" id="kbDrawer">
+        <div class="drawer-header">
+          <h3 id="kbDrawerTitle">📋 商品知识库详情</h3>
+          <button class="btn btn-outline btn-xs" onclick="closeKBDrawer()">✕</button>
+        </div>
+        <div class="drawer-body" id="kbDrawerBody">
+          <!-- Rendered by JS -->
+        </div>
+        <div class="drawer-footer">
+          💡 此内容作为 AI 直播互动的知识来源，用于智能回复观众关于该商品的提问
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 6. 直播视频库 ==================== -->
+    <div class="page" id="page-videos">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div class="text-muted">从视频素材库加载已发布的切片，编排商品顺序、权重、添加贴图/特写等效果，生成直播视频。所有调整均为临时调整，不修改原始素材。</div>
+        <button class="btn btn-primary btn-sm" onclick="alert('✨ 模拟：从素材库加载切片，创建新的直播视频')">+ 新建直播视频</button>
+      </div>
+
+      <!-- 已有的直播视频列表 -->
+      <div id="liveVideoList">
+        <div class="card">
+          <div class="card-header"><h3>🎬 直播视频列表</h3></div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>直播视频</th><th>商品数</th><th>总时长</th><th>播放模式</th><th>创建时间</th><th>操作</th></tr></thead>
+                <tbody>
+                  <tr style="cursor:pointer;" onclick="showLiveVideoEditor('夏季女装专场')">
+                    <td><strong>夏季女装专场</strong></td><td>3 个商品</td><td>44:00</td><td>顺序循环</td><td style="font-size:12px;color:var(--text-muted);">2026-07-20</td>
+                    <td><button class="btn btn-outline btn-xs" onclick="event.stopPropagation();showLiveVideoEditor('夏季女装专场')">编辑</button> <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();alert('📋 模拟：复制直播视频')">复制</button></td>
+                  </tr>
+                  <tr style="cursor:pointer;" onclick="showLiveVideoEditor('新品推荐')">
+                    <td><strong>新品推荐</strong></td><td>5 个商品</td><td>65:00</td><td>随机播放</td><td style="font-size:12px;color:var(--text-muted);">2026-07-18</td>
+                    <td><button class="btn btn-outline btn-xs" onclick="event.stopPropagation();showLiveVideoEditor('新品推荐')">编辑</button> <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();alert('📋 模拟：复制直播视频')">复制</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 直播视频编辑器 -->
+      <div id="liveVideoEditor" style="display:none;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <button class="btn btn-outline btn-sm" onclick="hideLiveVideoEditor()">← 返回列表</button>
+          <span style="font-weight:600;font-size:15px;" id="editorTitle">编辑：夏季女装专场</span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:var(--text-muted);">播放模式</span>
+            <select id="globalPlayMode" style="padding:4px 8px;font-size:12px;"><option>顺序播放</option><option>随机播放</option></select>
+            <span style="font-size:12px;color:var(--text-muted);margin-left:12px;">总时长 <strong id="editorTotalTime">44:00</strong> · <strong id="editorClipCount">3</strong> 个商品</span>
+            <button class="btn btn-primary btn-sm" onclick="alert('💾 模拟：直播视频已保存')">💾 保存</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:360px 1fr 340px;gap:16px;">
+          <!-- 左侧：切片列表 -->
+          <div class="card" style="max-height:calc(100vh - 180px);overflow-y:auto;">
+            <div class="card-header"><h3>📋 切片列表</h3></div>
+            <div class="card-body" style="padding:8px;">
+              <div id="editorClipList" style="display:flex;flex-direction:column;gap:6px;"></div>
+              <button class="btn btn-outline btn-sm" style="width:100%;margin-top:8px;" onclick="alert('➕ 模拟：从视频素材库添加切片')">+ 从素材库添加</button>
+            </div>
+          </div>
+
+          <!-- 中间：竖屏预览 -->
+          <div class="card">
+            <div class="card-header"><h3>📱 预览</h3></div>
+            <div class="card-body" style="display:flex;justify-content:center;padding:16px;">
+              <div id="editorPreview" style="width:280px;aspect-ratio:9/16;background:#0f172a;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;position:relative;overflow:hidden;">
+                <div style="font-size:48px;margin-bottom:8px;">🎬</div>
+                <div style="font-size:13px;" id="previewClipName">选择一个切片预览</div>
+                <div style="font-size:11px;color:#64748b;margin-top:4px;" id="previewClipTime"></div>
+                <!-- Simulated overlay -->
+                <div id="previewPauseNote" style="display:none;position:absolute;top:12px;left:12px;right:12px;background:rgba(99,102,241,.85);color:#fff;padding:6px 10px;border-radius:6px;font-size:10px;text-align:center;">⏸️ 定格画面 3秒</div>
+                <div id="previewOverlay" style="display:none;position:absolute;bottom:12px;left:12px;right:12px;background:rgba(0,0,0,.7);color:#fff;padding:8px 12px;border-radius:8px;font-size:11px;">🛒 商品信息卡片</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右侧：选中切片的调整面板 -->
+          <div class="card" style="max-height:calc(100vh - 180px);overflow-y:auto;">
+            <div class="card-header"><h3>🎨 切片调整 — <span id="adjustPanelTitle" style="color:var(--primary);">未选中</span></h3></div>
+            <div class="card-body" id="adjustPanelBody" style="display:flex;flex-direction:column;gap:14px;">
+              <div class="text-muted" style="text-align:center;padding:20px;">← 单击左侧切片开始调整</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 7. 视频素材库 ==================== -->
+    <div class="page" id="page-split">
+      <!-- 素材库列表视图 -->
+      <div id="splitListView">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div class="text-muted">上传长视频（20min-2h，含多SKU），AI 自动识别 SKU + 脚本 + 切分 → 每个切片可微调后发布到商品视频库</div>
+          <button class="btn btn-primary" onclick="alert('📤 模拟：打开上传对话框，支持 MP4/MOV，最大 2GB')">+ 上传视频</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>🎞️ 视频素材库</h3></div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>原始视频</th><th>时长</th><th>解析状态</th><th>已解析片段</th><th>上传时间</th><th>操作</th></tr></thead>
+                <tbody>
+                  <tr style="cursor:pointer;" onclick="showSplitDetail('新品混剪素材')">
+                    <td>🎬 <strong>新品混剪素材.mp4</strong></td>
+                    <td>25:00</td>
+                    <td><span style="display:flex;align-items:center;gap:8px;"><span class="tag tag-warning">解析中</span><span style="font-size:11px;color:var(--text-muted);">74%</span></span></td>
+                    <td>3 个片段</td>
+                    <td style="font-size:12px;color:var(--text-muted);">2026-07-22 10:15</td>
+                    <td><button class="btn btn-primary btn-xs" onclick="event.stopPropagation();showSplitDetail('新品混剪素材')">进入</button></td>
+                  </tr>
+                  <tr style="cursor:pointer;" onclick="showSplitDetail('夏季女装')">
+                    <td>🎬 <strong>夏季女装合集.mp4</strong></td>
+                    <td>1h32min</td>
+                    <td><span class="tag tag-success">✓ 已完成</span></td>
+                    <td>3 个片段（全部发布）</td>
+                    <td style="font-size:12px;color:var(--text-muted);">2026-07-18 14:30</td>
+                    <td><button class="btn btn-outline btn-xs" onclick="event.stopPropagation();showSplitDetail('夏季女装')">查看</button></td>
+                  </tr>
+                  <tr style="cursor:pointer;" onclick="showSplitDetail('春季新品')">
+                    <td>🎬 <strong>春季新品发布.mp4</strong></td>
+                    <td>48min</td>
+                    <td><span class="tag tag-success">✓ 已完成</span></td>
+                    <td>5 个片段（全部发布）</td>
+                    <td style="font-size:12px;color:var(--text-muted);">2026-07-15 09:12</td>
+                    <td><button class="btn btn-outline btn-xs" onclick="event.stopPropagation();showSplitDetail('春季新品')">查看</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 素材详情视图 -->
+      <div id="splitDetailView" style="display:none;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+          <button class="btn btn-outline btn-sm" onclick="hideSplitDetail()">← 返回素材库</button>
+          <span style="font-weight:600;font-size:15px;" id="splitDetailTitle">新品混剪素材.mp4</span>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 id="splitDetailHeader">⏳ 解析详情 — 新品混剪素材.mp4</h3>
+            <span class="text-muted" style="font-size:12px;" id="splitDetailMeta">总长 25:00 · 已分析 18:30 / 25:00</span>
+          </div>
+          <div class="card-body">
+            <div id="splitDetailProgress" style="margin-bottom:16px;">
+              <div class="progress-bar"><div class="fill fill-primary" style="width:74%;"></div></div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">已解析完成 3 个片段 · 剩余视频约 6:30 分析中，预计 32 分钟（约1:5时长比）</div>
+            </div>
+            <div id="splitSegments" style="display:flex;flex-direction:column;gap:12px;">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== 3.5 直播看板 ==================== -->
+    <div class="page" id="page-liveBoard">
+      <!-- 选择直播场次 -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-body" style="display:flex;align-items:center;gap:16px;padding:14px 18px;">
+          <span style="font-weight:600;font-size:13px;white-space:nowrap;">📡 选择直播场次：</span>
+          <select id="liveBoardSession" style="flex:1;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;max-width:420px;" onchange="renderLiveBoard()">
+            <option value="">— 选择一场直播 —</option>
+          </select>
+          <span class="text-muted" style="font-size:11px;white-space:nowrap;" id="liveBoardStatus"></span>
+        </div>
+      </div>
+
+      <!-- 数据区域 -->
+      <div id="liveBoardContent" style="display:none;">
+        <!-- 核心指标卡片 -->
+        <div class="stats-grid" style="margin-bottom:20px;">
+          <div class="stat-card"><div class="label">⏱️ 直播时长</div><div class="value" id="lbDuration">—</div><div class="change" id="lbTimeRange"></div></div>
+          <div class="stat-card"><div class="label">👁️ 累计观看</div><div class="value" id="lbViewers">—</div><div class="change" id="lbPeakViewers"></div></div>
+          <div class="stat-card"><div class="label">💬 弹幕总数</div><div class="value" id="lbDanmaku">—</div><div class="change" id="lbDanmakuRate"></div></div>
+          <div class="stat-card"><div class="label">➕ 新增粉丝</div><div class="value" id="lbFollowers">—</div><div class="change" id="lbFollowerRate"></div></div>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom:20px;">
+          <div class="stat-card"><div class="label">🛒 商品弹窗次数</div><div class="value" id="lbProductPops">—</div><div class="change" id="lbProductClicks"></div></div>
+          <div class="stat-card"><div class="label">📦 成交订单</div><div class="value" id="lbOrders">—</div><div class="change" id="lbRevenue"></div></div>
+          <div class="stat-card"><div class="label">❤️ 点赞数</div><div class="value" id="lbLikes">—</div><div class="change" id="lbLikeRate"></div></div>
+          <div class="stat-card"><div class="label">🎁 礼物收入</div><div class="value" id="lbGifts">—</div><div class="change" id="lbGiftCount"></div></div>
+        </div>
+
+        <div class="grid-2">
+          <!-- 商品讲解表现 -->
+          <div class="card">
+            <div class="card-header"><h3>🛒 商品讲解表现</h3></div>
+            <div class="card-body">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>商品</th><th>讲解时长</th><th>弹窗次数</th><th>弹幕提及</th><th>点击率</th></tr></thead>
+                  <tbody id="lbProductTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 弹幕互动趋势 -->
+          <div class="card">
+            <div class="card-header"><h3>💬 弹幕互动趋势</h3></div>
+            <div class="card-body">
+              <div id="lbDanmakuTimeline" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <div id="liveBoardEmpty" class="card">
+        <div class="card-body" style="text-align:center;padding:60px 20px;">
+          <div style="font-size:48px;margin-bottom:12px;">📡</div>
+          <div style="font-weight:600;font-size:15px;margin-bottom:4px;">选择一场直播查看详细数据</div>
+          <div class="text-muted" style="font-size:13px;">支持查看历史直播和当前正在进行的直播</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 4. 互动设置 ==================== -->
+    <div class="page" id="page-interact">
+      <div class="tabs">
+        <div class="tab active" onclick="switchInteractTab(this, 'tab-reply')">智能回复</div>
+        <div class="tab" onclick="switchInteractTab(this, 'tab-template')">话术模板</div>
+        <div class="tab" onclick="switchInteractTab(this, 'tab-auto')">自动互动</div>
+      </div>
+
+      <div id="tab-reply">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>💬 智能语音回复设置</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>回复语音模式</label>
+                <select><option>原音频驱动（使用真人原声）</option><option>TTS 驱动（AI 合成语音）</option></select>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>语速</label><input type="range" style="width:100%"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);"><span>慢</span><span>正常</span><span>快</span></div></div>
+                <div class="form-group"><label>音量</label><input type="range" style="width:100%" value="80"></div>
+                <div class="form-group"><label>语调</label><input type="range" style="width:100%" value="60"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);"><span>低沉</span><span>正常</span><span>高昂</span></div></div>
+              </div>
+              <div class="form-group">
+                <label>回复决策</label>
+                <select><option>仅回复提问类弹幕（节省成本）</option><option>回复所有弹幕（互动率高）</option></select>
+              </div>
+              <div class="form-group">
+                <label>TTS 读法修正</label>
+                <textarea rows="2" placeholder="例：券=quàn（不读juàn）| 打折=打zhé | SKU=爱斯凯优"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>📝 智能文字回复设置</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>文字回复开关</label>
+                <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                <span class="text-muted" style="margin-left:8px;">需要平台 API 支持</span>
+              </div>
+              <div class="form-group">
+                <label>知识库来源</label>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;">
+                  <label><input type="checkbox" checked> 商品详情页（自动抓取）</label>
+                  <label><input type="checkbox" checked> 手动配置的知识库</label>
+                  <label><input type="checkbox" checked> 直播脚本内容</label>
+                  <label><input type="checkbox"> 关联未绑定商品（全购物车学习）<span class="tag tag-warning" style="margin-left:4px;">T3</span></label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>回复风格</label>
+                <select><option>亲切热情 — "亲，这款连衣裙..."</option><option>专业干练 — "这款产品的核心卖点是..."</option><option>活泼带货 — "姐妹们冲！这个价格..."</option></select>
+              </div>
+              <div class="form-group">
+                <label>衔接模式 <span class="tag tag-warning" style="margin-left:4px;">T3</span></label>
+                <select><option>开启承上启下衔接</option><option>独立回复（每次都是新对话）</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-template" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h3>📋 单品互动话术模板</h3><button class="btn btn-primary btn-sm" onclick="alert('📥 模拟：下载模板Excel')">下载模板</button></div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>商品</th><th>触发关键词</th><th>AI 回复话术</th><th>回复方式</th><th>操作</th></tr></thead>
+                <tbody>
+                  <tr><td>法式碎花连衣裙</td><td>多少钱/价格/怎么卖</td><td>"亲，这款连衣裙现在活动价只要169哦~原价399，限时特惠！"</td><td>语音+文字</td><td><button class="btn btn-outline btn-xs">编辑</button></td></tr>
+                  <tr><td>法式碎花连衣裙</td><td>尺码/大小/怎么选</td><td>"这款是均码设计，S-L都能穿哦~具体尺码表可以看商品详情页~"</td><td>语音+文字</td><td><button class="btn btn-outline btn-xs">编辑</button></td></tr>
+                  <tr><td>冰丝防晒袖套</td><td>防晒/效果/真的假的</td><td>"亲，这款经过 UPF50+ 认证，实测防晒效果杠杠的！骑车开车都能用~"</td><td>文字</td><td><button class="btn btn-outline btn-xs">编辑</button></td></tr>
+                  <tr><td>草编遮阳帽</td><td>材质/草编/会不会变形</td><td>"天然拉菲草编织，不会变形的！而且可以折叠收纳，包里随便放~"</td><td>语音+文字</td><td><button class="btn btn-outline btn-xs">编辑</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="margin-top:12px;">
+              <button class="btn btn-outline btn-sm" onclick="alert('📤 模拟：上传填写好的模板')">📤 一键上传模板</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-auto" style="display:none;">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>⏰ 定时弹幕</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>定时弹幕开关</label>
+                <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+              </div>
+              <div class="form-group">
+                <label>发送间隔</label>
+                <select><option>每 3 分钟随机发送一条</option><option>每 5 分钟随机发送一条</option><option>每 10 分钟随机发送一条</option></select>
+              </div>
+              <div class="form-group">
+                <label>场控文案库（系统自动随机选择）</label>
+                <textarea rows="4" placeholder="每行一条，系统随机发送&#10;这个颜色好看！&#10;已经下单了，期待发货~&#10;主播讲解得好详细！&#10;有优惠券吗？&#10;老粉了，品质一直很好"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>🎯 主动互动触发</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>进场欢迎</label>
+                <select><option>开启 — "欢迎XXX进入直播间~"</option><option>关闭</option></select>
+              </div>
+              <div class="form-group">
+                <label>关注引导</label>
+                <select><option>每 15 分钟自动引导一次</option><option>根据在线人数自动触发</option></select>
+              </div>
+              <div class="form-group">
+                <label>催单促单</label>
+                <select><option>库存不足时自动触发</option><option>每轮结束前触发限时话术</option></select>
+              </div>
+              <div class="form-group">
+                <label>人工回复入口</label>
+                <div class="text-muted">运营人员可在弹幕面板手动介入回复</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 1. 直播中控台 ==================== -->
+    <div class="page active" id="page-live">
+      <!-- 直播间选择 -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <span style="font-weight:600;font-size:13px;white-space:nowrap;">当前监控：</span>
+        <select id="ctrlRoomSelect" style="padding:6px 12px;font-size:13px;border:1px solid var(--border);border-radius:6px;min-width:220px;" onchange="renderCtrlRoom()"></select>
+        <span id="ctrlRoomStatus"></span>
+        <span style="margin-left:auto;display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="renderCtrlRoom()">🔄 刷新</button>
+          <button class="btn btn-danger btn-sm" onclick="alert('⚠️ 模拟：直播已紧急关停')">🛑 紧急关停</button>
+        </span>
+      </div>
+
+      <div id="ctrlRoomContent">
+        <!-- 三栏布局：弹幕 | 竖屏画面 | 运营操作 -->
+        <div class="live-3col" style="display:grid;grid-template-columns:minmax(300px,380px) minmax(420px,1fr) minmax(300px,380px);gap:16px;align-items:start;">
+
+          <!-- 左栏：实时弹幕 -->
+          <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;height:calc(100vh - 160px);min-height:560px;">
+            <div style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px;">
+              <span style="width:5px;height:5px;border-radius:50%;background:#10b981;"></span> 实时弹幕
+              <span style="margin-left:auto;font-size:10px;color:var(--text-muted);" id="ctrlDanmakuCount">0 条</span>
+            </div>
+            <div id="ctrlCommentList" style="flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:4px;font-size:11px;"></div>
+            <div style="padding:8px;border-top:1px solid var(--border);display:flex;gap:4px;">
+              <input type="text" placeholder="模拟弹幕..." id="ctrlCommentInput" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:11px;" onkeydown="if(event.key==='Enter')ctrlSendComment()">
+              <button class="btn btn-primary btn-xs" onclick="ctrlSendComment()" style="font-size:10px;">发</button>
+              <button class="btn btn-outline btn-xs" id="ctrlAutoBtn" onclick="ctrlToggleAuto()" style="font-size:10px;">🤖</button>
+            </div>
+          </div>
+
+          <!-- 中栏：竖屏直播画面 (9:16) -->
+          <div style="display:flex;justify-content:center;">
+            <div style="height:calc(100vh - 160px);min-height:560px;aspect-ratio:9/16;background:linear-gradient(180deg,#1e1b4b 0%,#312e81 30%,#0f172a 100%);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+              <!-- 顶部信息栏 -->
+              <div style="position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;">
+                <span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;animation:pulse 2s infinite;">● LIVE</span>
+                <span style="background:rgba(0,0,0,.5);color:#fff;font-size:10px;padding:2px 7px;border-radius:3px;" id="ctrlViewerBadge">👁️ —</span>
+              </div>
+              <!-- 计时器 -->
+              <div style="position:absolute;top:36px;left:10px;background:rgba(0,0,0,.4);color:#fff;font-size:10px;padding:2px 7px;border-radius:3px;" id="ctrlTimer">🕐 00:00:00</div>
+              <!-- 画面主体 -->
+              <div style="font-size:72px;margin-bottom:12px;">🎥</div>
+              <div style="font-size:15px;font-weight:600;text-align:center;padding:0 16px;" id="ctrlNowPlaying">选择一个直播间</div>
+              <div style="font-size:12px;color:#94a3b8;margin-top:6px;text-align:center;padding:0 16px;" id="ctrlNowInfo"></div>
+              <!-- 底部弹品卡片（竖屏内） -->
+              <div id="ctrlProductCard" style="display:none;position:absolute;bottom:16px;left:12px;right:12px;background:rgba(255,255,255,.95);border-radius:10px;padding:10px 14px;color:#1e293b;align-items:center;gap:10px;font-size:12px;">
+                <span style="font-size:28px;">🛍️</span>
+                <div style="flex:1;"><div style="font-weight:600;" id="ctrlPopupProduct">—</div><div style="font-weight:700;color:#ef4444;" id="ctrlPopupPrice">—</div></div>
+                <button class="btn btn-outline btn-xs" onclick="document.getElementById('ctrlProductCard').style.display='none'" style="position:absolute;top:2px;right:2px;font-size:10px;">✕</button>
+              </div>
+              <!-- 底部BGM标识 -->
+              <div style="position:absolute;bottom:10px;right:10px;display:flex;gap:4px;">
+                <span style="background:rgba(255,255,255,.15);padding:2px 6px;border-radius:8px;font-size:9px;">🎵 BGM</span>
+                <span style="background:rgba(255,255,255,.15);padding:2px 6px;border-radius:8px;font-size:9px;" id="ctrlAudioMode">🔊 原声</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右栏：运营操作 -->
+          <div class="card" style="height:calc(100vh - 160px);min-height:560px;overflow-y:auto;display:flex;flex-direction:column;">
+            <div class="card-header"><h3 style="font-size:13px;">🎮 运营操作</h3></div>
+            <div class="card-body" style="padding:14px;display:flex;flex-direction:column;gap:16px;flex:1;">
+
+              <!-- 实时数据 -->
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">📊 实时数据</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;">
+                  <div><span style="color:var(--text-muted);">👁️ 观看</span><br><strong style="font-size:18px;" id="ctrlViewers">—</strong></div>
+                  <div><span style="color:var(--text-muted);">💬 弹幕</span><br><strong style="font-size:18px;" id="ctrlDanmaku">—</strong></div>
+                  <div><span style="color:var(--text-muted);">🛒 弹窗</span><br><strong style="font-size:18px;" id="ctrlPops">—</strong></div>
+                  <div><span style="color:var(--text-muted);">📦 订单</span><br><strong style="font-size:18px;color:var(--danger);" id="ctrlOrdersValue">—</strong></div>
+                </div>
+                <div style="margin-top:8px;font-size:10px;color:var(--text-muted);line-height:1.6;">
+                  <div id="ctrlPeak"></div><div id="ctrlElapsed"></div><div id="ctrlAIReplyRate"></div>
+                </div>
+              </div>
+
+              <div style="border-top:1px solid var(--border);"></div>
+
+              <!-- 商品操作 -->
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">🛒 商品操作</div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <button class="btn btn-outline btn-sm" onclick="ctrlPopProduct()">📦 手动弹出商品卡片</button>
+                  <button class="btn btn-outline btn-sm" onclick="alert('📋 已切换到下一个商品')">⏭️ 切换商品</button>
+                  <div style="font-size:11px;color:var(--text-muted);">当前：<strong id="ctrlCurrentProduct" style="color:var(--text);">—</strong></div>
+                </div>
+              </div>
+
+              <div style="border-top:1px solid var(--border);"></div>
+
+              <!-- 互动操作 -->
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">💬 互动设置</div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <button class="btn btn-outline btn-sm" onclick="ctrlManualReply()">✏️ 人工介入回复</button>
+                  <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;"><span>🔊 TTS语音</span><label class="switch"><input type="checkbox" checked onchange="document.getElementById('ctrlAudioMode').textContent=this.checked?'🔊 TTS':'🔊 原声'"><span class="slider"></span></label></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;"><span>🤖 自动回复</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;"><span>🎵 BGM音量</span><input type="range" value="30" style="width:80px;" oninput="this.nextElementSibling.textContent=this.value+'%'"><span style="font-size:10px;width:32px;">30%</span></div>
+                </div>
+              </div>
+
+              <div style="border-top:1px solid var(--border);"></div>
+
+              <!-- 推流状态 -->
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">📡 推流状态</div>
+                <div style="font-size:11px;color:var(--text-muted);line-height:2;">
+                  <div>画质：<span class="tag tag-success" style="font-size:10px;">1080p@30fps</span></div>
+                  <div>码率：<strong id="ctrlBitrate" style="color:var(--text);">4.2 Mbps</strong></div>
+                  <div>延迟：<span style="color:#10b981;">2.3s</span> · 丢帧：<span style="color:#10b981;">0.02%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="ctrlRoomEmpty" style="display:none;" class="card">
+        <div class="card-body" style="text-align:center;padding:60px 20px;">
+          <div style="font-size:48px;margin-bottom:12px;">📡</div>
+          <div style="font-weight:600;font-size:15px;">暂无直播中的直播间</div>
+          <div class="text-muted" style="font-size:13px;">请先在「直播间管理」中开播</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 5.1 商品素材数据 ==================== -->
+    <div class="page" id="page-productMaterial">
+      <div class="card">
+        <div class="card-body" style="font-size:13px;color:var(--text-muted);padding:14px 18px;">
+          💡 <strong>商品 → 素材关联统计：</strong>展示每个商品在视频素材库中的覆盖情况。素材来源包括已上传的长视频 AI 解析结果。未覆盖的商品提示商户补充视频素材。
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>🎞️ 商品 & 素材关联表</h3><button class="btn btn-outline btn-sm" onclick="alert('📥 模拟：导出商品素材报表')">导出报表</button></div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>商品</th><th>SKU</th><th>分类</th><th>关联素材数</th><th>切片总数</th><th>关联总时长</th><th>素材覆盖率</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="productMaterialBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 5.2 商品直播数据 ==================== -->
+    <div class="page" id="page-productLive">
+      <div class="card">
+        <div class="card-body" style="font-size:13px;color:var(--text-muted);padding:14px 18px;">
+          💡 <strong>商品 → 直播关联统计：</strong>展示每个商品在直播间的出场情况。数据来源于直播排班和实际推流记录，帮助商户了解各商品的曝光和互动表现。
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>📡 商品 & 直播关联表</h3><button class="btn btn-outline btn-sm" onclick="alert('📥 模拟：导出商品直播报表')">导出报表</button></div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>商品</th><th>SKU</th><th>分类</th><th>出现直播间</th><th>累计播放次数</th><th>累计播放时长</th><th>弹幕提及</th><th>弹品次数</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="productLiveBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 6. 账号管理 ==================== -->
+    <div class="page" id="page-account">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="label">主账号</div><div class="value" style="font-size:20px;">张老板的店铺</div><div class="change">总时长 365 天 · 剩余 187 天</div></div>
+        <div class="stat-card"><div class="label">子账号数</div><div class="value">3</div><div class="change">共享主账号时长</div></div>
+        <div class="stat-card"><div class="label">本月已用时长</div><div class="value">124h</div><div class="change up">3 个子账号活跃</div></div>
+        <div class="stat-card"><div class="label">到期提醒</div><div class="value" style="font-size:16px;color:var(--warning);">187 天后</div><div class="change">2027-01-24</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>👥 子账号管理</h3><button class="btn btn-primary btn-sm" onclick="alert('➕ 模拟：创建子账号')">+ 创建子账号</button></div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>子账号</th><th>时长模式</th><th>分配时长</th><th>已用</th><th>剩余</th><th>管理直播间</th><th>状态</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>运营小王</strong></td>
+                  <td><span class="tag tag-primary">共享主账号</span></td>
+                  <td>—</td>
+                  <td>56h</td>
+                  <td>—</td>
+                  <td>夏季女装专场</td>
+                  <td><span class="tag tag-success">活跃</span></td>
+                  <td><button class="btn btn-outline btn-xs">编辑</button> <button class="btn btn-outline btn-xs">调整时长</button></td>
+                </tr>
+                <tr>
+                  <td><strong>运营小李</strong></td>
+                  <td><span class="tag tag-warning">独立分配</span></td>
+                  <td>200h</td>
+                  <td>88h</td>
+                  <td>112h</td>
+                  <td>品牌特卖 — B 组</td>
+                  <td><span class="tag tag-success">活跃</span></td>
+                  <td><button class="btn btn-outline btn-xs">编辑</button> <button class="btn btn-outline btn-xs">调整时长</button></td>
+                </tr>
+                <tr>
+                  <td><strong>运营小张</strong></td>
+                  <td><span class="tag tag-primary">共享主账号</span></td>
+                  <td>—</td>
+                  <td>32h</td>
+                  <td>—</td>
+                  <td>家居好物推荐</td>
+                  <td><span class="tag tag-success">活跃</span></td>
+                  <td><button class="btn btn-outline btn-xs">编辑</button> <button class="btn btn-outline btn-xs">调整时长</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-outline btn-sm" onclick="alert('📥 模拟：下载账号使用明细')">📥 下载使用明细</button>
+            <button class="btn btn-outline btn-sm" onclick="alert('💰 模拟：跳转续费页面')">💰 续费</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 7. 平台接入 ==================== -->
+    <div class="page" id="page-platform">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div class="text-muted">管理各直播平台的 API 接入与推流配置。各平台 API 开放度差异大，详见<a href="#" onclick="alert('请查看 demo/平台接入能力调研.md')" style="color:var(--primary);">接入能力调研报告</a></div>
+      </div>
+
+      <!-- 已接入平台 -->
+      <div class="card">
+        <div class="card-header"><h3>✅ 已接入平台</h3><span class="text-muted" style="font-size:12px;">API 凭证所有直播间共用，RTMP 推流地址在"直播间管理"中单独配置</span></div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>平台</th><th>API 授权</th><th>支持能力</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><span class="tag tag-primary">淘宝</span></td>
+                  <td><span class="tag tag-success">已授权</span></td>
+                  <td>
+                    <span class="tag tag-success">推流</span>
+                    <span class="tag tag-success">弹幕</span>
+                    <span class="tag tag-success">弹品</span>
+                    <span class="tag tag-success">回复</span>
+                    <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">4/4</span>
+                  </td>
+                  <td><button class="btn btn-outline btn-xs" onclick="openConfigModal('淘宝', 'ak_taobao_xxxxxxxxxxxxxxxx')">配置</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 推荐接入 -->
+      <div class="card" style="margin-top:20px;">
+        <div class="card-header"><h3>⭐ 可接入平台</h3><span class="text-muted" style="font-size:12px;">接入后即可在该平台创建直播间并推流</span></div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>平台</th><th>直播电商份额</th><th>支持能力</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>抖音</strong> 🥇</td>
+                  <td><strong>31%</strong> · 头部第一</td>
+                  <td>
+                    <span class="tag tag-success">推流</span>
+                    <span class="tag tag-success">弹幕</span>
+                    <span class="tag tag-success">弹品</span>
+                    <span class="tag tag-success">回复</span>
+                    <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">4/4</span>
+                  </td>
+                  <td><button class="btn btn-primary btn-xs" onclick="openAccessWizard('抖音')">接入</button></td>
+                </tr>
+                <tr>
+                  <td><strong>快手</strong> 🥉</td>
+                  <td><strong>14%</strong> · 第三</td>
+                  <td>
+                    <span class="tag tag-success">推流</span>
+                    <span class="tag tag-success">弹幕</span>
+                    <span class="tag tag-success">弹品</span>
+                    <span class="tag tag-neutral">回复</span>
+                    <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">3/4</span>
+                  </td>
+                  <td><button class="btn btn-primary btn-xs" onclick="openAccessWizard('快手')">接入</button></td>
+                </tr>
+                <tr>
+                  <td><strong>京东</strong></td>
+                  <td><strong>8%</strong> · 第四</td>
+                  <td>
+                    <span class="tag tag-success">推流</span>
+                    <span class="tag tag-success">弹幕</span>
+                    <span class="tag tag-neutral">弹品</span>
+                    <span class="tag tag-neutral">回复</span>
+                    <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">2/4</span>
+                  </td>
+                  <td><button class="btn btn-outline btn-xs" onclick="openAccessWizard('京东')">接入</button></td>
+                </tr>
+                <tr>
+                  <td><strong>拼多多</strong></td>
+                  <td>增速最快</td>
+                  <td>
+                    <span class="tag tag-success">推流</span>
+                    <span class="tag tag-success">弹幕</span>
+                    <span class="tag tag-neutral">弹品</span>
+                    <span class="tag tag-neutral">回复</span>
+                    <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">2/4</span>
+                  </td>
+                  <td><button class="btn btn-outline btn-xs" onclick="openAccessWizard('拼多多')">接入</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 仅推流 / 观望 -->
+      <div style="margin-top:16px;padding:10px 14px;background:#f8fafc;border-radius:6px;font-size:12px;color:var(--text-muted);">
+        📌 <strong>视频号、小红书、唯品会</strong>目前仅支持 RTMP 推流，不具备弹幕采集/商品弹窗/文字回复的开放接口，暂缓接入。另外，国内没有任何直播平台提供"文字回复"官方 API，现有方案均依赖第三方工具。详见 <code>demo/平台接入能力调研.md</code>
+      </div>
+    </div>
+
+    <!-- ==================== 8. 系统设置 ==================== -->
+    <div class="page" id="page-settings">
+      <div class="card">
+        <div class="card-header"><h3>⚙️ 全局设置</h3></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#f8fafc;border-radius:6px;">
+              <div>
+                <div style="font-weight:600;font-size:13px;">默认 BGM 音量</div>
+                <div style="font-size:12px;color:var(--text-muted);">新创建直播间时的默认背景音乐音量</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input type="range" value="30" style="width:120px;">
+                <span style="font-size:12px;width:32px;">30%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 商户信息 ==================== -->
+    <div class="page" id="page-merchant">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+        <div style="width:64px;height:64px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;font-weight:700;">张</div>
+        <div>
+          <h2 style="font-size:20px;">张老板的店铺</h2>
+          <div style="font-size:13px;color:var(--text-muted);">商户ID: M00001 · 注册日期: 2026-01-24</div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="margin-left:auto;" onclick="navigateTo('settings')">← 返回</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">📦 当前套餐</div>
+          <div class="value" style="font-size:20px;">专业版</div>
+          <div class="change">¥999/月</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">📅 到期日期</div>
+          <div class="value" style="font-size:20px;">2027-01-24</div>
+          <div class="change">剩余 187 天</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">🏠 直播间配额</div>
+          <div class="value">2 / 10</div>
+          <div class="progress-bar" style="margin-top:6px;"><div class="fill fill-primary" style="width:20%;"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="label">📡 并发推流配额</div>
+          <div class="value">1 / 5</div>
+          <div class="progress-bar" style="margin-top:6px;"><div class="fill fill-success" style="width:20%;"></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>📋 基本信息</h3></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px;">
+            <div><span style="color:var(--text-muted);">联系人：</span>张三</div>
+            <div><span style="color:var(--text-muted);">手机号：</span>138****8888</div>
+            <div><span style="color:var(--text-muted);">邮箱：</span>zhang@example.com</div>
+            <div><span style="color:var(--text-muted);">已接入平台：</span>淘宝</div>
+            <div><span style="color:var(--text-muted);">本月开播时长：</span>124 小时</div>
+            <div><span style="color:var(--text-muted);">累计弹幕互动：</span>12,847 条</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.content -->
+</div><!-- /.main -->
+
+<!-- ==================== Modal: 配置已接入平台 ==================== -->
+<div class="modal-overlay" id="configModal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="configModalTitle">⚙️ 配置 — 平台接入</h3>
+      <button class="btn btn-outline btn-xs" onclick="closeConfigModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="padding:12px;background:#f0f9ff;border-radius:6px;font-size:12px;color:#075985;margin-bottom:16px;line-height:1.7;">
+        💡 <strong>接入说明：</strong>此处配置淘宝开放平台的 API 凭证（所有直播间共用）。<strong>RTMP 推流地址在"直播间管理"中为每个直播间单独配置。</strong>流程：淘宝后台创建直播间 → 获取 RTMP 地址 → 在直播间管理中填入。
+      </div>
+      <div class="form-group">
+        <label>平台</label>
+        <input type="text" id="configPlatform" disabled style="background:#f8fafc;">
+      </div>
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="text" id="configApiKey" placeholder="淘宝开放平台应用的 AppKey（用于弹幕采集 / 商品弹窗）">
+      </div>
+      <div class="form-group">
+        <label>API Secret</label>
+        <input type="password" id="configApiSecret" placeholder="淘宝开放平台应用的 AppSecret" value="••••••••••••••••">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeConfigModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Modal: 预览切片 ==================== -->
+<div class="modal-overlay" id="previewModal" style="display:none;">
+  <div class="modal" style="max-width:800px;">
+    <div class="modal-header">
+      <h3 id="previewTitle">🎬 预览切片</h3>
+      <button class="btn btn-outline btn-xs" onclick="closePreviewModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="preview-container">
+        <div class="preview-video" id="previewVideo" onclick="alert('▶️ 模拟：播放/暂停')">
+          🎬
+        </div>
+        <div class="preview-controls">
+          <div class="section">
+            <h4>⏱️ 时间范围</h4>
+            <div class="time-range-display" id="previewTimeRange">00:00 — 05:30</div>
+            <div class="time-btns">
+              <button class="btn btn-outline btn-sm" onclick="adjustTime(-5)">−5s</button>
+              <button class="btn btn-outline btn-sm" onclick="adjustTime(-1)">−1s</button>
+              <button class="btn btn-outline btn-sm" onclick="adjustTime(+1)">+1s</button>
+              <button class="btn btn-outline btn-sm" onclick="adjustTime(+5)">+5s</button>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">调整后自动重新识别 SKU 和脚本</div>
+          </div>
+          <div class="section">
+            <h4>🛒 识别的 SKU</h4>
+            <div id="previewSku" style="font-size:13px;font-weight:600;">运动鞋 (SKU: D006)</div>
+          </div>
+          <div class="section">
+            <h4>📝 识别的脚本</h4>
+            <div id="previewScript" style="font-size:12px;color:var(--text-muted);line-height:1.6;background:#f8fafc;padding:8px;border-radius:6px;max-height:120px;overflow-y:auto;">
+              今天给大家带来这款运动鞋...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closePreviewModal()">关闭</button>
+      <button class="btn btn-outline btn-sm" onclick="alert('✏️ 模拟：手动编辑SKU名称')">✏️ 微调SKU</button>
+      <button class="btn btn-outline btn-sm" onclick="alert('✏️ 模拟：手动编辑脚本内容')">📝 微调脚本</button>
+      <button class="btn btn-primary" onclick="alert('✅ 模拟：切片已确认，SKU和脚本已保存')">✓ 确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Modal: 创建直播间 ==================== -->
+<div class="modal-overlay" id="createRoomModal" style="display:none;">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header">
+      <h3 id="createRoomModalTitle">📝 创建直播间</h3>
+      <button class="btn btn-outline btn-xs" onclick="closeCreateRoomModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="padding:10px 14px;background:#f0f9ff;border-radius:6px;font-size:12px;color:#075985;margin-bottom:16px;line-height:1.7;">
+        💡 先在<strong>平台直播后台</strong>（如淘宝 zhubo.taobao.com）创建直播间 → 获取 RTMP 推流地址 → 回到此处填写。推流地址用于本系统向该直播间推送视频流。
+      </div>
+      <div class="form-group">
+        <label>直播间名称</label>
+        <input type="text" id="newRoomName" placeholder="例：夏季女装专场">
+      </div>
+      <div class="form-group">
+        <label>直播平台</label>
+        <select id="newRoomPlatform">
+          <option value="淘宝">淘宝</option>
+          <option value="抖音">抖音（需先接入）</option>
+          <option value="快手">快手（需先接入）</option>
+          <option value="京东">京东（需先接入）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>RTMP 推流地址 <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="newRoomRtmp" placeholder="从平台直播后台复制推流地址，粘贴到此处">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">格式：rtmp://push.xxx.com/live/...</div>
+      </div>
+      <input type="hidden" id="editRoomId" value="">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeCreateRoomModal()">取消</button>
+      <button class="btn btn-primary" id="createRoomBtn" onclick="createRoom()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Modal: 接入向导 ==================== -->
+<div class="modal-overlay" id="accessModal" style="display:none;">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 id="accessModalTitle">🔗 接入新平台</h3>
+      <button class="btn btn-outline btn-xs" onclick="closeAccessModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- 步骤条 -->
+      <div class="wizard-steps">
+        <div class="wizard-step active" id="wizStep1"><span class="step-num">1</span> 填写凭证</div>
+        <div class="wizard-step" id="wizStep2"><span class="step-num">2</span> 验证连接</div>
+        <div class="wizard-step" id="wizStep3"><span class="step-num">3</span> 激活完成</div>
+      </div>
+
+      <div class="wizard-body">
+        <!-- Step 1: 填写凭证 -->
+        <div class="wizard-pane active" id="wizPane1">
+          <div class="text-muted" style="margin-bottom:16px;">请输入 <strong id="wizPlatformName">京东</strong> 开放平台的 API 凭证，用于弹幕采集、商品弹窗等能力。</div>
+          <div class="form-group">
+            <label>AppKey（应用标识）</label>
+            <input type="text" id="wizAppKey" placeholder="平台开放平台 → 应用管理 → AppKey">
+          </div>
+          <div class="form-group">
+            <label>AppSecret（应用密钥）</label>
+            <input type="password" id="wizAppSecret" placeholder="平台开放平台 → 应用管理 → AppSecret">
+          </div>
+          <div class="form-group">
+            <label>RTMP 推流地址</label>
+            <input type="text" id="wizRtmpUrl" placeholder="rtmp://push.xxx.com/live/...">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">在平台直播后台 → 电脑开播 → 获取推流地址</div>
+          </div>
+        </div>
+
+        <!-- Step 2: 验证连接 -->
+        <div class="wizard-pane" id="wizPane2">
+          <div class="verify-spinner" id="verifySpinner">
+            <div class="spinner"></div>
+            <div style="font-weight:600;">正在验证 API 连接...</div>
+            <div class="text-muted" style="font-size:12px;" id="verifyStatus">尝试连接平台服务器...</div>
+          </div>
+          <div class="verify-success" id="verifySuccess" style="display:none;">
+            <div class="icon">✅</div>
+            <div style="font-weight:600;font-size:16px;margin-bottom:4px;">验证通过</div>
+            <div class="text-muted">API 连接正常，推流地址可达</div>
+          </div>
+          <div class="verify-success" id="verifyFail" style="display:none;">
+            <div class="icon">❌</div>
+            <div style="font-weight:600;font-size:16px;margin-bottom:4px;color:var(--danger);">验证失败</div>
+            <div class="text-muted" id="verifyFailMsg">AppKey 或 AppSecret 不正确</div>
+          </div>
+        </div>
+
+        <!-- Step 3: 激活完成 -->
+        <div class="wizard-pane" id="wizPane3">
+          <div class="verify-success">
+            <div class="icon">🎉</div>
+            <div style="font-weight:600;font-size:16px;margin-bottom:4px;">平台接入成功！</div>
+            <div class="text-muted" id="wizResultText">京东平台已激活，现在可以使用该平台创建直播间并推流</div>
+            <div style="margin-top:16px;padding:12px;background:#f0fdf4;border-radius:8px;text-align:left;font-size:13px;">
+              <div style="font-weight:600;color:var(--success);margin-bottom:6px;">✅ 已激活的能力：</div>
+              <div>• RTMP 直播推流</div>
+              <div>• 实时弹幕采集（需平台 API 支持）</div>
+              <div>• 商品弹窗联动（需平台 API 支持）</div>
+              <div>• 智能文字回复（需平台 API 支持）</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wizard 按钮 -->
+      <div class="wizard-footer" id="wizFooter">
+        <button class="btn btn-outline btn-sm" onclick="closeAccessModal()">取消</button>
+        <div class="right">
+          <button class="btn btn-outline btn-sm" id="wizPrevBtn" style="display:none;" onclick="wizPrev()">← 上一步</button>
+          <button class="btn btn-primary btn-sm" id="wizNextBtn" onclick="wizNext()">下一步 →</button>
+        </div>
+        <div class="right" id="wizDoneBtns" style="display:none;">
+          <button class="btn btn-primary btn-sm" onclick="closeAccessModal()">✓ 完成</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Toast ==================== -->
+<div id="toast" style="position:fixed;top:20px;right:20px;z-index:200;display:none;padding:12px 20px;background:#1e293b;color:#fff;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:slideUp .3s ease;"></div>
+
+<!-- ==================== Scripts ==================== -->
+<script>
+// ========== Navigation ==========
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const page = item.dataset.page;
+    // Update nav
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    // Update page
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById('page-' + page);
+    if (target) target.classList.add('active');
+    // Update title
+    const titles = {
+      rooms: '🏠 直播间管理', liveBoard: '📡 直播数据看板', products: '🛒 商品知识库', videos: '🎬 直播视频库', split: '🎞️ 视频素材库',
+      interact: '💬 互动设置', live: '📡 直播中控台', liveBoard: '📡 直播数据看板', productMaterial: '🎞️ 商品素材数据', productLive: '📡 商品直播数据',
+      account: '👥 账号管理', platform: '🔗 平台接入', settings: '⚙️ 系统设置', merchant: '🏪 商户信息'
+    };
+    document.getElementById('pageTitle').textContent = titles[page] || page;
+  });
+});
+
+// Navigate programmatically (for sidebar footer click)
+function navigateTo(page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navItem = document.querySelector(`[data-page="${page}"]`);
+  if (navItem) navItem.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + page);
+  if (target) target.classList.add('active');
+  const titles = {
+    rooms: '🏠 直播间管理', schedule: '📅 直播排班', products: '🛒 商品库', videos: '🎬 直播视频库', split: '🎞️ 视频素材库',
+    interact: '💬 互动设置', stats: '📊 数据统计', account: '👥 账号管理', platform: '🔗 平台接入', settings: '⚙️ 系统设置', merchant: '🏪 商户信息'
+  };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+}
+
+// ========== Interact Tabs ==========
+function switchInteractTab(tab, targetId) {
+  tab.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  ['tab-reply', 'tab-template', 'tab-auto'].forEach(id => {
+    document.getElementById(id).style.display = id === targetId ? 'block' : 'none';
+  });
+}
+
+// ========== Stats Tabs (removed - now separate pages) ==========
+
+// ========== Product-Material Cross Stats ==========
+const productMaterialStats = [
+  { id: 'D001', name: '法式碎花连衣裙', category: '女装', materialCount: 2, clipCount: 3, totalDuration: '47min', coverage: '54.0%', coveragePct: 54.0 },
+  { id: 'D002', name: '冰丝防晒袖套', category: '配饰', materialCount: 1, clipCount: 1, totalDuration: '12min', coverage: '13.8%', coveragePct: 13.8 },
+  { id: 'D003', name: '草编遮阳帽', category: '配饰', materialCount: 1, clipCount: 1, totalDuration: '17min', coverage: '19.5%', coveragePct: 19.5 },
+  { id: 'D004', name: '纯棉基础款T恤', category: '女装', materialCount: 1, clipCount: 1, totalDuration: '5min', coverage: '5.7%', coveragePct: 5.7 },
+  { id: 'D005', name: '冰丝休闲短裤', category: '女装', materialCount: 1, clipCount: 1, totalDuration: '6min', coverage: '6.9%', coveragePct: 6.9 },
+  { id: 'D006', name: '轻便运动鞋', category: '鞋靴', materialCount: 0, clipCount: 0, totalDuration: '—', coverage: '0%', coveragePct: 0 },
+];
+
+function renderProductMaterialTable() {
+  const tbody = document.getElementById('productMaterialBody');
+  if (!tbody) return;
+  tbody.innerHTML = productMaterialStats.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.id}</td>
+      <td><span class="tag tag-neutral">${p.category}</span></td>
+      <td style="text-align:center;font-weight:600;">${p.materialCount} 个</td>
+      <td style="text-align:center;font-weight:600;">${p.clipCount} 个</td>
+      <td style="text-align:center;">${p.totalDuration}</td>
+      <td style="min-width:100px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div class="progress-bar" style="flex:1;margin-top:0;"><div class="fill ${p.coveragePct > 0 ? 'fill-primary' : ''}" style="width:${p.coveragePct}%;${p.coveragePct === 0 ? 'background:#e2e8f0;' : ''}"></div></div>
+          <span style="font-size:11px;font-weight:600;white-space:nowrap;">${p.coverage}</span>
+        </div>
+      </td>
+      <td>
+        ${p.coverage === '0%'
+          ? '<button class="btn btn-primary btn-xs" onclick="alert(\'📤 模拟：跳转到视频素材库上传「' + p.name + '」的视频素材\')">📤 上传素材</button>'
+          : '<button class="btn btn-outline btn-xs" onclick="alert(\'🎞️ 模拟：查看「' + p.name + '」的关联切片详情\')">查看切片</button>'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ========== Product-Live Cross Stats ==========
+const productLiveStats = [
+  { id: 'D001', name: '法式碎花连衣裙', category: '女装', roomCount: 2, playCount: 48, playDuration: '720min', danmakuCount: 156, popupCount: 48 },
+  { id: 'D002', name: '冰丝防晒袖套', category: '配饰', roomCount: 1, playCount: 24, playDuration: '288min', danmakuCount: 89, popupCount: 24 },
+  { id: 'D003', name: '草编遮阳帽', category: '配饰', roomCount: 1, playCount: 18, playDuration: '306min', danmakuCount: 52, popupCount: 18 },
+  { id: 'D004', name: '纯棉基础款T恤', category: '女装', roomCount: 1, playCount: 12, playDuration: '60min', danmakuCount: 31, popupCount: 12 },
+  { id: 'D005', name: '冰丝休闲短裤', category: '女装', roomCount: 1, playCount: 10, playDuration: '60min', danmakuCount: 18, popupCount: 10 },
+  { id: 'D006', name: '轻便运动鞋', category: '鞋靴', roomCount: 0, playCount: 0, playDuration: '—', danmakuCount: 0, popupCount: 0 },
+];
+
+function renderProductLiveTable() {
+  const tbody = document.getElementById('productLiveBody');
+  if (!tbody) return;
+  tbody.innerHTML = productLiveStats.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.id}</td>
+      <td><span class="tag tag-neutral">${p.category}</span></td>
+      <td style="text-align:center;font-weight:600;">${p.roomCount} 个</td>
+      <td style="text-align:center;font-weight:600;">${p.playCount} 次</td>
+      <td style="text-align:center;">${p.playDuration}</td>
+      <td style="text-align:center;">${p.danmakuCount} 次</td>
+      <td style="text-align:center;">${p.popupCount} 次</td>
+      <td>
+        ${p.roomCount === 0
+          ? '<button class="btn btn-outline btn-xs" onclick="alert(\'🔗 模拟：跳转到排班页面关联商品\')">加入排班</button>'
+          : '<button class="btn btn-outline btn-xs" onclick="alert(\'📊 模拟：查看「' + p.name + '」的直播互动详情\')">互动详情</button>'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ========== Split Segments ==========
+const splitSegments = [
+  { id: 's1', sku: '纯棉T恤', skuId: 'D004', status: 'published', time: '00:00 — 05:30', start: 0, end: 330, script: '今天给大家带来这款纯棉T恤，100%新疆长绒棉，亲肤透气不起球。领口采用加固设计，洗100次不变形。有白色、黑色、灰色三个经典色，S到3XL全尺码覆盖，男女都能穿。现在下单还送运费险，不喜欢直接退！', thumbColor: '#e0e7ff', thumbIcon: '👕' },
+  { id: 's2', sku: '休闲短裤', skuId: 'D005', status: 'published', time: '05:30 — 12:00', start: 330, end: 720, script: '夏天必备的冰丝休闲短裤！面料用的是超薄冰丝材质，穿上瞬间降温3度。松紧腰带设计，不勒肚子。侧面有大口袋，放手机完全没问题。运动、居家、逛街都能穿，一条搞定所有场景。', thumbColor: '#d1fae5', thumbIcon: '🩳' },
+  { id: 's3', sku: '运动鞋', skuId: 'D006', status: 'pending', time: '12:00 — 18:30', start: 720, end: 1110, script: '这款运动鞋采用了飞织鞋面+爆米花中底，上脚超轻超软。鞋底的防滑纹路经过1000次测试，雨天也不打滑。36-44码全尺码，男女同款。今天直播间专属价只要129，比实体店便宜一半！', thumbColor: '#fef3c7', thumbIcon: '👟' },
+];
+
+let previewSegId = null;
+
+function renderSegments() {
+  const container = document.getElementById('splitSegments');
+  if (!container) return;
+
+  container.innerHTML = splitSegments.map(seg => {
+    const isProcessing = seg.status === 'processing';
+    const isPublished = seg.status === 'published';
+    const statusTag = isPublished
+      ? '<span class="tag tag-success">已发布到库</span>'
+      : isProcessing
+        ? '<span class="tag tag-warning">AI识别中</span>'
+        : '<span class="tag tag-warning">待确认发布</span>';
+    const skuTag = isProcessing
+      ? '<span class="tag tag-neutral">⏳ 识别中</span>'
+      : '<span class="tag tag-success">✓ SKU已识别</span>';
+    const scriptTag = isProcessing
+      ? '<span class="tag tag-neutral">⏳ 生成中</span>'
+      : '<span class="tag tag-success">✓ 脚本已生成</span>';
+
+    const disabled = isProcessing ? 'disabled' : '';
+
+    return `<div class="segment-card ${isProcessing ? 'processing' : ''} ${isPublished ? 'published' : ''}">
+      <div class="seg-thumb" style="background:${seg.thumbColor};" onclick="${isProcessing ? '' : "openPreviewModal('" + seg.id + "')"}" title="点击预览切片">
+        <span>${seg.thumbIcon}</span>
+        <span class="time-badge">${seg.time}</span>
+      </div>
+      <div class="seg-info">
+        <div class="seg-header">
+          <span class="seg-sku">${seg.sku}</span>
+          <span style="font-size:12px;color:var(--text-muted);">SKU: ${seg.skuId}</span>
+          ${skuTag}
+          ${scriptTag}
+          ${statusTag}
+        </div>
+        <div class="seg-script" onclick="this.classList.toggle('expanded')" title="点击展开/收起">${seg.script}</div>
+      </div>
+      <div class="seg-actions">
+        ${isProcessing ? '<span class="text-muted" style="font-size:12px;">等待AI完成...</span>' : `
+          <button class="btn btn-outline btn-xs" onclick="openPreviewModal('${seg.id}')">▶ 预览</button>
+          <button class="btn btn-outline btn-xs" ${disabled} onclick="alert('✏️ 模拟：手动修正SKU为其他商品')">✏️ 微调SKU</button>
+          <button class="btn btn-outline btn-xs" ${disabled} onclick="alert('📝 模拟：手动编辑讲解脚本')">📝 微调脚本</button>
+          <div class="time-adjust">
+            <button class="btn btn-outline btn-xs" onclick="adjustSegmentTime('${seg.id}', -1)">−1s</button>
+            <button class="btn btn-outline btn-xs" onclick="adjustSegmentTime('${seg.id}', +1)">+1s</button>
+            <span class="seg-time">${seg.time}</span>
+          </div>
+          ${!isPublished ? `<button class="btn btn-primary btn-xs" onclick="publishSegment('${seg.id}')">发布到库</button>` : ''}
+        `}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openPreviewModal(segId) {
+  const seg = splitSegments.find(s => s.id === segId);
+  if (!seg || seg.status === 'processing') return;
+  previewSegId = segId;
+  document.getElementById('previewTitle').textContent = '🎬 ' + seg.sku + ' — ' + seg.time;
+  document.getElementById('previewTimeRange').textContent = seg.time;
+  document.getElementById('previewSku').textContent = seg.sku + ' (SKU: ' + seg.skuId + ')';
+  document.getElementById('previewScript').textContent = seg.script;
+  document.getElementById('previewModal').style.display = 'flex';
+}
+
+function closePreviewModal() {
+  document.getElementById('previewModal').style.display = 'none';
+  previewSegId = null;
+}
+
+function adjustTime(delta) {
+  if (!previewSegId) return;
+  const seg = splitSegments.find(s => s.id === previewSegId);
+  if (!seg) return;
+  seg.end = Math.max(seg.start + 5, seg.end + delta);
+  const m1 = Math.floor(seg.start / 60), s1 = (seg.start % 60).toString().padStart(2, '0');
+  const m2 = Math.floor(seg.end / 60), s2 = (seg.end % 60).toString().padStart(2, '0');
+  seg.time = m1 + ':' + s1 + ' — ' + m2 + ':' + s2;
+  document.getElementById('previewTimeRange').textContent = seg.time;
+  // Simulate auto-re-generation
+  const btn = document.querySelector('#previewModal .btn-primary');
+  if (btn) btn.textContent = '⏳ 重新识别中...';
+  setTimeout(() => {
+    if (btn) btn.textContent = '✓ 确认';
+    document.getElementById('previewSku').textContent = seg.sku + ' (SKU: ' + seg.skuId + ') [已重新识别]';
+    document.getElementById('previewScript').textContent = seg.script + '\n\n[时间已微调，SKU和脚本已重新生成]';
+    renderSegments();
+  }, 800);
+}
+
+function adjustSegmentTime(segId, delta) {
+  const seg = splitSegments.find(s => s.id === segId);
+  if (!seg || seg.status === 'processing') return;
+  seg.end = Math.max(seg.start + 5, seg.end + delta);
+  const m1 = Math.floor(seg.start / 60), s1 = (seg.start % 60).toString().padStart(2, '0');
+  const m2 = Math.floor(seg.end / 60), s2 = (seg.end % 60).toString().padStart(2, '0');
+  seg.time = m1 + ':' + s1 + ' — ' + m2 + ':' + s2;
+  showToast('⏱️ 切片时间已调整，SKU和脚本将自动重新识别');
+  renderSegments();
+}
+
+function publishSegment(segId) {
+  const seg = splitSegments.find(s => s.id === segId);
+  if (seg) {
+    seg.status = 'published';
+    renderSegments();
+    showToast('✅ 「' + seg.sku + '」已发布到商品视频库');
+  }
+}
+
+document.getElementById('previewModal').addEventListener('click', function(e) {
+  if (e.target === this) closePreviewModal();
+});
+
+renderSegments();
+
+// ========== Product Data (Multi-Platform KB Model) ==========
+const platformNames = { taobao: '淘宝', douyin: '抖音', kuaishou: '快手', jd: '京东', pdd: '拼多多' };
+const platformIcons = { taobao: '🟠', douyin: '🎵', kuaishou: '📺', jd: '🐶', pdd: '📱' };
+
+const productData = [
+  {
+    id: 'D001', name: '法式碎花连衣裙', category: '女装', image: '👗',
+    platformKB: {
+      taobao:   { imported: true,  skuName: '夏季新款法式碎花连衣裙', skuId: 'TB736201', price: '¥169', lastSync: '2026-07-21 14:30',
+        detailHtml: '<h4>产品详情</h4><p>💐 <strong>100%纯棉面料</strong>，亲肤透气不起球。V领设计拉长颈部线条，<em>收腰版型显瘦又显高</em>。</p><p>🌸 碎花蓝 / 碎花粉 两色可选<br>📏 S / M / L / XL 全尺码覆盖</p><img src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27320%27 height=%27180%27%3E%3Crect fill=%27%23fce7f3%27 width=%27320%27 height=%27180%27/%3E%3Ctext x=%27160%27 y=%2795%27 text-anchor=%27middle%27 fill=%27%23be185d%27 font-size=%2718%27%3E👗 商品实拍图%3C/text%3E%3C/svg%3E" style="width:100%;"><h4>📐 规格参数</h4><table style="width:100%;font-size:12px;"><tr><td style="padding:4px 8px;color:#64748b;">面料</td><td>100%纯棉</td><td style="padding:4px 8px;color:#64748b;">领型</td><td>V领</td></tr><tr><td style="padding:4px 8px;color:#64748b;">袖长</td><td>短袖</td><td style="padding:4px 8px;color:#64748b;">裙长</td><td>中长款（95cm）</td></tr><tr><td style="padding:4px 8px;color:#64748b;">适用季节</td><td>夏季</td><td style="padding:4px 8px;color:#64748b;">风格</td><td>法式复古</td></tr></table><h4>📦 买家须知</h4><ul><li>七天无理由退换货</li><li>下单后48小时内发货</li><li>送运费险，放心购买</li><li>支持花呗/信用卡分期</li></ul><h4>💰 价格说明</h4><p>日常价：<span style="text-decoration:line-through;">¥399</span><br>直播间专属价：<strong style="color:#ef4444;font-size:16px;">¥169</strong><br>买2件再享9折</p>' },
+      douyin:   { imported: true,  skuName: '法式收腰显瘦连衣裙',     skuId: 'DY998201', price: '¥179', lastSync: '2026-07-20 09:15',
+        detailHtml: '<h4>商品卖点</h4><p>🔥 抖音爆款！<strong>已售10万+</strong></p><p>法式复古风碎花裙，博主同款。收腰设计+大裙摆，<em>谁穿谁好看</em>！</p><img src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27320%27 height=%27180%27%3E%3Crect fill=%27%23ede9fe%27 width=%27320%27 height=%27180%27/%3E%3Ctext x=%27160%27 y=%2795%27 text-anchor=%27middle%27 fill=%27%237c3aed%27 font-size=%2718%27%3E🎵 抖音商品图%3C/text%3E%3C/svg%3E" style="width:100%;"><h4>📐 商品参数</h4><table style="width:100%;font-size:12px;"><tr><td style="padding:4px 8px;color:#64748b;">品牌</td><td>法缇丝</td><td style="padding:4px 8px;color:#64748b;">货号</td><td>DY998201</td></tr><tr><td style="padding:4px 8px;color:#64748b;">材质</td><td>纯棉</td><td style="padding:4px 8px;color:#64748b;">尺码</td><td>S-XL</td></tr></table><h4>🎁 优惠信息</h4><p>店铺券：满200减20<br>平台券：满300减30<br>直播间下单赠运费险</p>' },
+      kuaishou: { imported: false },
+      jd:       { imported: false },
+      pdd:      { imported: false },
+    }
+  },
+  {
+    id: 'D002', name: '冰丝防晒袖套', category: '配饰', image: '🧥',
+    platformKB: {
+      taobao:   { imported: true,  skuName: '冰丝防晒袖套UPF50+', skuId: 'TB450112', price: '¥49', lastSync: '2026-07-21 11:00',
+        detailHtml: '<h4>产品详情</h4><p>☀️ <strong>UPF50+ 权威认证</strong>，有效阻挡99%紫外线。</p><p>冰丝面料，<em>戴上瞬间降温3°C</em>。高弹力，男女通用。开车/骑车/户外必备。</p><img src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27320%27 height=%27180%27%3E%3Crect fill=%27%23dbeafe%27 width=%27320%27 height=%27180%27/%3E%3Ctext x=%27160%27 y=%2795%27 text-anchor=%27middle%27 fill=%27%231d4ed8%27 font-size=%2718%27%3E🧥 袖套实拍%3C/text%3E%3C/svg%3E" style="width:100%;"><h4>📐 规格参数</h4><table style="width:100%;font-size:12px;"><tr><td style="padding:4px 8px;color:#64748b;">材质</td><td>冰丝（锦纶+氨纶）</td><td style="padding:4px 8px;color:#64748b;">防晒指数</td><td>UPF50+</td></tr><tr><td style="padding:4px 8px;color:#64748b;">长度</td><td>45cm（到手肘）</td><td style="padding:4px 8px;color:#64748b;">颜色</td><td>黑/白/灰/肤</td></tr></table><h4>💰 价格</h4><p>单双：¥49<br>两双套装：¥79<br>直播间福利：买二送一</p>' },
+      douyin:   { imported: false },
+      kuaishou: { imported: false },
+      jd:       { imported: false },
+      pdd:      { imported: false },
+    }
+  },
+  {
+    id: 'D003', name: '草编遮阳帽', category: '配饰', image: '👒',
+    platformKB: {
+      taobao:   { imported: true,  skuName: '天然拉菲草编织遮阳帽', skuId: 'TB552089', price: '¥89', lastSync: '2026-07-18 16:45',
+        detailHtml: '<h4>产品详情</h4><p>🌿 <strong>天然拉菲草手工编织</strong>，透气不闷热。大帽檐设计，<em>遮全脸不晒黑</em>。</p><p>可折叠收纳，放包里不占地。出游/度假/日常百搭。</p><img src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27320%27 height=%27180%27%3E%3Crect fill=%27%23fef3c7%27 width=%27320%27 height=%27180%27/%3E%3Ctext x=%27160%27 y=%2795%27 text-anchor=%27middle%27 fill=%27%23b45309%27 font-size=%2718%27%3E👒 帽子实拍%3C/text%3E%3C/svg%3E" style="width:100%;"><h4>📐 规格参数</h4><table style="width:100%;font-size:12px;"><tr><td style="padding:4px 8px;color:#64748b;">材质</td><td>拉菲草</td><td style="padding:4px 8px;color:#64748b;">帽檐</td><td>12cm</td></tr><tr><td style="padding:4px 8px;color:#64748b;">头围</td><td>56-58cm（可调节）</td><td style="padding:4px 8px;color:#64748b;">颜色</td><td>本色/卡其/黑色</td></tr></table><h4>💰 价格</h4><p>直播间价：<strong style="color:#ef4444;">¥89</strong><br>买两顶立减20</p>' },
+      douyin:   { imported: false },
+      kuaishou: { imported: false },
+      jd:       { imported: false },
+      pdd:      { imported: false },
+    }
+  },
+  {
+    id: 'D004', name: '纯棉基础款T恤', category: '女装', image: '👕',
+    platformKB: {
+      taobao:   { imported: true,  skuName: '新疆长绒棉纯色T恤', skuId: 'TB881203', price: '¥79', lastSync: '2026-07-15 10:00',
+        detailHtml: '<h4>产品详情</h4><p>✅ <strong>100%新疆长绒棉</strong>，领口加固设计洗100次不变形。</p><p>白/黑/灰三色，S-3XL全尺码覆盖，男女同款。</p><h4>💰 价格</h4><p>单件：¥79 | 两件：¥138 | 三件：¥189</p>' },
+      douyin:   { imported: false },
+      kuaishou: { imported: false },
+      jd:       { imported: false },
+      pdd:      { imported: false },
+    }
+  },
+  {
+    id: 'D005', name: '冰丝休闲短裤', category: '女装', image: '🩳',
+    platformKB: {
+      taobao:   { imported: false },
+      douyin:   { imported: true,  skuName: '夏季冰丝宽松短裤', skuId: 'DY334501', price: '¥109', lastSync: '2026-07-19 08:20',
+        detailHtml: '<h4>商品卖点</h4><p>❄️ <strong>超薄冰丝材质</strong>，穿上瞬间降温。松紧腰带不勒肚子，侧面大口袋。</p><p>运动/居家/逛街一条搞定！</p><h4>💰 价格</h4><p>直播间价：<strong style="color:#ef4444;">¥109</strong></p>' },
+      kuaishou: { imported: false },
+      jd:       { imported: false },
+      pdd:      { imported: false },
+    }
+  },
+  {
+    id: 'D006', name: '轻便运动鞋', category: '鞋靴', image: '👟',
+    platformKB: {
+      taobao:   { imported: false },
+      douyin:   { imported: false },
+      kuaishou: { imported: false },
+      jd:       { imported: false },
+      pdd:      { imported: false },
+    }
+  },
+];
+
+let currentImportMode = 'single';
+let currentImportPlatform = 'taobao';
+
+// ========== Render Product Table ==========
+function renderProductTable() {
+  const tbody = document.getElementById('productTableBody');
+  if (!tbody) return;
+  document.getElementById('productCount').textContent = productData.length;
+
+  tbody.innerHTML = productData.map(p => {
+    const kbTags = Object.entries(p.platformKB).map(([platform, kb]) => {
+      if (kb.imported) {
+        return `<span class="kb-tag green" onclick="event.stopPropagation();openKBDrawer('${p.id}', '${platform}')" title="点击查看${platformNames[platform]}知识库详情">${platformIcons[platform]} ${platformNames[platform]}</span>`;
+      } else {
+        return `<span class="kb-tag gray" onclick="event.stopPropagation();quickImport('${p.id}', '${platform}')" title="点击导入${platformNames[platform]}知识库">${platformIcons[platform]} ${platformNames[platform]}</span>`;
+      }
+    }).join('');
+
+    const importedCount = Object.values(p.platformKB).filter(kb => kb.imported).length;
+
+    return `<tr>
+      <td style="font-size:28px;text-align:center;">${p.image}</td>
+      <td><strong>${p.name}</strong><div style="font-size:11px;color:var(--text-muted);">SKU: ${p.id}</div></td>
+      <td><span class="tag tag-neutral">${p.category}</span></td>
+      <td><div class="kb-tags">${kbTags}</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${importedCount}/5 平台已接入</div></td>
+      <td>
+        <button class="btn btn-outline btn-xs" onclick="openKBDrawer('${p.id}')">📋 详情</button>
+        <button class="btn btn-outline btn-xs" onclick="alert('✏️ 模拟：编辑标准商品「${p.name}」')">✏️ 编辑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ========== Import Mode Switch ==========
+function switchImportMode(mode, btn) {
+  currentImportMode = mode;
+  document.querySelectorAll('#importModeToggle .mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const label = document.getElementById('importUrlLabel');
+  const input = document.getElementById('importUrlInput');
+  const hint = document.getElementById('importHint');
+
+  if (mode === 'store') {
+    label.textContent = '粘贴店铺链接，AI 自动扫描全店商品并导入知识库';
+    input.placeholder = 'https://shop.taobao.com/shop/xxxxx 或 https://xxx.taobao.com/';
+    hint.textContent = '整店模式：AI 自动扫描店铺全部商品，列出清单后勾选批量导入。支持淘宝/天猫/抖音/快手/京东/拼多多店铺链接';
+  } else {
+    label.textContent = '粘贴商品链接，AI 自动解析详情页作为知识库';
+    input.placeholder = 'https://item.taobao.com/item.htm?id=xxxxx';
+    hint.textContent = '单品模式：粘贴单个商品链接，AI 自动提取名称、价格、规格、详情图片、卖点描述，存入知识库';
+  }
+}
+
+// ========== Trigger Import ==========
+function triggerImport() {
+  const platform = document.getElementById('importPlatform').value;
+  const url = document.getElementById('importUrlInput').value.trim();
+  currentImportPlatform = platform;
+
+  if (!url) {
+    showToast('⚠️ 请粘贴' + (currentImportMode === 'store' ? '店铺' : '商品') + '链接', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('importBtn');
+
+  if (currentImportMode === 'store') {
+    // Simulate store scan
+    btn.textContent = '⏳ 扫描中...';
+    btn.disabled = true;
+    setTimeout(() => {
+      showStoreScanResults(platform);
+      btn.textContent = '🔍 智能识别并导入';
+      btn.disabled = false;
+    }, 1500);
+  } else {
+    // Simulate single product parse
+    btn.textContent = '⏳ 解析中...';
+    btn.disabled = true;
+    setTimeout(() => {
+      showSingleParseResult(platform);
+      btn.textContent = '🔍 智能识别并导入';
+      btn.disabled = false;
+    }, 1200);
+  }
+}
+
+// ========== Store Scan Results ==========
+function showStoreScanResults(platform) {
+  const platformName = platformNames[platform];
+  document.getElementById('storeScanTitle').textContent = platformName + '店铺';
+  document.getElementById('storeScanCount').textContent = '发现 8 个商品，请勾选要导入的商品';
+  document.getElementById('storeScanResult').style.display = 'block';
+
+  const mockProducts = [
+    { name: '夏季新款法式碎花连衣裙', price: '¥169', sku: 'TB736201' },
+    { name: '冰丝防晒袖套 UPF50+', price: '¥49', sku: 'TB450112' },
+    { name: '天然拉菲草遮阳帽', price: '¥89', sku: 'TB552089' },
+    { name: '新疆棉基础款T恤', price: '¥79', sku: 'TB881203' },
+    { name: '冰丝宽松休闲短裤', price: '¥109', sku: 'TB334501' },
+    { name: '轻便飞织运动鞋', price: '¥129', sku: 'TB990776' },
+    { name: '韩版百褶半身裙', price: '¥139', sku: 'TB223098' },
+    { name: '透气防晒面罩', price: '¥29', sku: 'TB678340' },
+  ];
+
+  document.getElementById('scanResultList').innerHTML = mockProducts.map((p, i) => `
+    <div class="scan-result-item">
+      <input type="checkbox" class="scan-check" id="scan_${i}" checked style="width:18px;height:18px;cursor:pointer;">
+      <span style="font-size:24px;">🛍️</span>
+      <div style="flex:1;">
+        <div style="font-weight:600;">${p.name}</div>
+        <div style="font-size:11px;color:var(--text-muted);">平台SKU: ${p.sku} · ${p.price}</div>
+      </div>
+      <span style="font-size:11px;color:var(--text-muted);">${platformName}</span>
+    </div>
+  `).join('');
+}
+
+function selectAllScanItems() {
+  const checks = document.querySelectorAll('.scan-check');
+  const allChecked = Array.from(checks).every(c => c.checked);
+  checks.forEach(c => { c.checked = !allChecked; });
+}
+
+function batchImportProducts() {
+  const checked = document.querySelectorAll('.scan-check:checked');
+  if (checked.length === 0) {
+    showToast('⚠️ 请至少勾选一个商品', 'warning');
+    return;
+  }
+  document.getElementById('storeScanResult').style.display = 'none';
+  showToast('✅ 已导入 ' + checked.length + ' 个商品到「' + platformNames[currentImportPlatform] + '」知识库');
+  document.getElementById('importUrlInput').value = '';
+  // In real app: merge into productData, for demo just refresh
+  renderProductTable();
+}
+
+// ========== Single Product Parse ==========
+function showSingleParseResult(platform) {
+  const platformName = platformNames[platform];
+  document.getElementById('parsePlatformName').textContent = platformName;
+  document.getElementById('parsedPlatformName').value = '夏季新款法式碎花连衣裙';
+  document.getElementById('parsedPlatformSku').value = 'TB' + Math.floor(Math.random() * 900000 + 100000);
+  document.getElementById('parsedPrice').value = '¥' + (Math.floor(Math.random() * 200) + 29);
+  document.getElementById('parsedSellingPoints').value = '100%纯棉面料 · V领收腰显瘦 · 碎花蓝/碎花粉两色 · S-XL全尺码 · 夏季新款';
+
+  // Populate "link to our product" dropdown
+  const select = document.getElementById('parsedLinkProduct');
+  select.innerHTML = '<option value="new">+ 创建新商品</option>' +
+    productData.map(p => `<option value="${p.id}">${p.name} (${p.id})</option>`).join('');
+
+  document.getElementById('singleParseResult').style.display = 'block';
+  document.getElementById('singleParseResult').scrollIntoView({ behavior: 'smooth' });
+}
+
+function confirmSingleImport() {
+  const platform = currentImportPlatform;
+  const linkProduct = document.getElementById('parsedLinkProduct').value;
+
+  document.getElementById('singleParseResult').style.display = 'none';
+  document.getElementById('importUrlInput').value = '';
+
+  if (linkProduct === 'new') {
+    showToast('✅ 已创建新商品并导入「' + platformNames[platform] + '」知识库');
+  } else {
+    const p = productData.find(p => p.id === linkProduct);
+    if (p && p.platformKB[platform]) {
+      p.platformKB[platform].imported = true;
+      p.platformKB[platform].skuName = document.getElementById('parsedPlatformName').value;
+      p.platformKB[platform].skuId = document.getElementById('parsedPlatformSku').value;
+      p.platformKB[platform].price = document.getElementById('parsedPrice').value;
+      p.platformKB[platform].lastSync = new Date().toISOString().slice(0, 16).replace('T', ' ');
+      p.platformKB[platform].detailHtml = '<h4>商品详情</h4><p>' + document.getElementById('parsedSellingPoints').value + '</p>';
+    }
+    renderProductTable();
+    showToast('✅ 「' + p.name + '」已关联「' + platformNames[platform] + '」知识库');
+  }
+}
+
+// ========== Quick Import from gray tag ==========
+function quickImport(productId, platform) {
+  currentImportPlatform = platform;
+  const p = productData.find(p => p.id === productId);
+  if (!p) return;
+
+  // Switch to single import mode and pre-fill
+  document.getElementById('importPlatform').value = platform;
+  const urlInput = document.getElementById('importUrlInput');
+  urlInput.value = 'https://item.' + (platform === 'taobao' ? 'taobao' : platform === 'douyin' ? 'douyin' : 'kuaishou') + '.com/item.htm?id=xxxxx';
+  urlInput.focus();
+
+  // Trigger single parse
+  const btn = document.getElementById('importBtn');
+  btn.textContent = '⏳ 解析中...';
+  btn.disabled = true;
+  setTimeout(() => {
+    document.getElementById('parsedLinkProduct').value = productId;
+    showSingleParseResult(platform);
+    btn.textContent = '🔍 智能识别并导入';
+    btn.disabled = false;
+  }, 1000);
+}
+
+// ========== Knowledge Base Drawer ==========
+let kbDrawerProductId = null;
+let kbDrawerPlatform = null;
+
+function openKBDrawer(productId, platform) {
+  kbDrawerProductId = productId;
+  const p = productData.find(p => p.id === productId);
+  if (!p) return;
+
+  // Default to first imported platform if none specified
+  const importedPlatforms = Object.entries(p.platformKB).filter(([_, kb]) => kb.imported);
+  if (importedPlatforms.length === 0) {
+    showToast('⚠️ 该商品尚未导入任何平台的知识库，请先导入', 'warning');
+    return;
+  }
+
+  kbDrawerPlatform = platform || importedPlatforms[0][0];
+  if (!p.platformKB[kbDrawerPlatform] || !p.platformKB[kbDrawerPlatform].imported) {
+    kbDrawerPlatform = importedPlatforms[0][0];
+  }
+
+  document.getElementById('kbDrawerTitle').textContent = '📋 商品知识库 — ' + p.name;
+
+  renderKBDrawerBody(p);
+
+  document.getElementById('kbDrawerOverlay').classList.add('show');
+  document.getElementById('kbDrawer').classList.add('open');
+}
+
+function renderKBDrawerBody(p) {
+  const body = document.getElementById('kbDrawerBody');
+  const importedPlatforms = Object.entries(p.platformKB).filter(([_, kb]) => kb.imported);
+  const kb = p.platformKB[kbDrawerPlatform];
+
+  const tabsHTML = importedPlatforms.map(([plat, _]) => `
+    <div class="kb-platform-tab ${plat === kbDrawerPlatform ? 'active' : ''}" onclick="switchKBDrawerTab('${plat}')">
+      ${platformIcons[plat]} ${platformNames[plat]}
+    </div>
+  `).join('');
+
+  body.innerHTML = `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:13px;color:var(--text-muted);">标准名称：<strong>${p.name}</strong> · 分类：${p.category} · SKU：${p.id}</div>
+    </div>
+    <div class="kb-platform-tabs">${tabsHTML}</div>
+    ${!kb ? '<div class="text-muted" style="text-align:center;padding:40px;">该平台知识库尚未导入</div>' : `
+    <div style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--text-muted);">
+      <span>平台商品名：<strong style="color:var(--text);">${kb.skuName}</strong></span>
+      <span>平台SKU：<strong style="color:var(--text);">${kb.skuId}</strong></span>
+      <span>平台售价：<strong style="color:var(--danger);">${kb.price}</strong></span>
+      <span>最后同步：${kb.lastSync}</span>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">📄 商品详情（知识库内容）</div>
+    <div class="kb-rich-content">${kb.detailHtml}</div>
+    <div style="margin-top:14px;display:flex;gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="alert('🔄 模拟：正在重新抓取「${platformNames[kbDrawerPlatform]}」商品详情...')">🔄 刷新知识库</button>
+      <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="alert('🗑️ 模拟：已删除「${platformNames[kbDrawerPlatform]}」知识库来源')">🗑️ 删除此来源</button>
+    </div>
+    `}
+  `;
+}
+
+function switchKBDrawerTab(platform) {
+  kbDrawerPlatform = platform;
+  const p = productData.find(p => p.id === kbDrawerProductId);
+  if (!p) return;
+  renderKBDrawerBody(p);
+}
+
+function closeKBDrawer() {
+  document.getElementById('kbDrawerOverlay').classList.remove('show');
+  document.getElementById('kbDrawer').classList.remove('open');
+}
+
+// ========== Live Video Editor ==========
+const editorClips = [
+  { sku: '法式碎花连衣裙', skuId: 'D001', duration: '15:00', weight: 3, source: '夏季女装合集',
+    script: '今天给大家带来这款法式碎花连衣裙，100%纯棉面料，透气又舒适。V领设计拉长颈部线条，收腰版型显瘦又显高。有碎花蓝和碎花粉两个颜色，S到XL全尺码。现在下单只要169，还送运费险！',
+    pauseAfter: 0, pauseContent: 'freeze', pauseGuideText: '', pauseCountdown: false,
+    closeUp: '关闭', transition: '无转场', overlay: '无贴图' },
+  { sku: '冰丝防晒袖套', skuId: 'D002', duration: '12:00', weight: 2, source: '夏季女装合集',
+    script: '夏天出门必备的冰丝防晒袖套！UPF50+认证，有效阻挡紫外线。冰丝面料穿上冰冰凉凉，不闷热。弹性超大，男女都能戴。今天直播间专属价49两双，超划算！',
+    pauseAfter: 0, pauseContent: 'freeze', pauseGuideText: '', pauseCountdown: false,
+    closeUp: '关闭', transition: '无转场', overlay: '无贴图' },
+  { sku: '草编遮阳帽', skuId: 'D003', duration: '17:00', weight: 3, source: '夏季女装合集',
+    script: '这款草编遮阳帽用的是天然拉菲草，手工编织，透气不闷头。帽檐够大能遮全脸，还能折叠放包里。搭配裙子、T恤都好看，出游必备！今天只要89，还有三个颜色可选。',
+    pauseAfter: 0, pauseContent: 'freeze', pauseGuideText: '', pauseCountdown: false,
+    closeUp: '关闭', transition: '无转场', overlay: '无贴图' },
+];
+
+let selectedClipIdx = -1;
+
+function renderEditorClips() {
+  const container = document.getElementById('editorClipList');
+  if (!container) return;
+  container.innerHTML = editorClips.map((clip, idx) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:2px solid ${idx===selectedClipIdx?'var(--primary)':'var(--border)'};background:${idx===selectedClipIdx?'#eef2ff':'#f8fafc'};cursor:pointer;transition:all .15s;" onclick="selectClip(${idx})">
+      <span style="font-size:16px;cursor:grab;">⠿</span>
+      <span style="font-size:11px;font-weight:700;color:var(--text-muted);">${idx + 1}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;">${clip.sku}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${clip.duration}${clip.pauseAfter > 0 ? ' · ⏸停留' + clip.pauseAfter + 's' : ''} · ${clip.source}</div>
+      </div>
+      <select style="padding:2px 4px;font-size:10px;width:52px;" onchange="updateClipWeight(event, ${idx}, this.value)" onclick="event.stopPropagation()">
+        ${[1,2,3,4,5].map(w => `<option value="${w}" ${clip.weight===w?'selected':''}>${'⭐'.repeat(w)}</option>`).join('')}
+      </select>
+      <button class="btn btn-danger btn-xs" onclick="event.stopPropagation();removeEditorClip(${idx})">✕</button>
+    </div>`).join('');
+  document.getElementById('editorTotalTime').textContent =
+    editorClips.reduce((sum, c) => sum + parseInt(c.duration) * c.weight, 0) + ':00';
+  document.getElementById('editorClipCount').textContent = editorClips.length;
+}
+
+function updateClipWeight(e, idx, val) {
+  editorClips[idx].weight = parseInt(val);
+  renderEditorClips();
+}
+
+function removeEditorClip(idx) {
+  if (selectedClipIdx === idx) selectedClipIdx = -1;
+  else if (selectedClipIdx > idx) selectedClipIdx--;
+  editorClips.splice(idx, 1);
+  renderEditorClips();
+  renderAdjustPanel();
+}
+
+function selectClip(idx) {
+  selectedClipIdx = idx;
+  renderEditorClips();
+  renderAdjustPanel();
+  // Update preview
+  const clip = editorClips[idx];
+  document.getElementById('previewClipName').textContent = clip.sku;
+  document.getElementById('previewClipTime').textContent = clip.duration + (clip.pauseAfter > 0 ? ' + 停留' + clip.pauseAfter + '秒' : '');
+  document.getElementById('previewOverlay').style.display = clip.overlay !== '无贴图' ? 'block' : 'none';
+  document.getElementById('previewOverlay').textContent = clip.overlay === '商品信息卡片（左下）' ? '🛒 商品信息卡片' : '⏰ 限时优惠倒计时';
+
+  // Update pause preview in the phone frame
+  const pauseNote = document.getElementById('previewPauseNote');
+  if (pauseNote) {
+    if (clip.pauseAfter > 0) {
+      pauseNote.style.display = 'block';
+      const contentMap = { freeze: '⏸️ 定格画面 ' + clip.pauseAfter + '秒', card: '🛒 定格+弹品卡片 ' + clip.pauseAfter + '秒', custom: '✏️ 自定义引导 ' + clip.pauseAfter + '秒' };
+      pauseNote.textContent = contentMap[clip.pauseContent] || '';
+    } else {
+      pauseNote.style.display = 'none';
+    }
+  }
+}
+
+function renderAdjustPanel() {
+  const title = document.getElementById('adjustPanelTitle');
+  const body = document.getElementById('adjustPanelBody');
+  if (selectedClipIdx < 0 || !editorClips[selectedClipIdx]) {
+    title.textContent = '未选中';
+    body.innerHTML = '<div class="text-muted" style="text-align:center;padding:20px;">← 单击左侧切片开始调整</div>';
+    return;
+  }
+  const clip = editorClips[selectedClipIdx];
+  title.textContent = clip.sku;
+
+  // Pause content section (only visible when pause > 0)
+  const pauseContentHTML = clip.pauseAfter > 0 ? `
+    <div style="padding:12px;background:#f0f9ff;border-radius:8px;margin-top:4px;display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:11px;font-weight:700;color:#0369a1;">📺 停顿期间画面内容</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <input type="radio" name="pauseContent_${selectedClipIdx}" value="freeze" ${clip.pauseContent==='freeze'?'checked':''} onchange="updateClipProp('pauseContent', this.value);renderAdjustPanel();">
+          🖼️ 定格最后一帧（仅冻结画面）
+        </label>
+        <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <input type="radio" name="pauseContent_${selectedClipIdx}" value="card" ${clip.pauseContent==='card'?'checked':''} onchange="updateClipProp('pauseContent', this.value);renderAdjustPanel();">
+          🛒 定格 + 自动弹出商品购买卡片
+        </label>
+        <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <input type="radio" name="pauseContent_${selectedClipIdx}" value="custom" ${clip.pauseContent==='custom'?'checked':''} onchange="updateClipProp('pauseContent', this.value);renderAdjustPanel();">
+          ✏️ 定格 + 自定义引导画面
+        </label>
+      </div>
+      ${clip.pauseContent === 'custom' ? `
+      <div>
+        <label style="font-size:11px;font-weight:600;display:block;margin-bottom:4px;">📝 引导文字</label>
+        <input type="text" value="${clip.pauseGuideText || ''}" placeholder="例：点击下方小黄车立即购买" style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:4px;" onchange="updateClipProp('pauseGuideText', this.value)">
+      </div>
+      ` : ''}
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:11px;font-weight:600;">⏱️ 显示倒计时</span>
+        <label class="switch">
+          <input type="checkbox" ${clip.pauseCountdown ? 'checked' : ''} onchange="updateClipProp('pauseCountdown', this.checked);">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);">画面角落显示 "下一商品 3...2...1..."</div>
+    </div>
+  ` : '';
+
+  body.innerHTML = `
+    <div>
+      <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;">📝 讲解脚本 <button class="btn btn-outline btn-xs" style="float:right;" onclick="alert('✨ 模拟：AI正在改写脚本...')">AI改写</button></label>
+      <textarea style="width:100%;height:80px;font-size:12px;line-height:1.6;padding:8px;border:1px solid var(--border);border-radius:6px;resize:vertical;font-family:inherit;" onchange="updateClipProp('script', this.value)">${clip.script}</textarea>
+    </div>
+    <div>
+      <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;">📐 AI改写风格</label>
+      <select style="width:100%;" onchange="updateClipProp('aiStyle', this.value)"><option>原风格</option><option>亲切种草</option><option>激昂带货</option><option>专业讲解</option></select>
+    </div>
+    <div>
+      <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;">⏸️ 讲完后停留 <span style="font-size:10px;color:var(--text-muted);font-weight:400;">— 给观众下单时间</span></label>
+      <select style="width:100%;" onchange="updateClipProp('pauseAfter', parseInt(this.value));renderAdjustPanel();">
+        <option value="0" ${clip.pauseAfter===0?'selected':''}>不停顿（直接播下一个）</option>
+        <option value="3" ${clip.pauseAfter===3?'selected':''}>停留 3 秒</option>
+        <option value="5" ${clip.pauseAfter===5?'selected':''}>停留 5 秒</option>
+      </select>
+    </div>
+    ${pauseContentHTML}
+    <div>
+      <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;">🔍 特写镜头 <span style="font-size:10px;color:var(--text-muted);font-weight:400;">— 数字裁切放大聚焦商品</span></label>
+      <select style="width:100%;" onchange="updateClipProp('closeUp', this.value)">
+        <option ${clip.closeUp==='关闭'?'selected':''}>关闭</option>
+        <option ${clip.closeUp==='开始3秒后'?'selected':''}>开始 3 秒后自动拉近</option>
+        <option ${clip.closeUp==='价格播报时'?'selected':''}>播报价格时放大</option>
+        <option ${clip.closeUp==='全程'?'selected':''}>全程放大展示</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;">🔄 入场转场 <span style="font-size:10px;color:var(--text-muted);font-weight:400;">— 商品切换过渡动画</span></label>
+      <select style="width:100%;" onchange="updateClipProp('transition', this.value)">
+        <option ${clip.transition==='无转场'?'selected':''}>无（直接切换）</option>
+        <option ${clip.transition==='品牌Logo动画'?'selected':''}>品牌Logo动画（3秒）</option>
+        <option ${clip.transition==='关注引导'?'selected':''}>关注引导（5秒）</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;">🖼️ 贴图 <span style="font-size:10px;color:var(--text-muted);font-weight:400;">— 叠加在视频上的信息层</span></label>
+      <select style="width:100%;" onchange="updateClipProp('overlay', this.value);updatePreviewOverlay(this.value);">
+        <option ${clip.overlay==='无贴图'?'selected':''}>无贴图</option>
+        <option ${clip.overlay==='商品信息卡片（左下）'?'selected':''}>商品信息卡片（左下）</option>
+        <option ${clip.overlay==='限时优惠倒计时（底部）'?'selected':''}>限时优惠倒计时（底部）</option>
+      </select>
+    </div>
+  `;
+}
+
+function updateClipProp(prop, value) {
+  if (selectedClipIdx < 0) return;
+  editorClips[selectedClipIdx][prop] = value;
+}
+
+function updatePreviewOverlay(val) {
+  const el = document.getElementById('previewOverlay');
+  if (val === '无贴图') { el.style.display = 'none'; }
+  else { el.style.display = 'block'; el.textContent = val.includes('商品') ? '🛒 商品信息卡片' : '⏰ 限时优惠倒计时'; }
+}
+
+function showLiveVideoEditor(name) {
+  document.getElementById('liveVideoList').style.display = 'none';
+  document.getElementById('liveVideoEditor').style.display = 'block';
+  document.getElementById('editorTitle').textContent = '编辑：' + name;
+  selectedClipIdx = -1;
+  renderEditorClips();
+  renderAdjustPanel();
+}
+
+function hideLiveVideoEditor() {
+  document.getElementById('liveVideoList').style.display = 'block';
+  document.getElementById('liveVideoEditor').style.display = 'none';
+}
+
+// ========== Split View Switching ==========
+const splitData = {
+  '新品混剪素材': { title: '新品混剪素材.mp4', duration: '25:00', progress: 74, analyzed: '18:30', segments: 3, remaining: '6:30', eta: '2 分钟' },
+  '夏季女装': { title: '夏季女装合集.mp4', duration: '1h32min', progress: 100, analyzed: '1h32min', segments: 3, remaining: '0', eta: '已完成' },
+  '春季新品': { title: '春季新品发布.mp4', duration: '48min', progress: 100, analyzed: '48min', segments: 5, remaining: '0', eta: '已完成' },
+};
+
+function showSplitDetail(key) {
+  const data = splitData[key];
+  document.getElementById('splitListView').style.display = 'none';
+  document.getElementById('splitDetailView').style.display = 'block';
+  document.getElementById('splitDetailTitle').textContent = data.title;
+  document.getElementById('splitDetailHeader').textContent = (data.progress === 100 ? '✅ 解析详情 — ' : '⏳ 解析详情 — ') + data.title;
+  document.getElementById('splitDetailMeta').textContent = '总长 ' + data.duration + ' · 已分析 ' + data.analyzed + ' / ' + data.duration;
+  const progressDiv = document.getElementById('splitDetailProgress');
+  if (data.progress === 100) {
+    progressDiv.style.display = 'none';
+  } else {
+    progressDiv.style.display = 'block';
+    progressDiv.querySelector('.fill').style.width = data.progress + '%';
+    progressDiv.querySelector('div:last-child').textContent = '已解析完成 ' + data.segments + ' 个片段 · 剩余视频约 ' + data.remaining + ' 分析中，预计 ' + data.eta;
+  }
+}
+
+function hideSplitDetail() {
+  document.getElementById('splitListView').style.display = 'block';
+  document.getElementById('splitDetailView').style.display = 'none';
+}
+
+// ========== Room Data (must be before init) ==========
+const roomData = [
+  { id: 'R001', name: '夏季女装专场', platform: '淘宝', rtmp: 'rtmp://push.taobao.com/live/stream-key-001', status: 'live', attachedVideo: '夏季女装专场', schedule: { enabled: true, start: '08:00', end: '23:59' } },
+  { id: 'R002', name: '美妆护肤专场', platform: '淘宝', rtmp: 'rtmp://push.taobao.com/live/stream-key-002', status: 'idle', attachedVideo: '', schedule: { enabled: false, start: '', end: '' } },
+];
+const availableVideos = [
+  { name: '夏季女装专场', clipCount: 3, duration: '44:00' },
+  { name: '新品推荐', clipCount: 5, duration: '65:00' },
+];
+
+// ========== Live Board (直播看板) ==========
+const liveSessions = [
+  { id: 'S001', room: '夏季女装专场', platform: '淘宝', status: 'live', start: '2026-07-22 08:00', end: null, duration: '12h 34m',
+    viewers: 1284, peakViewers: 327, danmaku: 486, aiReplyRate: '94%', followers: 86, followerRate: '+7.2%',
+    productPops: 48, productClicks: 156, orders: 23, revenue: '¥3,887', likes: 8420, likeRate: '6.6/千次',
+    gifts: '¥128', giftCount: 15,
+    products: [
+      { name: '法式碎花连衣裙', duration: '3h 45m', pops: 18, danmaku: 156, clickRate: '12.5%' },
+      { name: '冰丝防晒袖套', duration: '2h 30m', pops: 12, danmaku: 89, clickRate: '8.2%' },
+      { name: '草编遮阳帽', duration: '2h 58m', pops: 10, danmaku: 52, clickRate: '6.8%' },
+      { name: '纯棉基础款T恤', duration: '1h 40m', pops: 5, danmaku: 31, clickRate: '4.1%' },
+      { name: '冰丝休闲短裤', duration: '1h 41m', pops: 3, danmaku: 18, clickRate: '3.0%' },
+    ],
+    danmakuTimeline: [
+      { time: '08:00-09:00', count: 42, peak: '08:35 连衣裙提问' },
+      { time: '09:00-10:00', count: 58, peak: '09:22 价格咨询' },
+      { time: '10:00-11:00', count: 73, peak: '10:45 袖套防晒效果' },
+      { time: '11:00-12:00', count: 55, peak: '11:30 帽子材质' },
+      { time: '12:00-13:00', count: 38, peak: '12:15 尺码问题' },
+      { time: '13:00-14:00', count: 65, peak: '13:50 优惠券咨询' },
+      { time: '14:00-15:00', count: 82, peak: '14:30 催单互动' },
+      { time: '15:00-16:00', count: 73, peak: '15:20 发货时间' },
+    ],
+  },
+  { id: 'S002', room: '夏季女装专场', platform: '淘宝', status: 'ended', start: '2026-07-21 08:00', end: '2026-07-21 18:30', duration: '10h 30m',
+    viewers: 2100, peakViewers: 456, danmaku: 892, aiReplyRate: '93%', followers: 142, followerRate: '+11.3%',
+    productPops: 72, productClicks: 245, orders: 38, revenue: '¥5,962', likes: 12500, likeRate: '5.9/千次',
+    gifts: '¥256', giftCount: 28,
+    products: [
+      { name: '法式碎花连衣裙', duration: '3h 00m', pops: 25, danmaku: 312, clickRate: '14.2%' },
+      { name: '冰丝防晒袖套', duration: '2h 15m', pops: 18, danmaku: 156, clickRate: '9.5%' },
+      { name: '草编遮阳帽', duration: '2h 30m', pops: 16, danmaku: 98, clickRate: '7.8%' },
+      { name: '纯棉基础款T恤', duration: '1h 30m', pops: 8, danmaku: 45, clickRate: '4.5%' },
+      { name: '冰丝休闲短裤', duration: '1h 15m', pops: 5, danmaku: 28, clickRate: '3.2%' },
+    ],
+    danmakuTimeline: [
+      { time: '08:00-09:00', count: 68, peak: '08:20 开场互动' },
+      { time: '09:00-10:00', count: 95, peak: '09:40 连衣裙热销' },
+      { time: '10:00-11:00', count: 112, peak: '10:30 袖套秒杀' },
+      { time: '11:00-12:00', count: 88, peak: '11:15 帽子搭配' },
+      { time: '12:00-13:00', count: 52, peak: '12:30 午间休息' },
+      { time: '13:00-14:00', count: 105, peak: '13:20 T恤尺码' },
+      { time: '14:00-15:00', count: 128, peak: '14:45 限时优惠' },
+      { time: '15:00-16:00', count: 96, peak: '15:30 发货咨询' },
+      { time: '16:00-17:00', count: 85, peak: '16:10 好评刷屏' },
+      { time: '17:00-18:00', count: 63, peak: '17:40 收官互动' },
+    ],
+  },
+  { id: 'S003', room: '美妆护肤专场', platform: '淘宝', status: 'ended', start: '2026-07-20 14:00', end: '2026-07-20 20:00', duration: '6h 00m',
+    viewers: 890, peakViewers: 203, danmaku: 345, aiReplyRate: '91%', followers: 32, followerRate: '+3.5%',
+    productPops: 24, productClicks: 78, orders: 12, revenue: '¥1,680', likes: 4520, likeRate: '5.1/千次',
+    gifts: '¥45', giftCount: 6,
+    products: [],
+    danmakuTimeline: [
+      { time: '14:00-15:00', count: 72, peak: '14:30 开场介绍' },
+      { time: '15:00-16:00', count: 95, peak: '15:20 精华液咨询' },
+      { time: '16:00-17:00', count: 68, peak: '16:40 面膜推荐' },
+      { time: '17:00-18:00', count: 45, peak: '17:30 售后问题' },
+      { time: '18:00-19:00', count: 38, peak: '18:20 使用反馈' },
+      { time: '19:00-20:00', count: 27, peak: '19:40 下播提醒' },
+    ],
+  },
+];
+
+function initLiveBoardSelector() {
+  const sel = document.getElementById('liveBoardSession');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— 选择一场已结束的直播 —</option>';
+  const ended = liveSessions.filter(s => s.status === 'ended');
+  ended.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = `✅ ${s.room}（${s.platform}）| ${s.start} | ${s.duration}`;
+    sel.appendChild(opt);
+  });
+  // Default to most recent ended
+  if (ended.length > 0) {
+    sel.value = ended[0].id;
+    renderLiveBoard();
+  }
+}
+
+function renderLiveBoard() {
+  const sel = document.getElementById('liveBoardSession');
+  const content = document.getElementById('liveBoardContent');
+  const empty = document.getElementById('liveBoardEmpty');
+  const status = document.getElementById('liveBoardStatus');
+  if (!sel) return;
+
+  const sessionId = sel.value;
+  if (!sessionId) {
+    content.style.display = 'none';
+    empty.style.display = 'block';
+    status.textContent = '';
+    return;
+  }
+
+  const s = liveSessions.find(s => s.id === sessionId);
+  if (!s) return;
+
+  content.style.display = 'block';
+  empty.style.display = 'none';
+  status.innerHTML = s.status === 'live' ? '<span class="tag tag-success">● 直播中</span>' : '<span class="tag tag-neutral">已结束</span>';
+
+  // Core metrics
+  document.getElementById('lbDuration').textContent = s.duration;
+  document.getElementById('lbTimeRange').textContent = s.start + (s.end ? ' — ' + s.end : ' — 进行中');
+  document.getElementById('lbViewers').textContent = s.viewers.toLocaleString();
+  document.getElementById('lbPeakViewers').textContent = '峰值 ' + s.peakViewers + ' 人';
+  document.getElementById('lbDanmaku').textContent = s.danmaku.toLocaleString();
+  document.getElementById('lbDanmakuRate').textContent = 'AI 回复率 ' + s.aiReplyRate;
+  document.getElementById('lbFollowers').textContent = '+' + s.followers;
+  document.getElementById('lbFollowerRate').textContent = '增长率 ' + s.followerRate;
+  document.getElementById('lbProductPops').textContent = s.productPops;
+  document.getElementById('lbProductClicks').textContent = '点击 ' + s.productClicks + ' 次';
+  document.getElementById('lbOrders').textContent = s.orders;
+  document.getElementById('lbRevenue').textContent = '成交 ' + s.revenue;
+  document.getElementById('lbLikes').textContent = s.likes.toLocaleString();
+  document.getElementById('lbLikeRate').textContent = s.likeRate;
+  document.getElementById('lbGifts').textContent = s.gifts;
+  document.getElementById('lbGiftCount').textContent = s.giftCount + ' 个礼物';
+
+  // Product table
+  const pt = document.getElementById('lbProductTable');
+  pt.innerHTML = s.products.length > 0
+    ? s.products.map(p => `<tr><td><strong>${p.name}</strong></td><td>${p.duration}</td><td>${p.pops} 次</td><td>${p.danmaku} 次</td><td>${p.clickRate}</td></tr>`).join('')
+    : '<tr><td colspan="5" class="text-muted" style="text-align:center;">该场次无商品数据</td></tr>';
+
+  // Danmaku timeline
+  const dt = document.getElementById('lbDanmakuTimeline');
+  const maxCount = Math.max(...s.danmakuTimeline.map(d => d.count));
+  dt.innerHTML = s.danmakuTimeline.map(d => `
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;color:var(--text-muted);width:80px;text-align:right;">${d.time}</span>
+      <div class="progress-bar" style="flex:1;margin-top:0;height:20px;background:#e2e8f0;"><div class="fill fill-primary" style="width:${(d.count/maxCount*100)}%;min-width:${d.count > 0 ? '30px' : '0'};display:flex;align-items:center;padding-left:8px;font-size:11px;font-weight:600;">${d.count}</div></div>
+      <span style="font-size:10px;color:var(--text-muted);width:140px;">${d.peak}</span>
+    </div>
+  `).join('');
+}
+
+// ========== Live Control Center (直播中控台) ==========
+let ctrlTimerInterval = null;
+let ctrlAutoInterval = null;
+let ctrlSessionStart = null;
+let ctrlDanmakuTotal = 0;
+let ctrlPopTotal = 0;
+let ctrlViewerBase = 0;
+
+const ctrlMockUsers = ['买家小王', '新粉小李', '老顾客张姐', '铁粉阿强', '爱美的CC', '剁手党老刘', '学生党小陈', '观望中...'];
+const ctrlMockQuestions = [
+  '这个有XL码吗？', '多少钱？', '包邮吗？', '什么面料啊？', '能再便宜点吗？',
+  '已经下单了！', '有没有优惠券？', '什么时候发货？', '质量怎么样？', '适合什么肤质？',
+  '颜色会不会有色差？', '讲解得好详细！', '买两件有折扣吗？', '可以七天无理由吗？', '支持花呗吗？',
+];
+const ctrlMockReplies = [
+  '亲，这款是均码哦，S-L都能穿~', '现在活动价只要169呢，超划算！', '全场满99包邮哦亲~',
+  '这个是纯棉面料，透气又舒适！', '支持7天无理由，放心购买！', '关注店铺领5元优惠券！',
+  '谢谢支持！下单后48小时内发货~', '实物和图片基本没色差，可以放心！', '两件9折，三件8.5折！',
+  '质量杠杠的，买过的都说好！', '适合所有肤质，敏感肌也能用！', '今晚12点前下单明天就发！',
+];
+
+function initCtrlRoomSelector() {
+  const sel = document.getElementById('ctrlRoomSelect');
+  if (!sel) return;
+  const liveRooms = roomData.filter(r => r.status === 'live');
+  const idleRooms = roomData.filter(r => r.status !== 'live');
+  sel.innerHTML = '<option value="">— 选择直播间 —</option>';
+  if (liveRooms.length > 0) {
+    const og = document.createElement('optgroup');
+    og.label = '● 正在直播';
+    liveRooms.forEach(r => { const o = document.createElement('option'); o.value = r.id; o.textContent = r.name + '（' + r.platform + '）'; og.appendChild(o); });
+    sel.appendChild(og);
+  }
+  if (idleRooms.length > 0) {
+    const og = document.createElement('optgroup');
+    og.label = '○ 待开播';
+    idleRooms.forEach(r => { const o = document.createElement('option'); o.value = r.id; o.textContent = r.name + '（' + r.platform + '）'; og.appendChild(o); });
+    sel.appendChild(og);
+  }
+  // Default to first live room
+  if (liveRooms.length > 0) { sel.value = liveRooms[0].id; renderCtrlRoom(); }
+}
+
+function renderCtrlRoom() {
+  const sel = document.getElementById('ctrlRoomSelect');
+  const content = document.getElementById('ctrlRoomContent');
+  const empty = document.getElementById('ctrlRoomEmpty');
+  const status = document.getElementById('ctrlRoomStatus');
+  if (!sel) return;
+
+  const roomId = sel.value;
+  if (!roomId) {
+    content.style.display = 'none'; empty.style.display = 'block';
+    if (status) status.textContent = '';
+    clearCtrlTimers();
+    return;
+  }
+
+  const r = roomData.find(r => r.id === roomId);
+  if (!r) return;
+
+  content.style.display = 'block'; empty.style.display = 'none';
+  if (status) status.innerHTML = r.status === 'live'
+    ? '<span class="tag tag-success">● 推流中</span>'
+    : '<span class="tag tag-neutral">○ 待开播</span>';
+
+  clearCtrlTimers();
+
+  if (r.status === 'live') {
+    ctrlSessionStart = Date.now();
+    ctrlDanmakuTotal = 0; ctrlPopTotal = 0;
+    ctrlViewerBase = Math.floor(Math.random() * 300 + 200);
+
+    document.getElementById('ctrlNowPlaying').textContent = '正在直播：' + (r.attachedVideo || r.name);
+
+    // Start timer
+    ctrlTimerInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - ctrlSessionStart) / 1000);
+      const h = Math.floor(elapsed / 3600), m = Math.floor((elapsed % 3600) / 60), s = elapsed % 60;
+      document.getElementById('ctrlTimer').textContent = '🕐 ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+      document.getElementById('ctrlElapsed').textContent = '⏱️ 已播 ' + (h > 0 ? h + 'h ' : '') + m + 'm';
+
+      const viewers = ctrlViewerBase + Math.floor(Math.random() * 100 - 30);
+      document.getElementById('ctrlViewers').textContent = viewers;
+      document.getElementById('ctrlViewerBadge').textContent = '👁️ ' + viewers;
+      document.getElementById('ctrlPeak').textContent = '峰值 ' + Math.floor(ctrlViewerBase * 1.4) + ' 人';
+      document.getElementById('ctrlDanmaku').textContent = ctrlDanmakuTotal;
+      document.getElementById('ctrlPops').textContent = ctrlPopTotal;
+      document.getElementById('ctrlOrdersValue').textContent = '¥' + (ctrlPopTotal * 79 + Math.floor(Math.random() * 500));
+      document.getElementById('ctrlAIReplyRate').textContent = '🤖 AI 回复率 94%';
+      document.getElementById('ctrlCurrentProduct').textContent = ['法式碎花连衣裙','冰丝防晒袖套','草编遮阳帽'][Math.floor(ctrlPopTotal % 3)];
+
+      document.getElementById('ctrlBitrate').textContent = (3.8 + Math.random() * 1.2).toFixed(1) + ' Mbps';
+    }, 2000);
+
+    // Auto danmaku
+    ctrlAutoInterval = setInterval(() => {
+      const u = ctrlMockUsers[Math.floor(Math.random() * ctrlMockUsers.length)];
+      const q = ctrlMockQuestions[Math.floor(Math.random() * ctrlMockQuestions.length)];
+      ctrlAddDanmaku(u, q);
+    }, 4000 + Math.random() * 6000);
+  } else {
+    document.getElementById('ctrlElapsed').textContent = '尚未开播';
+    document.getElementById('ctrlNowPlaying').textContent = '待开播 — ' + r.name;
+    document.getElementById('ctrlViewers').textContent = '—';
+    document.getElementById('ctrlViewerBadge').textContent = '👁️ —';
+    document.getElementById('ctrlTimer').textContent = '🕐 00:00:00';
+    document.getElementById('ctrlDanmaku').textContent = '—';
+    document.getElementById('ctrlPops').textContent = '—';
+    document.getElementById('ctrlOrdersValue').textContent = '—';
+    document.getElementById('ctrlPeak').textContent = '';
+    document.getElementById('ctrlAIReplyRate').textContent = '';
+    document.getElementById('ctrlBitrate').textContent = '—';
+  }
+
+  document.getElementById('ctrlNowInfo').textContent = r.attachedVideo
+    ? (() => { const v = availableVideos.find(v => v.name === r.attachedVideo); return v ? v.clipCount + '个商品 · ' + v.duration + ' · 循环播放' : r.platform; })()
+    : '未挂载视频';
+
+  // Reset comment list
+  const list = document.getElementById('ctrlCommentList');
+  if (list) {
+    ctrlDanmakuTotal = 0;
+    list.innerHTML = '<div style="font-size:12px;padding:6px 10px;border-radius:6px;background:#fefce8;text-align:center;color:var(--text-muted);">🚀 直播间监控就绪 · 实时弹幕收集中</div>';
+    document.getElementById('ctrlDanmakuCount').textContent = '0 条';
+  }
+}
+
+function ctrlAddDanmaku(user, text) {
+  const list = document.getElementById('ctrlCommentList');
+  if (!list) return;
+  ctrlDanmakuTotal++;
+  const time = new Date().toLocaleTimeString();
+  list.innerHTML += `<div style="font-size:12px;padding:8px 10px;border-radius:6px;background:#f8fafc;animation:fadeIn .3s ease;"><strong style="color:#6366f1;">${user}</strong> ${text}<div style="font-size:10px;color:#94a3b8;">${time}</div></div>`;
+  list.scrollTop = list.scrollHeight;
+  document.getElementById('ctrlDanmakuCount').textContent = ctrlDanmakuTotal + ' 条';
+
+  // AI auto-reply
+  const reply = ctrlMockReplies[Math.floor(Math.random() * ctrlMockReplies.length)];
+  setTimeout(() => {
+    list.innerHTML += `<div style="font-size:12px;padding:8px 10px;border-radius:6px;background:#eef2ff;border-left:3px solid #6366f1;animation:fadeIn .3s ease;"><strong style="color:#4f46e5;">🤖 AI主播</strong> ${reply}<div style="font-size:10px;color:#94a3b8;">${new Date().toLocaleTimeString()}</div></div>`;
+    list.scrollTop = list.scrollHeight;
+  }, 600 + Math.random() * 1500);
+}
+
+function ctrlSendComment() {
+  const input = document.getElementById('ctrlCommentInput');
+  const text = input.value.trim();
+  if (!text) return;
+  ctrlAddDanmaku('观众', text);
+  input.value = '';
+}
+
+function ctrlToggleAuto() {
+  const btn = document.getElementById('ctrlAutoBtn');
+  if (ctrlAutoInterval) {
+    clearInterval(ctrlAutoInterval); ctrlAutoInterval = null;
+    btn.textContent = '🤖 自动'; btn.style.background = ''; btn.style.color = '';
+  } else {
+    btn.textContent = '⏹ 停止'; btn.style.background = 'var(--danger)'; btn.style.color = '#fff';
+    ctrlAutoInterval = setInterval(() => {
+      const u = ctrlMockUsers[Math.floor(Math.random() * ctrlMockUsers.length)];
+      const q = ctrlMockQuestions[Math.floor(Math.random() * ctrlMockQuestions.length)];
+      ctrlAddDanmaku(u, q);
+    }, 3000 + Math.random() * 5000);
+  }
+}
+
+function ctrlPopProduct() {
+  ctrlPopTotal++;
+  document.getElementById('ctrlPops').textContent = ctrlPopTotal;
+  const products = ['法式碎花连衣裙', '冰丝防晒袖套', '草编遮阳帽', '纯棉基础款T恤'];
+  const prices = ['¥169', '¥49', '¥89', '¥79'];
+  const idx = Math.floor(Math.random() * products.length);
+  document.getElementById('ctrlPopupProduct').textContent = products[idx];
+  document.getElementById('ctrlPopupPrice').textContent = prices[idx];
+  document.getElementById('ctrlProductCard').style.display = 'flex';
+  setTimeout(() => { document.getElementById('ctrlProductCard').style.display = 'none'; }, 5000);
+}
+
+function ctrlManualReply() {
+  const text = prompt('输入人工回复内容：', '亲，感谢您的关注，客服稍后联系您~');
+  if (!text) return;
+  const list = document.getElementById('ctrlCommentList');
+  if (!list) return;
+  list.innerHTML += `<div style="font-size:12px;padding:8px 10px;border-radius:6px;background:#fef2f2;border-left:3px solid #ef4444;animation:fadeIn .3s ease;"><strong style="color:#dc2626;">👤 人工客服</strong> ${text}<div style="font-size:10px;color:#94a3b8;">${new Date().toLocaleTimeString()}</div></div>`;
+  list.scrollTop = list.scrollHeight;
+}
+
+function clearCtrlTimers() {
+  if (ctrlTimerInterval) { clearInterval(ctrlTimerInterval); ctrlTimerInterval = null; }
+  if (ctrlAutoInterval) { clearInterval(ctrlAutoInterval); ctrlAutoInterval = null; }
+}
+
+// ========== Init ==========
+renderProductTable();
+renderProductMaterialTable();
+renderProductLiveTable();
+renderRoomCards();
+initLiveBoardSelector();
+initCtrlRoomSelector();
+
+// ========== Modal: 配置已接入平台 ==========
+let configPlatform = '';
+
+function openConfigModal(platform, apiKey) {
+  configPlatform = platform;
+  document.getElementById('configModalTitle').textContent = '⚙️ 配置 — ' + platform + '平台 API 凭证';
+  document.getElementById('configPlatform').value = platform;
+  document.getElementById('configApiKey').value = apiKey;
+  document.getElementById('configApiSecret').value = '••••••••••••••••';
+  document.getElementById('configModal').style.display = 'flex';
+}
+
+function closeConfigModal() {
+  document.getElementById('configModal').style.display = 'none';
+}
+
+function saveConfig() {
+  const apiKey = document.getElementById('configApiKey').value;
+
+  if (!apiKey) {
+    showToast('⚠️ 请填写 API Key', 'warning');
+    return;
+  }
+
+  const btn = event.target;
+  btn.textContent = '⏳ 保存中...';
+  btn.disabled = true;
+  setTimeout(() => {
+    closeConfigModal();
+    showToast('✅ ' + configPlatform + '平台 API 凭证已保存（所有直播间共用此凭证）');
+    btn.textContent = '💾 保存配置';
+    btn.disabled = false;
+  }, 800);
+}
+
+// ========== Room Management Functions ==========
+// roomData & availableVideos defined above before init
+
+function renderRoomCards() {
+  const container = document.getElementById('roomCards');
+  const empty = document.getElementById('roomEmptyState');
+  if (!container) return;
+
+  if (roomData.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+  }
+
+  container.innerHTML = roomData.map(r => {
+    const isLive = r.status === 'live';
+    const statusTag = isLive
+      ? '<span class="tag tag-success" style="font-size:12px;">● 推流中</span>'
+      : '<span class="tag tag-neutral" style="font-size:12px;">○ 待开播</span>';
+
+    const attachedInfo = r.attachedVideo
+      ? (() => { const v = availableVideos.find(v => v.name === r.attachedVideo); return v ? `${v.clipCount}个商品 · ${v.duration}` : ''; })()
+      : '';
+
+    const videoOptions = ['<option value="">未挂载</option>']
+      .concat(availableVideos.map(v => `<option value="${v.name}" ${r.attachedVideo === v.name ? 'selected' : ''}>${v.name}（${v.clipCount}商品·${v.duration}）</option>`))
+      .join('');
+
+    return `<div class="card" style="${isLive ? 'border-left: 3px solid var(--success);' : ''}">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">🏠</span>
+          <div>
+            <h3 style="font-size:15px;">${r.name}</h3>
+            <div style="font-size:11px;color:var(--text-muted);">${r.platform} · RTMP: <code style="font-size:10px;background:#f1f5f9;padding:1px 4px;border-radius:3px;">${r.rtmp.substring(0, 35)}...</code></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="tag tag-primary" style="font-size:11px;">${r.platform}</span>
+          ${statusTag}
+        </div>
+      </div>
+      <div class="card-body" style="padding:16px 20px;">
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+          <!-- 挂载视频 -->
+          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:280px;">
+            <span style="font-size:13px;font-weight:600;white-space:nowrap;">🎬 挂载视频：</span>
+            <select style="flex:1;padding:6px 10px;font-size:12px;border:1px solid var(--border);border-radius:6px;max-width:340px;"
+              onchange="attachVideoToRoom('${r.id}', this.value)">
+              ${videoOptions}
+            </select>
+            ${r.attachedVideo ? `<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">${attachedInfo}</span>` : '<span style="font-size:11px;color:var(--warning);white-space:nowrap;">⚠️ 请挂载视频</span>'}
+          </div>
+
+          <!-- 排班信息行 -->
+          ${(() => {
+            const s = r.schedule;
+            const hasSchedule = s.enabled && s.start;
+            return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;width:100%;padding-top:4px;">
+              <span style="color:var(--text-muted);">⏰ 排班：</span>
+              ${hasSchedule
+                ? `<span style="font-weight:500;color:var(--primary);">每天 ${s.start} — ${s.end}</span><span class="tag tag-success" style="font-size:10px;">自动</span>`
+                : '<span style="color:var(--text-muted);">未设置</span>'}
+              <button class="btn btn-outline btn-xs" style="margin-left:8px;" onclick="openScheduleEdit(\'${r.id}\')">${hasSchedule ? '调整' : '设置'}</button>
+            </div>`;
+          })()}
+
+          <!-- 操作按钮 -->
+          <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+            ${isLive ? `
+              <button class="btn btn-danger btn-sm" onclick="stopRoom('${r.id}')">⏹ 停播</button>
+            ` : `
+              <button class="btn btn-primary btn-sm" onclick="startRoom('${r.id}')" ${!r.attachedVideo ? 'disabled title="请先挂载直播视频"' : ''}>▶ 开播</button>
+            `}
+            <button class="btn btn-outline btn-sm" onclick="editRoom('${r.id}')">⚙️ 编辑</button>
+            <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteRoom('${r.id}')">🗑️ 删除</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  updateQuotaDisplay();
+}
+
+function updateQuotaDisplay() {
+  const total = roomData.length;
+  const streaming = roomData.filter(r => r.status === 'live').length;
+  document.getElementById('quotaRoomsUsed').textContent = total;
+  document.getElementById('quotaStreamsUsed').textContent = streaming;
+
+  // Platform breakdown for total rooms — render as tags
+  const platformCount = {};
+  roomData.forEach(r => { platformCount[r.platform] = (platformCount[r.platform] || 0) + 1; });
+  const roomTags = Object.entries(platformCount).map(([p, c]) =>
+    `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#e0e7ff;color:#3730a3;margin:0 2px;">${p}: ${c}</span>`
+  ).join(' ');
+  document.getElementById('quotaRoomsBreakdown').innerHTML = roomTags || '<span style="color:#94a3b8;">—</span>';
+
+  // Platform breakdown for streaming rooms — render as tags
+  const streamPlatforms = {};
+  roomData.filter(r => r.status === 'live').forEach(r => { streamPlatforms[r.platform] = (streamPlatforms[r.platform] || 0) + 1; });
+  const streamTags = Object.entries(streamPlatforms).map(([p, c]) =>
+    `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#d1fae5;color:#065f46;margin:0 2px;">${p}: ${c}</span>`
+  ).join(' ');
+  document.getElementById('quotaStreamsBreakdown').innerHTML = streamTags || '<span style="color:#94a3b8;">暂无推流</span>';
+}
+
+function attachVideoToRoom(roomId, videoName) {
+  const r = roomData.find(r => r.id === roomId);
+  if (r) {
+    r.attachedVideo = videoName;
+    renderRoomCards();
+    showToast(videoName ? '✅ 已挂载「' + videoName + '」到「' + r.name + '」' : '⚠️ 已取消「' + r.name + '」的视频挂载', videoName ? 'success' : 'warning');
+  }
+}
+
+function startRoom(roomId) {
+  const r = roomData.find(r => r.id === roomId);
+  if (!r) return;
+  if (!r.attachedVideo) { showToast('⚠️ 请先挂载直播视频再开播', 'warning'); return; }
+  r.status = 'live';
+  renderRoomCards();
+  showToast('✅ 「' + r.name + '」已开播，正在推流「' + r.attachedVideo + '」');
+}
+
+function stopRoom(roomId) {
+  const r = roomData.find(r => r.id === roomId);
+  if (!r) return;
+  r.status = 'idle';
+  renderRoomCards();
+  showToast('⏹ 「' + r.name + '」已停播');
+}
+
+function editRoom(roomId) {
+  const r = roomData.find(r => r.id === roomId);
+  if (!r) return;
+  document.getElementById('createRoomModalTitle').textContent = '⚙️ 编辑直播间';
+  document.getElementById('newRoomName').value = r.name;
+  document.getElementById('newRoomPlatform').value = r.platform;
+  document.getElementById('newRoomRtmp').value = r.rtmp;
+  document.getElementById('editRoomId').value = roomId;
+  document.getElementById('createRoomBtn').textContent = '💾 保存';
+  document.getElementById('createRoomModal').style.display = 'flex';
+}
+
+function deleteRoom(roomId) {
+  const r = roomData.find(r => r.id === roomId);
+  if (!r) return;
+  if (r.status === 'live') { showToast('⚠️ 请先停播再删除直播间', 'warning'); return; }
+  if (confirm('确定要删除直播间「' + r.name + '」吗？此操作不可恢复。')) {
+    const idx = roomData.findIndex(r => r.id === roomId);
+    roomData.splice(idx, 1);
+    renderRoomCards();
+    showToast('🗑️ 「' + r.name + '」已删除');
+  }
+}
+
+// ========== Modal: 创建直播间 ==========
+function openCreateRoomModal() {
+  document.getElementById('createRoomModalTitle').textContent = '📝 创建直播间';
+  document.getElementById('newRoomName').value = '';
+  document.getElementById('newRoomPlatform').value = '淘宝';
+  document.getElementById('newRoomRtmp').value = '';
+  document.getElementById('editRoomId').value = '';
+  document.getElementById('createRoomBtn').textContent = '创建';
+  document.getElementById('createRoomModal').style.display = 'flex';
+}
+
+function closeCreateRoomModal() {
+  document.getElementById('createRoomModal').style.display = 'none';
+}
+
+function createRoom() {
+  const name = document.getElementById('newRoomName').value.trim();
+  const platform = document.getElementById('newRoomPlatform').value;
+  const rtmp = document.getElementById('newRoomRtmp').value.trim();
+  const editId = document.getElementById('editRoomId').value;
+
+  if (!name) { showToast('⚠️ 请输入直播间名称', 'warning'); return; }
+  if (!rtmp) { showToast('⚠️ 请填写 RTMP 推流地址', 'warning'); return; }
+
+  if (editId) {
+    // Edit existing
+    const r = roomData.find(r => r.id === editId);
+    if (r) {
+      r.name = name; r.platform = platform; r.rtmp = rtmp;
+      showToast('✅ 「' + name + '」已更新');
+    }
+  } else {
+    // Create new
+    const id = 'R' + String(roomData.length + 1).padStart(3, '0');
+    roomData.push({ id, name, platform, rtmp, status: 'idle', attachedVideo: '', schedule: { enabled: false, start: '', end: '' } });
+    showToast('✅ 直播间「' + name + '」已创建，请挂载直播视频后开播');
+  }
+
+  closeCreateRoomModal();
+  renderRoomCards();
+}
+
+document.getElementById('createRoomModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCreateRoomModal();
+});
+
+// ========== Schedule Functions ==========
+let scheduleEditRoomId = '';
+
+function openScheduleEdit(roomId) {
+  scheduleEditRoomId = roomId;
+  const r = roomData.find(r => r.id === roomId);
+  if (!r) return;
+  const s = r.schedule;
+  document.getElementById('scheduleEditRoomName').textContent = '🏠 ' + r.name + '（' + r.platform + '）';
+  document.getElementById('scheduleEditEnabled').checked = s.enabled;
+  document.getElementById('scheduleStartTime').value = s.start || '08:00';
+  document.getElementById('scheduleEndTime').value = s.end || '23:59';
+  document.getElementById('scheduleTimeRow').style.display = s.enabled ? 'flex' : 'none';
+  document.getElementById('scheduleEditModal').style.display = 'flex';
+}
+
+function closeScheduleEdit() {
+  document.getElementById('scheduleEditModal').style.display = 'none';
+}
+
+function saveScheduleEdit() {
+  const r = roomData.find(r => r.id === scheduleEditRoomId);
+  if (!r) return;
+  const enabled = document.getElementById('scheduleEditEnabled').checked;
+  r.schedule = {
+    enabled,
+    start: document.getElementById('scheduleStartTime').value,
+    end: document.getElementById('scheduleEndTime').value,
+  };
+  closeScheduleEdit();
+  renderRoomCards();
+  showToast('✅ 「' + r.name + '」排班已' + (enabled ? '更新：每天 ' + r.schedule.start + ' — ' + r.schedule.end : '暂停'));
+}
+
+document.getElementById('scheduleEditModal').addEventListener('click', function(e) {
+  if (e.target === this) closeScheduleEdit();
+});
+
+// ========== Modal: 接入向导 ==========
+let wizCurrentStep = 1;
+let wizPlatform = '';
+
+function openAccessWizard(platform) {
+  wizPlatform = platform;
+  wizCurrentStep = 1;
+  document.getElementById('accessModalTitle').textContent = '🔗 接入 — ' + platform + '平台';
+  document.getElementById('wizPlatformName').textContent = platform;
+  // Reset form
+  document.getElementById('wizAppKey').value = '';
+  document.getElementById('wizAppSecret').value = '';
+  document.getElementById('wizRtmpUrl').value = '';
+  // Reset steps UI
+  resetWizSteps();
+  // Reset verify UI
+  document.getElementById('verifySpinner').style.display = 'flex';
+  document.getElementById('verifySuccess').style.display = 'none';
+  document.getElementById('verifyFail').style.display = 'none';
+  // Show step 1
+  goToWizStep(1);
+  document.getElementById('accessModal').style.display = 'flex';
+}
+
+function closeAccessModal() {
+  document.getElementById('accessModal').style.display = 'none';
+}
+
+function resetWizSteps() {
+  ['wizStep1','wizStep2','wizStep3'].forEach(id => {
+    document.getElementById(id).className = 'wizard-step';
+  });
+  ['wizPane1','wizPane2','wizPane3'].forEach(id => {
+    document.getElementById(id).className = 'wizard-pane';
+  });
+}
+
+function goToWizStep(n) {
+  wizCurrentStep = n;
+  // Update step indicators
+  document.getElementById('wizStep1').className = 'wizard-step' + (n > 1 ? ' done' : '') + (n === 1 ? ' active' : '');
+  document.getElementById('wizStep2').className = 'wizard-step' + (n > 2 ? ' done' : '') + (n === 2 ? ' active' : '');
+  document.getElementById('wizStep3').className = 'wizard-step' + (n === 3 ? ' active' : '');
+  // Show/hide panes
+  document.getElementById('wizPane1').className = 'wizard-pane' + (n === 1 ? ' active' : '');
+  document.getElementById('wizPane2').className = 'wizard-pane' + (n === 2 ? ' active' : '');
+  document.getElementById('wizPane3').className = 'wizard-pane' + (n === 3 ? ' active' : '');
+  // Update buttons
+  document.getElementById('wizPrevBtn').style.display = n > 1 ? 'inline-flex' : 'none';
+  document.getElementById('wizNextBtn').style.display = n < 3 ? 'inline-flex' : 'none';
+  document.getElementById('wizDoneBtns').style.display = n === 3 ? 'flex' : 'none';
+}
+
+function wizNext() {
+  if (wizCurrentStep === 1) {
+    // Validate step 1
+    const appKey = document.getElementById('wizAppKey').value.trim();
+    const appSecret = document.getElementById('wizAppSecret').value.trim();
+    const rtmp = document.getElementById('wizRtmpUrl').value.trim();
+    if (!appKey || !appSecret || !rtmp) {
+      showToast('⚠️ 请填写所有必填字段（AppKey、AppSecret、RTMP 推流地址）', 'warning');
+      return;
+    }
+    // Go to verify step
+    goToWizStep(2);
+    // Simulate verification
+    simulateVerify();
+    return;
+  }
+  if (wizCurrentStep === 2) {
+    goToWizStep(3);
+    document.getElementById('wizResultText').textContent =
+      wizPlatform + '平台已激活，现在可以创建' + wizPlatform + '直播间并推流';
+    return;
+  }
+}
+
+function wizPrev() {
+  if (wizCurrentStep > 1) {
+    goToWizStep(wizCurrentStep - 1);
+    if (wizCurrentStep === 1) {
+      // Reset verify UI for re-entry
+      document.getElementById('verifySpinner').style.display = 'flex';
+      document.getElementById('verifySuccess').style.display = 'none';
+      document.getElementById('verifyFail').style.display = 'none';
+    }
+  }
+}
+
+function simulateVerify() {
+  document.getElementById('verifySpinner').style.display = 'flex';
+  document.getElementById('verifySuccess').style.display = 'none';
+  document.getElementById('verifyFail').style.display = 'none';
+  document.getElementById('verifyStatus').textContent = '尝试连接平台服务器...';
+
+  const statuses = [
+    { text: '验证 AppKey 有效性...', delay: 500 },
+    { text: '测试 RTMP 推流地址可达性...', delay: 800 },
+    { text: '检查 API 权限范围...', delay: 700 },
+  ];
+
+  let i = 0;
+  function nextStatus() {
+    if (i < statuses.length) {
+      document.getElementById('verifyStatus').textContent = statuses[i].text;
+      i++;
+      setTimeout(nextStatus, statuses[i-1].delay);
+    } else {
+      // Random: 85% success, 15% fail
+      const success = Math.random() > 0.15;
+      document.getElementById('verifySpinner').style.display = 'none';
+      if (success) {
+        document.getElementById('verifySuccess').style.display = 'block';
+        document.getElementById('wizNextBtn').textContent = '完成激活 →';
+        document.getElementById('wizNextBtn').style.display = 'inline-flex';
+      } else {
+        document.getElementById('verifyFail').style.display = 'block';
+        document.getElementById('verifyFailMsg').textContent = 'AppSecret 校验失败，请返回上一步检查凭证是否正确';
+        document.getElementById('wizNextBtn').style.display = 'none';
+      }
+    }
+  }
+  nextStatus();
+}
+
+// ========== Toast ==========
+function showToast(msg, type) {
+  const toast = document.getElementById('toast');
+  type = type || 'success';
+  const colors = { success: '#10b981', warning: '#f59e0b', error: '#ef4444' };
+  toast.style.background = colors[type] || colors.success;
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 3000);
+}
+
+// ========== Close modals on overlay click ==========
+document.getElementById('configModal').addEventListener('click', function(e) {
+  if (e.target === this) closeConfigModal();
+});
+document.getElementById('accessModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAccessModal();
+});
+</script>
+</body>
+</html>
