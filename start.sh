@@ -1,48 +1,69 @@
 #!/bin/bash
 set -e
 
-PORT=8000
+BACKEND_PORT=8000
+FRONTEND_PORT=5173
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "========================================="
-echo "  AI 直播工具 — 后端启动脚本"
+echo "  AI 直播工具 — 一键启动 (Mock模式)"
 echo "========================================="
 
-# 1. 杀掉占用端口的进程
+# ─── 1. 杀旧进程 ───
 echo ""
-echo "[1/3] 检查端口 $PORT ..."
+echo "[1/4] 清理旧进程..."
 
-# macOS/Linux 通用：查找并杀掉占端口的进程
-PID=$(lsof -ti:$PORT 2>/dev/null || true)
-if [ -n "$PID" ]; then
-    echo "  → 发现进程 PID=$PID 占用端口 $PORT，正在终止..."
-    kill -9 $PID 2>/dev/null || true
-    sleep 1
-    echo "  → 已终止"
-else
-    echo "  → 端口 $PORT 空闲"
-fi
+kill_port() {
+    local port=$1
+    local pid=$(lsof -ti:$port 2>/dev/null || true)
+    if [ -n "$pid" ]; then
+        echo "  → 端口 $port 被 PID=$pid 占用，正在终止..."
+        kill -9 $pid 2>/dev/null || true
+        sleep 1
+    fi
+}
 
-# 2. 安装依赖
+kill_port $BACKEND_PORT
+kill_port $FRONTEND_PORT
+echo "  → 端口 $BACKEND_PORT / $FRONTEND_PORT 已释放"
+
+# ─── 2. 后端依赖 ───
 echo ""
-echo "[2/3] 安装依赖..."
+echo "[2/4] 安装后端依赖..."
 cd "$PROJECT_DIR"
 pip install -r backend/requirements.txt -q
-echo "  → 依赖就绪"
+echo "  → 后端依赖就绪"
 
-# 3. 清理旧数据库 (可选 — 如果不需要保留数据)
-# rm -f "$PROJECT_DIR/data/app.db"
+# ─── 3. 前端依赖 + 启动 ───
+echo ""
+echo "[3/4] 安装前端依赖 + 启动..."
+cd "$PROJECT_DIR/frontend"
+npm install
+echo "  → 前端依赖就绪"
 
-# 4. 启动
 echo ""
-echo "[3/3] 启动服务 (Mock模式) ..."
+echo "[4/4] 启动服务..."
+npm run dev &
+FRONTEND_PID=$!
+
+# 后端 (前台)
+cd "$PROJECT_DIR"
 echo ""
-echo "  API 文档:  http://localhost:$PORT/docs"
-echo "  健康检查:  http://localhost:$PORT/api/health"
+echo "  后端 API:   http://localhost:$BACKEND_PORT/docs"
+echo "  前端页面:   http://localhost:$FRONTEND_PORT"
+echo "  健康检查:   http://localhost:$BACKEND_PORT/api/health"
 echo ""
+echo "  按 Ctrl+C 停止所有服务"
 echo "========================================="
+echo ""
 
-MOCK_EXTERNAL_API=true uvicorn backend.main:app \
+# 退出时杀前端进程
+trap "kill $FRONTEND_PID 2>/dev/null; exit 0" INT TERM
+
+MOCK_EXTERNAL_API=true python -m uvicorn backend.main:app \
     --reload \
     --host 0.0.0.0 \
-    --port $PORT
+    --port $BACKEND_PORT
+
+# 后端退出后杀前端
+kill $FRONTEND_PID 2>/dev/null

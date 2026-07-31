@@ -1,0 +1,8 @@
+node_modules/
+__pycache__/
+*.pyc
+.env
+data/app.db
+data/videos/
+dist/
+.vite/
