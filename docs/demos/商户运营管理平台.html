@@ -403,23 +403,13 @@ tr:hover td { background: #f8fafc; }
     <div class="nav-item" data-page="interact">
       <span class="icon">💬</span> 互动设置
     </div>
-    <div class="nav-section">平台设置</div>
-    <div class="nav-item" data-page="account">
-      <span class="icon">👥</span> 账号管理
-    </div>
-    <div class="nav-item" data-page="platform">
-      <span class="icon">🔗</span> 平台接入
-    </div>
-    <div class="nav-item" data-page="settings">
-      <span class="icon">⚙️</span> 系统设置
-    </div>
   </nav>
   <div class="sidebar-footer">
-    <div class="sidebar-user" onclick="navigateTo('merchant')" style="cursor:pointer;" title="点击查看商户信息">
+    <div class="sidebar-user">
       <div class="avatar">张</div>
       <div class="info">
         <div class="name">张老板的店铺</div>
-        <div class="role">专业版 · 剩余 187 天</div>
+        <div class="role">专业版</div>
       </div>
     </div>
   </div>
@@ -1154,266 +1144,8 @@ tr:hover td { background: #f8fafc; }
       </div>
     </div>
 
-    <!-- ==================== 6. 账号管理 ==================== -->
-    <div class="page" id="page-account">
-      <div class="stats-grid">
-        <div class="stat-card"><div class="label">主账号</div><div class="value" style="font-size:20px;">张老板的店铺</div><div class="change">总时长 365 天 · 剩余 187 天</div></div>
-        <div class="stat-card"><div class="label">子账号数</div><div class="value">3</div><div class="change">共享主账号时长</div></div>
-        <div class="stat-card"><div class="label">本月已用时长</div><div class="value">124h</div><div class="change up">3 个子账号活跃</div></div>
-        <div class="stat-card"><div class="label">到期提醒</div><div class="value" style="font-size:16px;color:var(--warning);">187 天后</div><div class="change">2027-01-24</div></div>
-      </div>
-
-      <div class="card">
-        <div class="card-header"><h3>👥 子账号管理</h3><button class="btn btn-primary btn-sm" onclick="alert('➕ 模拟：创建子账号')">+ 创建子账号</button></div>
-        <div class="card-body">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>子账号</th><th>时长模式</th><th>分配时长</th><th>已用</th><th>剩余</th><th>管理直播间</th><th>状态</th><th>操作</th></tr></thead>
-              <tbody>
-                <tr>
-                  <td><strong>运营小王</strong></td>
-                  <td><span class="tag tag-primary">共享主账号</span></td>
-                  <td>—</td>
-                  <td>56h</td>
-                  <td>—</td>
-                  <td>夏季女装专场</td>
-                  <td><span class="tag tag-success">活跃</span></td>
-                  <td><button class="btn btn-outline btn-xs">编辑</button> <button class="btn btn-outline btn-xs">调整时长</button></td>
-                </tr>
-                <tr>
-                  <td><strong>运营小李</strong></td>
-                  <td><span class="tag tag-warning">独立分配</span></td>
-                  <td>200h</td>
-                  <td>88h</td>
-                  <td>112h</td>
-                  <td>品牌特卖 — B 组</td>
-                  <td><span class="tag tag-success">活跃</span></td>
-                  <td><button class="btn btn-outline btn-xs">编辑</button> <button class="btn btn-outline btn-xs">调整时长</button></td>
-                </tr>
-                <tr>
-                  <td><strong>运营小张</strong></td>
-                  <td><span class="tag tag-primary">共享主账号</span></td>
-                  <td>—</td>
-                  <td>32h</td>
-                  <td>—</td>
-                  <td>家居好物推荐</td>
-                  <td><span class="tag tag-success">活跃</span></td>
-                  <td><button class="btn btn-outline btn-xs">编辑</button> <button class="btn btn-outline btn-xs">调整时长</button></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div style="margin-top:12px;display:flex;gap:8px;">
-            <button class="btn btn-outline btn-sm" onclick="alert('📥 模拟：下载账号使用明细')">📥 下载使用明细</button>
-            <button class="btn btn-outline btn-sm" onclick="alert('💰 模拟：跳转续费页面')">💰 续费</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== 7. 平台接入 ==================== -->
-    <div class="page" id="page-platform">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <div class="text-muted">管理各直播平台的 API 接入与推流配置。各平台 API 开放度差异大，详见<a href="#" onclick="alert('请查看 demo/平台接入能力调研.md')" style="color:var(--primary);">接入能力调研报告</a></div>
-      </div>
-
-      <!-- 已接入平台 -->
-      <div class="card">
-        <div class="card-header"><h3>✅ 已接入平台</h3><span class="text-muted" style="font-size:12px;">API 凭证所有直播间共用，RTMP 推流地址在"直播间管理"中单独配置</span></div>
-        <div class="card-body">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>平台</th><th>API 授权</th><th>支持能力</th><th>操作</th></tr></thead>
-              <tbody>
-                <tr>
-                  <td><span class="tag tag-primary">淘宝</span></td>
-                  <td><span class="tag tag-success">已授权</span></td>
-                  <td>
-                    <span class="tag tag-success">推流</span>
-                    <span class="tag tag-success">弹幕</span>
-                    <span class="tag tag-success">弹品</span>
-                    <span class="tag tag-success">回复</span>
-                    <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">4/4</span>
-                  </td>
-                  <td><button class="btn btn-outline btn-xs" onclick="openConfigModal('淘宝', 'ak_taobao_xxxxxxxxxxxxxxxx')">配置</button></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- 推荐接入 -->
-      <div class="card" style="margin-top:20px;">
-        <div class="card-header"><h3>⭐ 可接入平台</h3><span class="text-muted" style="font-size:12px;">接入后即可在该平台创建直播间并推流</span></div>
-        <div class="card-body">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>平台</th><th>直播电商份额</th><th>支持能力</th><th>操作</th></tr></thead>
-              <tbody>
-                <tr>
-                  <td><strong>抖音</strong> 🥇</td>
-                  <td><strong>31%</strong> · 头部第一</td>
-                  <td>
-                    <span class="tag tag-success">推流</span>
-                    <span class="tag tag-success">弹幕</span>
-                    <span class="tag tag-success">弹品</span>
-                    <span class="tag tag-success">回复</span>
-                    <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">4/4</span>
-                  </td>
-                  <td><button class="btn btn-primary btn-xs" onclick="openAccessWizard('抖音')">接入</button></td>
-                </tr>
-                <tr>
-                  <td><strong>快手</strong> 🥉</td>
-                  <td><strong>14%</strong> · 第三</td>
-                  <td>
-                    <span class="tag tag-success">推流</span>
-                    <span class="tag tag-success">弹幕</span>
-                    <span class="tag tag-success">弹品</span>
-                    <span class="tag tag-neutral">回复</span>
-                    <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">3/4</span>
-                  </td>
-                  <td><button class="btn btn-primary btn-xs" onclick="openAccessWizard('快手')">接入</button></td>
-                </tr>
-                <tr>
-                  <td><strong>京东</strong></td>
-                  <td><strong>8%</strong> · 第四</td>
-                  <td>
-                    <span class="tag tag-success">推流</span>
-                    <span class="tag tag-success">弹幕</span>
-                    <span class="tag tag-neutral">弹品</span>
-                    <span class="tag tag-neutral">回复</span>
-                    <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">2/4</span>
-                  </td>
-                  <td><button class="btn btn-outline btn-xs" onclick="openAccessWizard('京东')">接入</button></td>
-                </tr>
-                <tr>
-                  <td><strong>拼多多</strong></td>
-                  <td>增速最快</td>
-                  <td>
-                    <span class="tag tag-success">推流</span>
-                    <span class="tag tag-success">弹幕</span>
-                    <span class="tag tag-neutral">弹品</span>
-                    <span class="tag tag-neutral">回复</span>
-                    <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">2/4</span>
-                  </td>
-                  <td><button class="btn btn-outline btn-xs" onclick="openAccessWizard('拼多多')">接入</button></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- 仅推流 / 观望 -->
-      <div style="margin-top:16px;padding:10px 14px;background:#f8fafc;border-radius:6px;font-size:12px;color:var(--text-muted);">
-        📌 <strong>视频号、小红书、唯品会</strong>目前仅支持 RTMP 推流，不具备弹幕采集/商品弹窗/文字回复的开放接口，暂缓接入。另外，国内没有任何直播平台提供"文字回复"官方 API，现有方案均依赖第三方工具。详见 <code>demo/平台接入能力调研.md</code>
-      </div>
-    </div>
-
-    <!-- ==================== 8. 系统设置 ==================== -->
-    <div class="page" id="page-settings">
-      <div class="card">
-        <div class="card-header"><h3>⚙️ 全局设置</h3></div>
-        <div class="card-body">
-          <div style="display:flex;flex-direction:column;gap:16px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#f8fafc;border-radius:6px;">
-              <div>
-                <div style="font-weight:600;font-size:13px;">默认 BGM 音量</div>
-                <div style="font-size:12px;color:var(--text-muted);">新创建直播间时的默认背景音乐音量</div>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <input type="range" value="30" style="width:120px;">
-                <span style="font-size:12px;width:32px;">30%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== 商户信息 ==================== -->
-    <div class="page" id="page-merchant">
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
-        <div style="width:64px;height:64px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;font-weight:700;">张</div>
-        <div>
-          <h2 style="font-size:20px;">张老板的店铺</h2>
-          <div style="font-size:13px;color:var(--text-muted);">商户ID: M00001 · 注册日期: 2026-01-24</div>
-        </div>
-        <button class="btn btn-outline btn-sm" style="margin-left:auto;" onclick="navigateTo('settings')">← 返回</button>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="label">📦 当前套餐</div>
-          <div class="value" style="font-size:20px;">专业版</div>
-          <div class="change">¥999/月</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">📅 到期日期</div>
-          <div class="value" style="font-size:20px;">2027-01-24</div>
-          <div class="change">剩余 187 天</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">🏠 直播间配额</div>
-          <div class="value">2 / 10</div>
-          <div class="progress-bar" style="margin-top:6px;"><div class="fill fill-primary" style="width:20%;"></div></div>
-        </div>
-        <div class="stat-card">
-          <div class="label">📡 并发推流配额</div>
-          <div class="value">1 / 5</div>
-          <div class="progress-bar" style="margin-top:6px;"><div class="fill fill-success" style="width:20%;"></div></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header"><h3>📋 基本信息</h3></div>
-        <div class="card-body">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px;">
-            <div><span style="color:var(--text-muted);">联系人：</span>张三</div>
-            <div><span style="color:var(--text-muted);">手机号：</span>138****8888</div>
-            <div><span style="color:var(--text-muted);">邮箱：</span>zhang@example.com</div>
-            <div><span style="color:var(--text-muted);">已接入平台：</span>淘宝</div>
-            <div><span style="color:var(--text-muted);">本月开播时长：</span>124 小时</div>
-            <div><span style="color:var(--text-muted);">累计弹幕互动：</span>12,847 条</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div><!-- /.content -->
 </div><!-- /.main -->
-
-<!-- ==================== Modal: 配置已接入平台 ==================== -->
-<div class="modal-overlay" id="configModal" style="display:none;">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="configModalTitle">⚙️ 配置 — 平台接入</h3>
-      <button class="btn btn-outline btn-xs" onclick="closeConfigModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div style="padding:12px;background:#f0f9ff;border-radius:6px;font-size:12px;color:#075985;margin-bottom:16px;line-height:1.7;">
-        💡 <strong>接入说明：</strong>此处配置淘宝开放平台的 API 凭证（所有直播间共用）。<strong>RTMP 推流地址在"直播间管理"中为每个直播间单独配置。</strong>流程：淘宝后台创建直播间 → 获取 RTMP 地址 → 在直播间管理中填入。
-      </div>
-      <div class="form-group">
-        <label>平台</label>
-        <input type="text" id="configPlatform" disabled style="background:#f8fafc;">
-      </div>
-      <div class="form-group">
-        <label>API Key</label>
-        <input type="text" id="configApiKey" placeholder="淘宝开放平台应用的 AppKey（用于弹幕采集 / 商品弹窗）">
-      </div>
-      <div class="form-group">
-        <label>API Secret</label>
-        <input type="password" id="configApiSecret" placeholder="淘宝开放平台应用的 AppSecret" value="••••••••••••••••">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeConfigModal()">取消</button>
-      <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
-    </div>
-  </div>
-</div>
 
 <!-- ==================== Modal: 预览切片 ==================== -->
 <div class="modal-overlay" id="previewModal" style="display:none;">
@@ -1499,91 +1231,6 @@ tr:hover td { background: #f8fafc; }
   </div>
 </div>
 
-<!-- ==================== Modal: 接入向导 ==================== -->
-<div class="modal-overlay" id="accessModal" style="display:none;">
-  <div class="modal" style="max-width:560px;">
-    <div class="modal-header">
-      <h3 id="accessModalTitle">🔗 接入新平台</h3>
-      <button class="btn btn-outline btn-xs" onclick="closeAccessModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <!-- 步骤条 -->
-      <div class="wizard-steps">
-        <div class="wizard-step active" id="wizStep1"><span class="step-num">1</span> 填写凭证</div>
-        <div class="wizard-step" id="wizStep2"><span class="step-num">2</span> 验证连接</div>
-        <div class="wizard-step" id="wizStep3"><span class="step-num">3</span> 激活完成</div>
-      </div>
-
-      <div class="wizard-body">
-        <!-- Step 1: 填写凭证 -->
-        <div class="wizard-pane active" id="wizPane1">
-          <div class="text-muted" style="margin-bottom:16px;">请输入 <strong id="wizPlatformName">京东</strong> 开放平台的 API 凭证，用于弹幕采集、商品弹窗等能力。</div>
-          <div class="form-group">
-            <label>AppKey（应用标识）</label>
-            <input type="text" id="wizAppKey" placeholder="平台开放平台 → 应用管理 → AppKey">
-          </div>
-          <div class="form-group">
-            <label>AppSecret（应用密钥）</label>
-            <input type="password" id="wizAppSecret" placeholder="平台开放平台 → 应用管理 → AppSecret">
-          </div>
-          <div class="form-group">
-            <label>RTMP 推流地址</label>
-            <input type="text" id="wizRtmpUrl" placeholder="rtmp://push.xxx.com/live/...">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">在平台直播后台 → 电脑开播 → 获取推流地址</div>
-          </div>
-        </div>
-
-        <!-- Step 2: 验证连接 -->
-        <div class="wizard-pane" id="wizPane2">
-          <div class="verify-spinner" id="verifySpinner">
-            <div class="spinner"></div>
-            <div style="font-weight:600;">正在验证 API 连接...</div>
-            <div class="text-muted" style="font-size:12px;" id="verifyStatus">尝试连接平台服务器...</div>
-          </div>
-          <div class="verify-success" id="verifySuccess" style="display:none;">
-            <div class="icon">✅</div>
-            <div style="font-weight:600;font-size:16px;margin-bottom:4px;">验证通过</div>
-            <div class="text-muted">API 连接正常，推流地址可达</div>
-          </div>
-          <div class="verify-success" id="verifyFail" style="display:none;">
-            <div class="icon">❌</div>
-            <div style="font-weight:600;font-size:16px;margin-bottom:4px;color:var(--danger);">验证失败</div>
-            <div class="text-muted" id="verifyFailMsg">AppKey 或 AppSecret 不正确</div>
-          </div>
-        </div>
-
-        <!-- Step 3: 激活完成 -->
-        <div class="wizard-pane" id="wizPane3">
-          <div class="verify-success">
-            <div class="icon">🎉</div>
-            <div style="font-weight:600;font-size:16px;margin-bottom:4px;">平台接入成功！</div>
-            <div class="text-muted" id="wizResultText">京东平台已激活，现在可以使用该平台创建直播间并推流</div>
-            <div style="margin-top:16px;padding:12px;background:#f0fdf4;border-radius:8px;text-align:left;font-size:13px;">
-              <div style="font-weight:600;color:var(--success);margin-bottom:6px;">✅ 已激活的能力：</div>
-              <div>• RTMP 直播推流</div>
-              <div>• 实时弹幕采集（需平台 API 支持）</div>
-              <div>• 商品弹窗联动（需平台 API 支持）</div>
-              <div>• 智能文字回复（需平台 API 支持）</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Wizard 按钮 -->
-      <div class="wizard-footer" id="wizFooter">
-        <button class="btn btn-outline btn-sm" onclick="closeAccessModal()">取消</button>
-        <div class="right">
-          <button class="btn btn-outline btn-sm" id="wizPrevBtn" style="display:none;" onclick="wizPrev()">← 上一步</button>
-          <button class="btn btn-primary btn-sm" id="wizNextBtn" onclick="wizNext()">下一步 →</button>
-        </div>
-        <div class="right" id="wizDoneBtns" style="display:none;">
-          <button class="btn btn-primary btn-sm" onclick="closeAccessModal()">✓ 完成</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ==================== Toast ==================== -->
 <div id="toast" style="position:fixed;top:20px;right:20px;z-index:200;display:none;padding:12px 20px;background:#1e293b;color:#fff;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:slideUp .3s ease;"></div>
 
@@ -1603,8 +1250,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
     // Update title
     const titles = {
       rooms: '🏠 直播间管理', liveBoard: '📡 直播数据看板', products: '🛒 商品知识库', videos: '🎬 直播视频库', split: '🎞️ 视频素材库',
-      interact: '💬 互动设置', live: '📡 直播中控台', liveBoard: '📡 直播数据看板', productMaterial: '🎞️ 商品素材数据', productLive: '📡 商品直播数据',
-      account: '👥 账号管理', platform: '🔗 平台接入', settings: '⚙️ 系统设置', merchant: '🏪 商户信息'
+      interact: '💬 互动设置', live: '📡 直播中控台', productMaterial: '🎞️ 商品素材数据', productLive: '📡 商品直播数据'
     };
     document.getElementById('pageTitle').textContent = titles[page] || page;
   });
@@ -1620,7 +1266,7 @@ function navigateTo(page) {
   if (target) target.classList.add('active');
   const titles = {
     rooms: '🏠 直播间管理', schedule: '📅 直播排班', products: '🛒 商品库', videos: '🎬 直播视频库', split: '🎞️ 视频素材库',
-    interact: '💬 互动设置', stats: '📊 数据统计', account: '👥 账号管理', platform: '🔗 平台接入', settings: '⚙️ 系统设置', merchant: '🏪 商户信息'
+    interact: '💬 互动设置', stats: '📊 数据统计'
   };
   document.getElementById('pageTitle').textContent = titles[page] || page;
 }
@@ -2753,41 +2399,6 @@ renderRoomCards();
 initLiveBoardSelector();
 initCtrlRoomSelector();
 
-// ========== Modal: 配置已接入平台 ==========
-let configPlatform = '';
-
-function openConfigModal(platform, apiKey) {
-  configPlatform = platform;
-  document.getElementById('configModalTitle').textContent = '⚙️ 配置 — ' + platform + '平台 API 凭证';
-  document.getElementById('configPlatform').value = platform;
-  document.getElementById('configApiKey').value = apiKey;
-  document.getElementById('configApiSecret').value = '••••••••••••••••';
-  document.getElementById('configModal').style.display = 'flex';
-}
-
-function closeConfigModal() {
-  document.getElementById('configModal').style.display = 'none';
-}
-
-function saveConfig() {
-  const apiKey = document.getElementById('configApiKey').value;
-
-  if (!apiKey) {
-    showToast('⚠️ 请填写 API Key', 'warning');
-    return;
-  }
-
-  const btn = event.target;
-  btn.textContent = '⏳ 保存中...';
-  btn.disabled = true;
-  setTimeout(() => {
-    closeConfigModal();
-    showToast('✅ ' + configPlatform + '平台 API 凭证已保存（所有直播间共用此凭证）');
-    btn.textContent = '💾 保存配置';
-    btn.disabled = false;
-  }, 800);
-}
-
 // ========== Room Management Functions ==========
 // roomData & availableVideos defined above before init
 
@@ -3032,130 +2643,6 @@ document.getElementById('scheduleEditModal').addEventListener('click', function(
 });
 
 // ========== Modal: 接入向导 ==========
-let wizCurrentStep = 1;
-let wizPlatform = '';
-
-function openAccessWizard(platform) {
-  wizPlatform = platform;
-  wizCurrentStep = 1;
-  document.getElementById('accessModalTitle').textContent = '🔗 接入 — ' + platform + '平台';
-  document.getElementById('wizPlatformName').textContent = platform;
-  // Reset form
-  document.getElementById('wizAppKey').value = '';
-  document.getElementById('wizAppSecret').value = '';
-  document.getElementById('wizRtmpUrl').value = '';
-  // Reset steps UI
-  resetWizSteps();
-  // Reset verify UI
-  document.getElementById('verifySpinner').style.display = 'flex';
-  document.getElementById('verifySuccess').style.display = 'none';
-  document.getElementById('verifyFail').style.display = 'none';
-  // Show step 1
-  goToWizStep(1);
-  document.getElementById('accessModal').style.display = 'flex';
-}
-
-function closeAccessModal() {
-  document.getElementById('accessModal').style.display = 'none';
-}
-
-function resetWizSteps() {
-  ['wizStep1','wizStep2','wizStep3'].forEach(id => {
-    document.getElementById(id).className = 'wizard-step';
-  });
-  ['wizPane1','wizPane2','wizPane3'].forEach(id => {
-    document.getElementById(id).className = 'wizard-pane';
-  });
-}
-
-function goToWizStep(n) {
-  wizCurrentStep = n;
-  // Update step indicators
-  document.getElementById('wizStep1').className = 'wizard-step' + (n > 1 ? ' done' : '') + (n === 1 ? ' active' : '');
-  document.getElementById('wizStep2').className = 'wizard-step' + (n > 2 ? ' done' : '') + (n === 2 ? ' active' : '');
-  document.getElementById('wizStep3').className = 'wizard-step' + (n === 3 ? ' active' : '');
-  // Show/hide panes
-  document.getElementById('wizPane1').className = 'wizard-pane' + (n === 1 ? ' active' : '');
-  document.getElementById('wizPane2').className = 'wizard-pane' + (n === 2 ? ' active' : '');
-  document.getElementById('wizPane3').className = 'wizard-pane' + (n === 3 ? ' active' : '');
-  // Update buttons
-  document.getElementById('wizPrevBtn').style.display = n > 1 ? 'inline-flex' : 'none';
-  document.getElementById('wizNextBtn').style.display = n < 3 ? 'inline-flex' : 'none';
-  document.getElementById('wizDoneBtns').style.display = n === 3 ? 'flex' : 'none';
-}
-
-function wizNext() {
-  if (wizCurrentStep === 1) {
-    // Validate step 1
-    const appKey = document.getElementById('wizAppKey').value.trim();
-    const appSecret = document.getElementById('wizAppSecret').value.trim();
-    const rtmp = document.getElementById('wizRtmpUrl').value.trim();
-    if (!appKey || !appSecret || !rtmp) {
-      showToast('⚠️ 请填写所有必填字段（AppKey、AppSecret、RTMP 推流地址）', 'warning');
-      return;
-    }
-    // Go to verify step
-    goToWizStep(2);
-    // Simulate verification
-    simulateVerify();
-    return;
-  }
-  if (wizCurrentStep === 2) {
-    goToWizStep(3);
-    document.getElementById('wizResultText').textContent =
-      wizPlatform + '平台已激活，现在可以创建' + wizPlatform + '直播间并推流';
-    return;
-  }
-}
-
-function wizPrev() {
-  if (wizCurrentStep > 1) {
-    goToWizStep(wizCurrentStep - 1);
-    if (wizCurrentStep === 1) {
-      // Reset verify UI for re-entry
-      document.getElementById('verifySpinner').style.display = 'flex';
-      document.getElementById('verifySuccess').style.display = 'none';
-      document.getElementById('verifyFail').style.display = 'none';
-    }
-  }
-}
-
-function simulateVerify() {
-  document.getElementById('verifySpinner').style.display = 'flex';
-  document.getElementById('verifySuccess').style.display = 'none';
-  document.getElementById('verifyFail').style.display = 'none';
-  document.getElementById('verifyStatus').textContent = '尝试连接平台服务器...';
-
-  const statuses = [
-    { text: '验证 AppKey 有效性...', delay: 500 },
-    { text: '测试 RTMP 推流地址可达性...', delay: 800 },
-    { text: '检查 API 权限范围...', delay: 700 },
-  ];
-
-  let i = 0;
-  function nextStatus() {
-    if (i < statuses.length) {
-      document.getElementById('verifyStatus').textContent = statuses[i].text;
-      i++;
-      setTimeout(nextStatus, statuses[i-1].delay);
-    } else {
-      // Random: 85% success, 15% fail
-      const success = Math.random() > 0.15;
-      document.getElementById('verifySpinner').style.display = 'none';
-      if (success) {
-        document.getElementById('verifySuccess').style.display = 'block';
-        document.getElementById('wizNextBtn').textContent = '完成激活 →';
-        document.getElementById('wizNextBtn').style.display = 'inline-flex';
-      } else {
-        document.getElementById('verifyFail').style.display = 'block';
-        document.getElementById('verifyFailMsg').textContent = 'AppSecret 校验失败，请返回上一步检查凭证是否正确';
-        document.getElementById('wizNextBtn').style.display = 'none';
-      }
-    }
-  }
-  nextStatus();
-}
-
 // ========== Toast ==========
 function showToast(msg, type) {
   const toast = document.getElementById('toast');
@@ -3167,13 +2654,6 @@ function showToast(msg, type) {
   setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
-// ========== Close modals on overlay click ==========
-document.getElementById('configModal').addEventListener('click', function(e) {
-  if (e.target === this) closeConfigModal();
-});
-document.getElementById('accessModal').addEventListener('click', function(e) {
-  if (e.target === this) closeAccessModal();
-});
 </script>
 </body>
 </html>
