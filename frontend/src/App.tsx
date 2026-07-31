@@ -1,29 +1,38 @@
 import { useState } from "react";
+import DashboardPage from "./pages/DashboardPage";
+import ProductPage from "./pages/ProductPage";
+import VideoAssetPage from "./pages/VideoAssetPage";
+import LiveVideoPage from "./pages/LiveVideoPage";
+import LiveRoomPage from "./pages/LiveRoomPage";
+import LiveControlPage from "./pages/LiveControlPage";
+import InteractionPage from "./pages/InteractionPage";
+import AccountPage from "./pages/AccountPage";
+import PlatformPage from "./pages/PlatformPage";
+import SettingsPage from "./pages/SettingsPage";
+import MerchantPage from "./pages/MerchantPage";
 
-// ---- 页面组件 (占位，后续逐步实现) ----
-// 对应 Demo HTML 的 7 个商户端页面
-
+// ---- 页面类型 ----
 type Page =
-  | "liveBoard"
-  | "productMaterial"
-  | "productLive"
-  | "products"
-  | "split"
-  | "videos"
-  | "rooms"
-  | "live"
-  | "interact";
+  | "liveBoard" | "productMaterial" | "productLive"
+  | "products" | "split" | "videos"
+  | "rooms" | "live" | "interact"
+  | "account" | "platform" | "settings"
+  | "merchant";
 
 const PAGE_TITLES: Record<Page, string> = {
-  liveBoard: "📡 直播数据看板",
-  productMaterial: "🎞️ 商品素材数据",
-  productLive: "📡 商品直播数据",
-  products: "🛒 商品知识库",
-  split: "🎞️ 视频素材库",
-  videos: "🎬 直播视频库",
-  rooms: "🏠 直播间管理",
-  live: "📡 直播中控台",
-  interact: "💬 互动设置",
+  liveBoard: "📡 直播数据看板", productMaterial: "🎞️ 商品素材数据", productLive: "📡 商品直播数据",
+  products: "🛒 商品知识库", split: "🎞️ 视频素材库", videos: "🎬 直播视频库",
+  rooms: "🏠 直播间管理", live: "📡 直播中控台", interact: "💬 互动设置",
+  account: "👥 账号管理", platform: "🔗 平台接入", settings: "⚙️ 系统设置",
+  merchant: "🏪 商户信息",
+};
+
+const ICON: Record<Page, string> = {
+  liveBoard: "📡", productMaterial: "🎞️", productLive: "📡",
+  products: "🛒", split: "🎞️", videos: "🎬",
+  rooms: "🏠", live: "📡", interact: "💬",
+  account: "👥", platform: "🔗", settings: "⚙️",
+  merchant: "🏪",
 };
 
 export default function App() {
@@ -31,74 +40,7 @@ export default function App() {
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
-      {/* Sidebar */}
-      <aside
-        style={{
-          width: 240,
-          background: "var(--sidebar-bg)",
-          color: "var(--sidebar-text)",
-          display: "flex",
-          flexDirection: "column",
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ padding: "20px 24px 12px", fontSize: 18, fontWeight: 700, color: "#fff" }}>
-          🎬 <span style={{ color: "#818cf8" }}>AI</span> 直播工具
-        </div>
-        <div style={{ padding: "0 24px 20px", fontSize: 12, color: "#94a3b8" }}>
-          轻量级电商直播 SaaS
-        </div>
-
-        <nav style={{ flex: 1, padding: "4px 12px" }}>
-          <NavSection title="数据大盘" />
-          <NavItem page="liveBoard" icon="📡" label="直播数据看板" current={page} onClick={setPage} />
-          <NavItem page="productMaterial" icon="🎞️" label="商品素材数据" current={page} onClick={setPage} />
-          <NavItem page="productLive" icon="📡" label="商品直播数据" current={page} onClick={setPage} />
-
-          <NavSection title="内容管理" />
-          <NavItem page="products" icon="🛒" label="商品知识库" current={page} onClick={setPage} />
-          <NavItem page="split" icon="🎞️" label="视频素材库" current={page} onClick={setPage} />
-          <NavItem page="videos" icon="🎬" label="直播视频库" current={page} onClick={setPage} />
-
-          <NavSection title="直播运营" />
-          <NavItem page="rooms" icon="🏠" label="直播间管理" current={page} onClick={setPage} />
-          <NavItem page="live" icon="📡" label="直播中控台" current={page} onClick={setPage} badge="LIVE" />
-          <NavItem page="interact" icon="💬" label="互动设置" current={page} onClick={setPage} />
-        </nav>
-
-        <div
-          style={{
-            padding: 12,
-            borderTop: "1px solid rgba(255,255,255,.08)",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              background: "var(--primary)",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 14,
-              color: "#fff",
-              fontWeight: 600,
-            }}
-          >
-            张
-          </div>
-          <div>
-            <div style={{ color: "#fff", fontWeight: 500, fontSize: 13 }}>张老板的店铺</div>
-            <div style={{ fontSize: 11, color: "#94a3b8" }}>专业版</div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main */}
+      <Sidebar page={page} onNav={setPage} />
       <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <TopBar title={PAGE_TITLES[page]} />
         <div style={{ flex: 1, overflow: "auto", padding: 24 }}>
@@ -109,137 +51,106 @@ export default function App() {
   );
 }
 
-// ---- 子组件 ----
+// ==================== Sidebar ====================
 
-function NavSection({ title }: { title: string }) {
+function Sidebar({ page, onNav }: { page: Page; onNav: (p: Page) => void }) {
   return (
-    <div
-      style={{
-        fontSize: 11,
-        textTransform: "uppercase",
-        letterSpacing: 1,
-        color: "#94a3b8",
-        padding: "16px 12px 8px",
-      }}
-    >
-      {title}
-    </div>
+    <aside className="sidebar">
+      <div className="sidebar-logo">🎬 <span>AI</span> 直播工具</div>
+      <div className="sidebar-subtitle">轻量级电商直播 SaaS</div>
+      <nav className="sidebar-nav">
+        <NavSection title="数据大盘" />
+        <NavItem page="liveBoard" label="直播数据看板" current={page} onClick={onNav} />
+        <NavItem page="productMaterial" label="商品素材数据" current={page} onClick={onNav} />
+        <NavItem page="productLive" label="商品直播数据" current={page} onClick={onNav} />
+
+        <NavSection title="内容管理" />
+        <NavItem page="products" label="商品知识库" current={page} onClick={onNav} />
+        <NavItem page="split" label="视频素材库" current={page} onClick={onNav} />
+        <NavItem page="videos" label="直播视频库" current={page} onClick={onNav} />
+
+        <NavSection title="直播运营" />
+        <NavItem page="rooms" label="直播间管理" current={page} onClick={onNav} />
+        <NavItem page="live" label="直播中控台" current={page} onClick={onNav} badge="LIVE" />
+        <NavItem page="interact" label="互动设置" current={page} onClick={onNav} />
+
+        <NavSection title="平台设置" />
+        <NavItem page="account" label="账号管理" current={page} onClick={onNav} />
+        <NavItem page="platform" label="平台接入" current={page} onClick={onNav} />
+        <NavItem page="settings" label="系统设置" current={page} onClick={onNav} />
+      </nav>
+      <div className="sidebar-footer">
+        <div className="sidebar-user" onClick={() => onNav("merchant")} title="点击查看商户信息">
+          <div className="avatar">张</div>
+          <div className="info">
+            <div className="name">张老板的店铺</div>
+            <div className="role">专业版 · 剩余 187 天</div>
+          </div>
+        </div>
+      </div>
+    </aside>
   );
 }
 
-function NavItem({
-  page,
-  icon,
-  label,
-  current,
-  onClick,
-  badge,
-}: {
-  page: Page;
-  icon: string;
-  label: string;
-  current: Page;
-  onClick: (p: Page) => void;
-  badge?: string;
+function NavSection({ title }: { title: string }) {
+  return <div className="nav-section">{title}</div>;
+}
+
+function NavItem({ page, label, current, onClick, badge }: {
+  page: Page; label: string; current: Page; onClick: (p: Page) => void; badge?: string;
 }) {
   const active = page === current;
   return (
-    <div
-      onClick={() => onClick(page)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "10px 12px",
-        borderRadius: 8,
-        cursor: "pointer",
-        fontSize: 14,
-        marginBottom: 2,
-        background: active ? "var(--primary)" : "transparent",
-        color: active ? "#fff" : undefined,
-        fontWeight: active ? 500 : undefined,
-      }}
-    >
-      <span style={{ fontSize: 18, width: 22, textAlign: "center" }}>{icon}</span>
+    <div className={`nav-item ${active ? "active" : ""}`} onClick={() => onClick(page)}>
+      <span className="icon">{ICON[page]}</span>
       {label}
-      {badge && (
-        <span
-          style={{
-            marginLeft: "auto",
-            background: "var(--danger)",
-            color: "#fff",
-            fontSize: 11,
-            padding: "2px 7px",
-            borderRadius: 10,
-            fontWeight: 600,
-          }}
-        >
-          {badge}
-        </span>
-      )}
+      {badge && <span className="nav-badge">{badge}</span>}
     </div>
   );
 }
+
+// ==================== TopBar ====================
 
 function TopBar({ title }: { title: string }) {
   return (
-    <div
-      style={{
-        height: 56,
-        background: "var(--card-bg)",
-        borderBottom: "1px solid var(--border)",
-        display: "flex",
-        alignItems: "center",
-        padding: "0 24px",
-        flexShrink: 0,
-      }}
-    >
-      <h2 style={{ fontSize: 17, fontWeight: 600 }}>{title}</h2>
+    <div className="topbar">
+      <h2>{title}</h2>
+      <div className="topbar-actions">
+        <div className="status-dot" />
+        <span className="status-text">系统运行中</span>
+      </div>
     </div>
   );
 }
+
+// ==================== Page Router ====================
 
 function PageContent({ page }: { page: Page }) {
-  // 各页面后端 API 调用示例
   switch (page) {
-    case "products":
-      return <Placeholder title="商品知识库" api="/api/products" />;
-    case "split":
-      return <Placeholder title="视频素材库" api="/api/video-assets" />;
-    case "videos":
-      return <Placeholder title="直播视频库" api="/api/live-videos" />;
-    case "rooms":
-      return <Placeholder title="直播间管理" api="/api/live-rooms" />;
-    case "live":
-      return <Placeholder title="直播中控台" api="WS /ws/live/{room_id}" />;
-    case "interact":
-      return <Placeholder title="互动设置" api="/api/interaction/config" />;
+    // 数据大盘 (合并在一个组件里，Tab 切换)
     case "liveBoard":
-      return <Placeholder title="直播数据看板" api="/api/analytics/sessions" />;
     case "productMaterial":
-      return <Placeholder title="商品素材数据" api="商品素材交叉统计" />;
     case "productLive":
-      return <Placeholder title="商品直播数据" api="商品直播交叉统计" />;
-    default:
-      return null;
-  }
-}
+      return <DashboardPage tab={page} />;
 
-function Placeholder({ title, api }: { title: string; api: string }) {
-  return (
-    <div
-      style={{
-        background: "var(--card-bg)",
-        borderRadius: "var(--radius)",
-        padding: 40,
-        textAlign: "center",
-      }}
-    >
-      <div style={{ fontSize: 48, marginBottom: 16 }}>🚧</div>
-      <h3 style={{ marginBottom: 8 }}>{title}</h3>
-      <p style={{ color: "var(--text-muted)", fontSize: 14 }}>
-        页面开发中 · API: <code>{api}</code>
-      </p>
-    </div>
-  );
+    // 内容管理
+    case "products": return <ProductPage />;
+    case "split":    return <VideoAssetPage />;
+    case "videos":   return <LiveVideoPage />;
+
+    // 直播运营
+    case "rooms":    return <LiveRoomPage />;
+    case "live":     return <LiveControlPage />;
+    case "interact": return <InteractionPage />;
+
+    // 平台设置
+    case "account":  return <AccountPage />;
+    case "platform": return <PlatformPage />;
+    case "settings": return <SettingsPage />;
+
+    // 商户信息
+    case "merchant": return <MerchantPage />;
+
+    default: return null;
+  }
 }

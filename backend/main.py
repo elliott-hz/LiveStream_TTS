@@ -14,6 +14,9 @@ from backend.modules.live_room.router import router as live_room_router
 from backend.modules.live_control.router import router as live_control_router
 from backend.modules.interaction.router import router as interaction_router
 from backend.modules.analytics.router import router as analytics_router
+from backend.modules.account.router import router as account_router
+from backend.modules.platform.router import router as platform_router
+from backend.modules.settings.router import router as settings_router
 
 
 @asynccontextmanager
@@ -47,6 +50,9 @@ app.include_router(live_room_router)
 app.include_router(live_control_router)
 app.include_router(interaction_router)
 app.include_router(analytics_router)
+app.include_router(account_router)
+app.include_router(platform_router)
+app.include_router(settings_router)
 
 
 @app.get("/api/health")

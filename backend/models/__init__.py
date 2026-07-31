@@ -4,6 +4,8 @@ from backend.models.video import RawVideo, VideoSegment, LiveVideo, LiveVideoCli
 from backend.models.room import LiveRoom, RoomSchedule
 from backend.models.interaction import InteractionConfig, ReplyTemplate
 from backend.models.analytics import LiveSession, DanmakuRecord
+from backend.models.account import Merchant, User
+from backend.models.system import PlatformConfig, SystemSetting
 
 __all__ = [
     "Base", "engine", "async_session", "get_db", "init_db", "new_uuid",
