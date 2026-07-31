@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     # 阿里云
     aliyun_access_key: str = ""
     aliyun_secret: str = ""
+    bailian_endpoint: str = "https://dashscope.aliyuncs.com/api/v1/services/video/smart-strip"
 
     # AutoDL GPU (Wav2Lip)
     wav2lip_url: str = "http://127.0.0.1:8000"
